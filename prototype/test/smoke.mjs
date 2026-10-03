@@ -50,6 +50,12 @@ await page.keyboard.press('KeyK');
 await waitState(() => __game.G.boss.state !== 'gap');
 results.duoHap = await ev(() => __game.G.stats.hap);
 await page.screenshot({ path: path.join(out, '1_duo_hap.png') });
+// 1-b) 맞장구: 받았던 1P(모루)가 반동이 끝난 뒤 휘청이는 보스를 친다
+await waitState(() => __game.G.players[0].state === 'free');
+await page.keyboard.press('KeyF');
+await waitState(() => __game.G.stats.echo > 0 || __game.G.boss.state === 'chase');
+results.duoEcho = await ev(() => __game.G.stats.echo);
+results.fit = await ev(() => { const { G, fit } = __game; const [m, j] = G.players; return [fit(m, 'slam'), fit(m, 'charge'), fit(j, 'slam'), fit(j, 'charge')].join(','); });
 
 // 2) 혼자 듀오 연습: A 받기 자세 유지한 채 Q → B로 틈 공격
 await page.keyboard.press('Escape');
@@ -72,6 +78,27 @@ await waitState(() => __game.G.boss.state !== 'gap');
 results.practiceHap = await ev(() => __game.G.stats.hap);
 await page.screenshot({ path: path.join(out, '2_practice_hap.png') });
 
+// 2-b) 혼자 하기: 모루 받기 → Q(제비 틈 진입, 합) → Q(모루 되돌려 태그, 맞장구)
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit1');
+await waitState(() => __game.G.mode === 'solo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, A = G.players[0];
+  B.cd = 99; B.pos.set(0, 0, 0); A.pos.set(0, 0, 3); A.yaw = Math.PI;
+  B.target = A; B.begin('slam'); B.t = B.atk.windup - 0.05;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+results.soloReceive = await ev(() => __game.G.boss.state);
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.stats.hap > 0 || __game.G.boss.state !== 'gap');
+results.soloHap = await ev(() => __game.G.stats.hap);
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.stats.echo > 0 || __game.G.boss.state === 'chase');
+results.soloEcho = await ev(() => __game.G.stats.echo);
+await page.screenshot({ path: path.join(out, '2b_solo_echo.png') });
+
 // 3) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -79,6 +106,7 @@ results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > i
 await page.screenshot({ path: path.join(out, '3_mobile_title.png') });
 
 await browser.close();
-const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1 && !results.mobileOverflow && !errors.length;
+const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.duoEcho === 1 && results.fit === 'strong,weak,weak,strong' &&
+  results.soloReceive === 'gap' && results.soloHap === 1 && results.soloEcho === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1 && !results.mobileOverflow && !errors.length;
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);
