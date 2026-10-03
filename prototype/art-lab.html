@@ -1,0 +1,1173 @@
+<title>합 아트 스타일 랩</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Nanum+Brush+Script&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
+<style>
+/* 레이아웃: 위에 얇은 조작 막대, 아래 전체가 비교 화면. 한 캔버스를 타일로 나눠 같은 장면을 스타일별로 그린다.
+   하나씩 보기에서는 오른쪽(폰에서는 아래)에 스타일 설명이 붙는다. 상영실처럼 어두운 한 가지 룩으로 고정. */
+:root {
+  --bg: #0e1118;
+  --panel: #151a24;
+  --raise: #1d2431;
+  --line: rgba(232, 236, 245, 0.12);
+  --ink: #eceff5;
+  --dim: #98a1b4;
+  --gold: #ffd23f;
+  --display: "Black Han Sans", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --body: "IBM Plex Sans KR", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html { height: 100%; box-sizing: border-box; background: var(--bg); }
+body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--body); overflow: hidden; }
+#app { height: 100%; display: flex; flex-direction: column; }
+
+/* 조작 막대 */
+.bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: baseline; gap: 8px; margin-right: auto; }
+.brand b { font: 400 26px/1 var(--display); color: var(--gold); }
+.brand span { font-weight: 600; font-size: 13px; color: var(--dim); letter-spacing: 0.02em; }
+.group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.group > .k { font-size: 11px; color: var(--dim); letter-spacing: 0.06em; margin-right: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button, .chip { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 6px 10px; color: var(--dim); white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--raise); color: var(--ink); }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; }
+.chip[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.seg button:focus-visible, .chip:focus-visible, .nav:focus-visible, .tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.timeline { flex: 1 1 260px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+#scrub { flex: 1; min-width: 80px; accent-color: var(--gold); }
+#phase { font-size: 12px; color: var(--dim); min-width: 0; flex: 0 1 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+main { flex: 1; min-height: 0; display: flex; }
+#stage { position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden; touch-action: pan-y; }
+#stage canvas { position: absolute; inset: 0; display: block; }
+#tiles { position: absolute; inset: 0; display: grid; gap: 2px; }
+.tile { position: relative; container-type: inline-size; cursor: pointer; overflow: hidden; }
+.single .tile { cursor: default; }
+.lbl { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: baseline; gap: 6px; padding: 4px 8px; border-radius: 4px; background: rgba(10, 12, 18, 0.72); color: var(--ink); font-size: 12px; pointer-events: none; max-width: calc(100% - 16px); }
+.lbl b { font: 400 15px/1.1 var(--display); letter-spacing: 0.02em; white-space: nowrap; }
+.lbl span { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.single .lbl { font-size: 13px; left: 12px; bottom: 12px; }
+.single .lbl b { font-size: 19px; }
+.nav { all: unset; cursor: pointer; position: absolute; top: 50%; translate: 0 -50%; width: 40px; height: 56px; display: grid; place-items: center; border-radius: 6px; background: rgba(10, 12, 18, 0.6); color: var(--ink); font-size: 22px; z-index: 2; }
+#prev { left: 8px; } #next { right: 8px; }
+
+/* 합 글자: 스타일마다 타이포 */
+.ht { position: absolute; left: 0; top: 0; pointer-events: none; white-space: nowrap; text-align: center; line-height: 1; will-change: transform, opacity; }
+.ht .x { display: block; font-size: clamp(20px, 10cqi, 76px); }
+.ht small { display: block; font-size: clamp(10px, 3.4cqi, 22px); margin-top: 0.25em; font-family: var(--body); font-weight: 600; }
+.ht-base .x { font-family: var(--display); color: #fff; text-shadow: 0 0 0.35em #ffd23f, 0 0 0.7em rgba(255, 210, 63, 0.7), 0 0.07em 0 rgba(0, 0, 0, 0.6); }
+.ht-base small { color: #ffd23f; }
+.ht-anime .x { font-family: var(--display); color: #fff; transform: skewX(-12deg); -webkit-text-stroke: 0.1em #1a1d3c; paint-order: stroke fill; text-shadow: 0.07em 0.07em 0 #ffcf33; }
+.ht-anime small { color: #1a1d3c; background: #ffcf33; display: inline-block; padding: 0.1em 0.5em; transform: skewX(-12deg); }
+.ht-ink .x { font-family: "Nanum Brush Script", var(--display); font-size: clamp(30px, 17cqi, 128px); color: #15130f; transform: rotate(-6deg); text-shadow: 0.03em 0.02em 0 rgba(21, 19, 15, 0.5); }
+.ht-ink small { color: #8c2a1c; font-family: "Nanum Brush Script", var(--body); font-size: clamp(14px, 6cqi, 40px); font-weight: 400; }
+.ht-neon .x { font-family: "Do Hyeon", var(--display); color: #fff7d6; text-shadow: 0 0 0.08em #fff, 0 0 0.25em #ffd84a, 0 0 0.6em #ff3fa4, 0 0 1.2em #ff3fa4; }
+.ht-neon small { color: #2ee6ff; text-shadow: 0 0 0.4em #2ee6ff; }
+.ht-gouache .x { font-family: "Jua", var(--display); color: #fff5dd; text-shadow: 0 0.06em 0 #b0643a, 0 0 0.45em rgba(255, 201, 74, 0.8); }
+.ht-gouache small { color: #7a3f22; }
+.ht-riso .x { font-family: var(--display); color: #ffd400; text-shadow: 0.06em 0.05em 0 #ff6c2f, -0.05em -0.04em 0 #3255a4; }
+.ht-riso small { color: #3255a4; }
+
+/* 설명 패널 */
+#info { flex: none; width: min(400px, 38%); overflow-y: auto; border-left: 1px solid var(--line); background: var(--panel); padding: 16px 18px 28px; display: grid; gap: 16px; align-content: start; }
+#info h2 { margin: 0; font: 400 30px/1.1 var(--display); text-wrap: balance; }
+#info .sub { margin: 4px 0 0; color: var(--dim); font-size: 13px; }
+#info .lead { margin: 0; font-size: 15px; line-height: 1.65; text-wrap: pretty; }
+#info .ref { display: flex; flex-wrap: wrap; gap: 6px; }
+#info .ref span { font-size: 11.5px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+.sw { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw i { display: grid; gap: 3px; justify-items: center; font-style: normal; font-size: 10.5px; color: var(--dim); }
+.sw i::before { content: ""; width: 30px; height: 30px; border-radius: 4px; background: var(--c); border: 1px solid var(--line); }
+dl.recipe { margin: 0; display: grid; gap: 10px; }
+dl.recipe div { display: grid; gap: 2px; }
+dl.recipe dt { font-size: 11px; font-weight: 600; color: var(--dim); letter-spacing: 0.08em; }
+dl.recipe dd { margin: 0; font-size: 13.5px; line-height: 1.6; }
+.risk { border-left: 3px solid #ff7a59; padding: 2px 0 2px 12px; font-size: 13.5px; line-height: 1.6; }
+.risk b { display: block; font-size: 11px; color: #ff9a80; letter-spacing: 0.08em; }
+.common { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; }
+.common h3 { margin: 0; font-size: 12px; color: var(--gold); letter-spacing: 0.08em; }
+.common ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; line-height: 1.55; color: var(--ink); }
+.hint { font-size: 12px; color: var(--dim); margin: 0; }
+kbd { font: 600 11px var(--body); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; }
+
+@media (max-width: 820px), (orientation: portrait) and (max-width: 1100px) {
+  main { flex-direction: column; }
+  #info { width: auto; flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--line); min-height: 0; }
+  .single #stage { flex: 0 0 auto; height: min(58%, 82vw); }
+}
+@media (max-width: 560px) {
+  .bar { gap: 8px 10px; padding: 8px 16px; }
+  .brand b { font-size: 22px; }
+  .group > .k { display: none; }
+  .seg button, .chip { padding: 6px 8px; font-size: 12px; }
+  #phase { display: none; }
+  .lbl b { font-size: 13px; }
+  .lbl span { display: none; }
+  .single .lbl span { display: inline; }
+}
+</style>
+
+<div id="app">
+  <header class="bar">
+    <div class="brand"><b>합</b><span>아트 스타일 랩 · 같은 7초를 여섯 가지로</span></div>
+    <div class="group">
+      <span class="k">보기</span>
+      <div class="seg" id="viewSeg">
+        <button type="button" id="vGrid" aria-pressed="true">모아 보기</button>
+        <button type="button" id="vSingle" aria-pressed="false">하나씩</button>
+      </div>
+    </div>
+    <div class="group" id="moments">
+      <button class="chip" type="button" id="mPlay" aria-pressed="true">▶ 흐름</button>
+      <button class="chip" type="button" data-tau="1.3" aria-pressed="false">예비 동작</button>
+      <button class="chip" type="button" data-tau="1.78" aria-pressed="false">완벽한 합</button>
+      <button class="chip" type="button" data-tau="4.8" aria-pressed="false">충격파</button>
+    </div>
+    <div class="timeline">
+      <input type="range" id="scrub" min="0" max="7" step="0.01" value="0" aria-label="장면 시간">
+      <span id="phase"></span>
+    </div>
+    <div class="group">
+      <span class="k">캐릭터</span>
+      <div class="seg" id="shapeSeg">
+        <button type="button" data-shape="0" aria-pressed="true">지금 캡슐</button>
+        <button type="button" data-shape="1" aria-pressed="false">실루엣 제안</button>
+      </div>
+    </div>
+    <div class="group">
+      <span class="k">검사</span>
+      <div class="seg" id="checkSeg">
+        <button type="button" data-check="0" aria-pressed="true">끔</button>
+        <button type="button" data-check="1" aria-pressed="false">명도</button>
+        <button type="button" data-check="2" aria-pressed="false">실루엣</button>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="tiles"></div>
+      <button class="nav" id="prev" type="button" aria-label="이전 스타일" hidden>‹</button>
+      <button class="nav" id="next" type="button" aria-label="다음 스타일" hidden>›</button>
+    </div>
+    <aside id="info" hidden></aside>
+  </main>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+THREE.ColorManagement.enabled = false;
+
+// ───────────────────────── 스타일 정의 ─────────────────────────
+// pal: 색. shade: 명암 셰이더. outline: 외곽선. post: 화면 후처리. arena: 바닥/소품/공기. fx: 합 연출.
+// 공략 색 규칙(모든 스타일 공통): 받을 수 있는 공격 = 따뜻한 채움, 받을 수 없는 공격 = 사선 줄무늬. 금색은 합 전용.
+const STYLES = [
+  {
+    id: 'base', name: '기준', sub: '지금 프로토타입', ht: 'ht-base',
+    pal: { bg: 0x22304a, ground: 0x1a2436, floor: 0x6f8f8c, floor2: 0x6f8f8c, floorLine: 0x587472, side: 0x4f6765, mark: 0xffffff, markA: 0.22,
+      p1: 0xff7a59, p2: 0x45c4ff, boss: 0x5b3a8c, bossDark: 0x4a2f73, horn: 0xe9dcc0, blade: 0xf4f1ea, visor: 0x1b1530, eye: 0xffd23f,
+      recv: 0xff5a36, unblock: 0xb06cff, gold: 0xffd23f, core: 0xfff3c4, shadow: 0x0b1020, shadowA: 0.35, shadowHard: 0.3,
+      prop: 0x8a8fa3, prop2: 0x8a8fa3, far: 0x1a2436 },
+    fog: [34, 80],
+    shade: { light: [-8, 22, 6], t1: 0.36, t2: 0.66, soft: 0.004, lv: [0.6, 0.84, 1.04], tint: 0xe6e8f2, rim: 0, rimW: 0.3, rimColor: 0xffffff, rimSelf: false, spec: 0, pattern: 0, patScale: 6, patColor: 0x000000, patAmt: 0 },
+    outline: { mode: 'fixed', color: 0x161226, w: 2.4, wobble: 0 },
+    post: { grain: 0, vig: 0.15, paper: 0, misreg: 0, sat: 1, bloom: 0, bloomTh: 0.7, fx: 0, flash: 0xfff0be, paperCol: 0xffffff, inkCol: 0x000000 },
+    arena: { floorKind: 5, props: 'pillar', far: 'none', particles: null },
+    fx: { add: true, rcv: [0xffffff], hap: [0xffd23f], extra: null, teleNoise: 0, teleA: 1 },
+    lead: '비교 기준. 지금 게임에 들어 있는 기본 툰을 그대로 옮겼어요. 다른 스타일이 무엇을 더하고 빼는지 이 칸과 견줘 보세요.',
+    feel: '합 순간의 금색 플래시와 외곽선 번쩍임은 있지만, 화면 전체가 같은 밝기라 "와"의 대비가 작아요.',
+    recipe: { '셰이더': '3단 셀(경계 0.36 / 0.66), 그림자는 회색으로 어두워질 뿐 색이 안 바뀜.', '외곽선': '뒤집은 껍데기, 남보라 고정색, 굵기 일정.', '팔레트': '밤 청록 바닥 + 주황/하늘 캐릭터 + 보라 보스.', '아레나': '민무늬 원판, 돌기둥 11개, 공기 효과 없음.', '합 연출': '금색 원형 플래시 + 가산 광선.' },
+    risk: '정체성이 약하고 그림자가 탁해 보여요. 보스와 바닥이 비슷한 명도라서 명도 검사에서 보스가 묻혀요.',
+    refs: ['현재 프로토타입'],
+  },
+  {
+    id: 'anime', name: '셀 애니', sub: '한낮의 결투장', ht: 'ht-anime',
+    pal: { bg: 0x9ccbe8, ground: 0x86b08c, floor: 0xe4dccb, floor2: 0xd3c9b3, floorLine: 0xb3a78f, side: 0xa79f8d, mark: 0x5d6fa8, markA: 0.35,
+      p1: 0xff6b4a, p2: 0x3fb6ff, boss: 0x4b3b7d, bossDark: 0x3a2d63, horn: 0xf3ead6, blade: 0xffffff, visor: 0x1a1d3c, eye: 0xffcf33,
+      recv: 0xff4a1c, unblock: 0x7d45ff, gold: 0xffcf33, core: 0xfffbe0, shadow: 0x3c4a7a, shadowA: 0.4, shadowHard: 0.7,
+      prop: 0xdcd3c1, prop2: 0xc8bea9, far: 0xbcd3e8 },
+    fog: [30, 72],
+    shade: { light: [-6, 14, 10], t1: 0.5, t2: 9, soft: 0.006, lv: [0.78, 1, 1.04], tint: 0x9ea8e6, rim: 0.7, rimW: 0.26, rimColor: 0xffffff, rimSelf: false, spec: 0.35, pattern: 0, patScale: 6, patColor: 0x000000, patAmt: 0 },
+    outline: { mode: 'dark', color: 0x1a1d3c, w: 1.7, wobble: 0 },
+    post: { grain: 0, vig: 0.1, paper: 0, misreg: 0, sat: 1.06, bloom: 0, bloomTh: 0.7, fx: 2, flash: 0xffffff, paperCol: 0xffffff, inkCol: 0x1a1d3c },
+    arena: { floorKind: 0, props: 'pillar', far: 'peaks', particles: { kind: 0, color: 0xffffff, count: 70, size: 3 } },
+    fx: { add: false, rcv: [0xffffff], hap: [0xffcf33, 0xffffff], extra: null, teleNoise: 0, teleA: 1.15 },
+    lead: '레퍼런스(젠레스 존 제로, 명조) 장르의 문법이에요. 선명한 2단 명암, 차가운 색으로 바뀌는 그림자, 하얀 역광 테두리.',
+    feel: '합 순간에 집중선과 흰 번쩍임이 들어가 "컷인" 같은 쾌감(1순위)을 바로 줘요. 밝은 낮이라 두 사람 위치가 한눈에 읽혀요(신뢰, 내 거/네 거).',
+    recipe: { '셰이더': '2단 셀 + 하이라이트 띠 + 화면 가장자리 흰 림. 그림자는 파랑-보라로 색상 이동.', '외곽선': '물체 색을 어둡게 한 색, 얇게(1.7px). 고정 검정보다 덜 딱딱해요.', '팔레트': '하늘색 배경, 밝은 석재 바닥, 채도 높은 주황/하늘 캐릭터.', '아레나': '동심원 돌 타일, 먼 산, 떠다니는 먼지.', '합 연출': '방사형 집중선 + 흰 번쩍임 + 비스듬한 굵은 글자.' },
+    risk: '레퍼런스와 너무 닮아서 이 게임만의 얼굴이 약해요. 밝은 바닥에서 주황 예고가 덜 튀어서 예고 채움을 진하게 올렸어요.',
+    refs: ['젠레스 존 제로', '명조', '길티기어 스트라이브'],
+  },
+  {
+    id: 'ink', name: '먹선', sub: '한지 위의 결투', ht: 'ht-ink',
+    pal: { bg: 0xe9e5da, ground: 0xd9d4c6, floor: 0xe6e2d6, floor2: 0xd6d0c0, floorLine: 0x26221d, side: 0xcfc9ba, mark: 0x26221d, markA: 0.18,
+      p1: 0xdd5a2b, p2: 0x2f5597, boss: 0x6b6760, bossDark: 0x45423d, horn: 0xe9e5da, blade: 0xf0ede4, visor: 0x15130f, eye: 0xc9962b,
+      recv: 0x8c2a1c, unblock: 0x2a2622, gold: 0xc9962b, core: 0xf2d27a, shadow: 0x15130f, shadowA: 0.8, shadowHard: 0.82,
+      prop: 0x1f1c18, prop2: 0x3a3631, far: 0xbdb8ab },
+    fog: [26, 62],
+    shade: { light: [-10, 20, 4], t1: 0.46, t2: 9, soft: 0.004, lv: [0.86, 1, 1.0], tint: 0xd8d4cc, rim: 0, rimW: 0.3, rimColor: 0xffffff, rimSelf: false, spec: 0, pattern: 1, patScale: 5, patColor: 0x15130f, patAmt: 0.85 },
+    outline: { mode: 'fixed', color: 0x15130f, w: 3.6, wobble: 0.6 },
+    post: { grain: 0.03, vig: 0.22, paper: 0.55, misreg: 0, sat: 0.95, bloom: 0, bloomTh: 0.7, fx: 1, flash: 0xc9962b, paperCol: 0xe9e5da, inkCol: 0x15130f },
+    arena: { floorKind: 1, props: 'banner', far: 'peaks', particles: { kind: 3, color: 0x15130f, count: 40, size: 2.4 } },
+    fx: { add: false, rcv: [0x15130f], hap: [0xc9962b, 0x15130f], extra: 'splat', teleNoise: 0.08, teleA: 1.1 },
+    lead: '한지 위에 먹으로 그린 결투. 색은 두 사람(인주 주홍, 쪽빛)과 금박에만 써요. 나머지는 먹과 종이.',
+    feel: '색이 귀한 화면이라, 두 사람의 색이 금으로 이어지는 합 순간이 가장 극적으로 보여요. 합 = 흑백이 뒤집히는 임팩트 프레임 + 바닥에 먹이 튐. "합"이라는 제목의 서예 느낌과도 맞아요.',
+    recipe: { '셰이더': '2단 + 그림자에 화면 공간 사선 해칭, 아주 어두운 곳은 교차 해칭.', '외곽선': '굵고(3.6px) 노이즈로 굵기가 흔들리는 붓선.', '팔레트': '한지 회백, 먹, 인주 주홍, 쪽빛, 금박. 받기 예고는 인주색, 받기 불가는 먹 + 사선.', '아레나': '한지 바닥에 마른 붓으로 그은 원, 먹 깃발, 옅은 먼 산, 떠다니는 먹 티끌.', '합 연출': '0.1초 흑백 반전 프레임 → 먹 튐 자국이 바닥에 남음.' },
+    risk: '동양풍 세계관으로 강하게 묶여요(E 세션 세계관과 맞춰야 해요). 해칭이 화면에 붙어 있어서 움직일 때 무늬가 미끄러져 보일 수 있어요.',
+    refs: ['오카미', '대신 (Sifu 일부 연출)', '스트리트 파이터 6 먹 이펙트'],
+  },
+  {
+    id: 'neon', name: '네온', sub: '자정의 결투장', ht: 'ht-neon',
+    pal: { bg: 0x07080f, ground: 0x0a0c16, floor: 0x0d1020, floor2: 0x8a4dff, floorLine: 0x3b45a8, side: 0x10142a, mark: 0x8a4dff, markA: 0.3,
+      p1: 0xff7a3c, p2: 0x2ee6ff, boss: 0xff3fa4, bossDark: 0x7a2a8f, horn: 0xffe9c2, blade: 0xffffff, visor: 0x05060a, eye: 0xffd84a,
+      recv: 0xff6a1f, unblock: 0xa04bff, gold: 0xffd84a, core: 0xfffbe6, shadow: 0x000000, shadowA: 0.55, shadowHard: 0.4,
+      prop: 0x1a1d2e, prop2: 0x1a1d2e, far: 0x0a0c16 },
+    fog: [30, 70],
+    bodyMul: 0.22,
+    shade: { light: [4, 18, -8], t1: 0.45, t2: 0.75, soft: 0.01, lv: [0.6, 0.85, 1.1], tint: 0x8088c0, rim: 1, rimW: 0.42, rimColor: 0xffffff, rimSelf: true, spec: 0.25, pattern: 0, patScale: 6, patColor: 0x000000, patAmt: 0 },
+    outline: { mode: 'self', color: 0x000000, w: 2.2, wobble: 0 },
+    post: { grain: 0.035, vig: 0.4, paper: 0, misreg: 0, sat: 1.05, bloom: 1.2, bloomTh: 0.5, fx: 3, flash: 0xffd84a, paperCol: 0xffffff, inkCol: 0x000000 },
+    arena: { floorKind: 2, props: 'lantern', far: 'none', particles: { kind: 1, color: 0xff4fa0, count: 60, size: 2.6 } },
+    fx: { add: true, rcv: [0xffffff], hap: [0xffd84a, 0xff7a3c, 0x2ee6ff], extra: null, teleNoise: 0, teleA: 1 },
+    lead: '몸은 어둡게 두고, 테두리와 외곽선을 각자의 색으로 빛나게 해요. 바닥은 빛나는 격자.',
+    feel: '어둠 속에서 파트너의 빛이 보스 너머에 보이는 게 "등을 맡기는 신뢰"(2순위)를 그림으로 보여 줘요. 합 순간 주황과 하늘 빛이 금빛으로 섞이며 번져요.',
+    recipe: { '셰이더': '본색을 22%로 낮추고, 넓은 림을 캐릭터 자기 색으로. 약한 하이라이트.', '외곽선': '캐릭터 자기 색으로 빛나는 선(2.2px). 화면 번짐(블룸)이 받아서 발광처럼 보여요.', '팔레트': '검정에 가까운 남색 + 주황/청록/자홍 발광. 금색은 합에만.', '아레나': '빛나는 격자 바닥, 가장자리 보라 링, 등불 기둥, 떠오르는 불티.', '합 연출': '금빛 과노출 + 블룸 확장.' },
+    risk: '보스 몸이 어두워 형태(예비 동작 자세)가 덜 읽혀요. 이펙트가 많아지면 발광끼리 겹쳐 예고 색이 묻힐 수 있어요.',
+    refs: ['하데스 (일부)', 'Hi-Fi Rush 무대 연출', '트론'],
+  },
+  {
+    id: 'gouache', name: '구아슈', sub: '해 질 녘 숲속 공터', ht: 'ht-gouache',
+    pal: { bg: 0xf2c8a0, ground: 0x86a86c, floor: 0x9cbf7a, floor2: 0x86ad66, floorLine: 0xd6b688, side: 0x7a6a52, mark: 0xfff1d6, markA: 0.4,
+      p1: 0xf28a5a, p2: 0x5aa6d6, boss: 0x6e4f92, bossDark: 0x56407a, horn: 0xf6e7c8, blade: 0xfff8ea, visor: 0x3b2a4a, eye: 0xffc94a,
+      recv: 0xe8502a, unblock: 0x7d4fc4, gold: 0xffc94a, core: 0xfff6d6, shadow: 0x5b4a7a, shadowA: 0.38, shadowHard: 0.2,
+      prop: 0x7a5a44, prop2: 0x6f9a5a, far: 0xb79fc4 },
+    fog: [26, 62],
+    shade: { light: [-12, 9, 6], t1: 0.4, t2: 0.68, soft: 0.05, lv: [0.72, 0.88, 1.04], tint: 0xb39ce8, rim: 0.3, rimW: 0.22, rimColor: 0xffe2b8, rimSelf: false, spec: 0, pattern: 0, patScale: 6, patColor: 0x000000, patAmt: 0 },
+    outline: { mode: 'dark', color: 0x3b2a4a, w: 1.4, wobble: 0.15 },
+    post: { grain: 0.03, vig: 0.2, paper: 0.42, misreg: 0, sat: 1, bloom: 0, bloomTh: 0.7, fx: 0, flash: 0xfff0c0, paperCol: 0xffffff, inkCol: 0x000000 },
+    arena: { floorKind: 3, props: 'tree', far: 'peaks', particles: { kind: 2, color: 0xffc2d1, count: 55, size: 3.2 } },
+    fx: { add: false, rcv: [0xffffff], hap: [0xffc94a, 0xffc2d1], extra: null, teleNoise: 0.02, teleA: 1.15 },
+    lead: '물감으로 칠한 그림책 느낌. 경계가 부드러운 3단 명암, 보라로 물드는 그림자, 같은 색 계열의 얇은 선.',
+    feel: '"와"보다 "좋다"에 가까운 따뜻함. 신뢰(2순위)와 실수 메워 주기(4순위)의 정서에 어울리지만, 1순위인 쾌감은 연출로 따로 세워야 해요.',
+    recipe: { '셰이더': '3단, 경계가 부드럽게 번짐. 그림자는 라벤더로 색상 이동, 노을빛 림.', '외곽선': '물체 색을 어둡게 한 색, 얇고(1.4px) 살짝 흔들림.', '팔레트': '노을 살구 + 풀빛 + 라벤더 그림자.', '아레나': '풀밭에 흙길 원, 둥근 나무, 먼 보라 산, 꽃잎.', '합 연출': '따뜻한 빛 번짐 + 꽃잎이 터짐.' },
+    risk: '합의 쾌감(1순위)이 약하게 느껴질 수 있어요. 쓰려면 합 순간에만 대비를 확 올리는 별도 처리가 필요해요.',
+    refs: ['젤다 바람의 지휘봉', '지브리 배경', '스피릿페어러'],
+  },
+  {
+    id: 'riso', name: '리소 판화', sub: '3도 인쇄 포스터', ht: 'ht-riso',
+    pal: { bg: 0xeeece6, ground: 0xe2dfd6, floor: 0xeeece6, floor2: 0x3255a4, floorLine: 0xff6c2f, side: 0xd8d4ca, mark: 0xff6c2f, markA: 0.7,
+      p1: 0xff6c2f, p2: 0x3255a4, boss: 0x6b3f5a, bossDark: 0x4c2c46, horn: 0xeeece6, blade: 0xeeece6, visor: 0x3255a4, eye: 0xffd400,
+      recv: 0xff6c2f, unblock: 0x3255a4, gold: 0xffd400, core: 0xfff3a0, shadow: 0x3255a4, shadowA: 0.45, shadowHard: 0.9,
+      prop: 0xff6c2f, prop2: 0x3255a4, far: 0xe2dfd6 },
+    fog: [30, 72],
+    shade: { light: [-8, 22, 6], t1: 0.3, t2: 9, soft: 0.004, lv: [1, 1, 1], tint: 0xffffff, rim: 0, rimW: 0.3, rimColor: 0xffffff, rimSelf: false, spec: 0, pattern: 2, patScale: 5, patColor: 0x2a3f86, patAmt: 0.9 },
+    outline: { mode: 'fixed', color: 0x2a3f86, w: 1.8, wobble: 0.1 },
+    post: { grain: 0.05, vig: 0.08, paper: 0.3, misreg: 1.6, sat: 1, bloom: 0, bloomTh: 0.7, fx: 4, flash: 0xffd400, paperCol: 0xeeece6, inkCol: 0x3255a4 },
+    arena: { floorKind: 4, props: 'block', far: 'none', particles: null },
+    fx: { add: false, rcv: [0x3255a4], hap: [0xffd400, 0xff6c2f], extra: null, teleNoise: 0, teleA: 1.2 },
+    lead: '형광 주황, 파랑, 노랑 세 가지 잉크만 쓰는 인쇄물. 명암은 망점으로, 판은 살짝 어긋나 있어요.',
+    feel: '합 순간 판이 크게 어긋나며 노란 망점이 폭발해요. 포스터나 만화 같은 개성이 가장 강해서, 스크린샷 한 장으로 기억되는 스타일이에요.',
+    recipe: { '셰이더': '명암 단계 없이 평평하게 칠하고, 어두운 만큼 망점이 커짐(45도 망점).', '외곽선': '파랑 잉크 단색(1.8px).', '팔레트': '종이 + 형광 주황 + 파랑 + 노랑. 보스는 주황과 파랑이 겹친 색.', '아레나': '바닥 가장자리로 갈수록 진해지는 망점, 단색 블록 소품.', '합 연출': '판 어긋남이 크게 튐 + 노란 망점 폭발.' },
+    risk: '잉크가 셋뿐이라 받기 예고(주황)가 1P 색과, 받기 불가(파랑)가 2P 색과 겹쳐요. 사선 줄무늬가 없으면 구분이 안 돼요. 3D 깊이감도 가장 약해요.',
+    refs: ['리소그래프 인쇄', '스파이더버스 망점', '페르소나 5 UI'],
+  },
+];
+
+const COMMON_RULES = [
+  '받을 수 있는 공격은 따뜻한 색 <b>채움</b>, 받을 수 없는 공격은 <b>사선 줄무늬</b>. 색을 못 구분해도, 스타일이 바뀌어도 읽혀요.',
+  '금색은 <b>합 전용</b>. 다른 곳에 금색을 쓰면 합의 특별함이 닳아요.',
+  '두 캐릭터 색은 보색에 가깝게, 그리고 <b>명도도 다르게</b>. 명도 검사에서 둘이 구분돼야 해요.',
+  '쿼터뷰는 머리 위가 보여요. 두 캐릭터의 <b>머리 위 모양</b>을 다르게 (넓은 망토 / 뾰족한 두건).',
+  '보스의 틈 자리를 몸에 미리 그려 둬요. 실루엣 제안의 보스는 <b>등껍질이 열리며 금빛 핵</b>이 드러나요.',
+];
+
+// ───────────────────────── 장면 시간표 ─────────────────────────
+// 실제 시간 τ(0~7초, 반복)와 게임 시간 g. 합 순간 0.22초 히트스톱 + 0.3초 슬로모션은 게임 시간만 멈춘다.
+const LOOP = 7.0;
+const T = { windup: 0.4, recvPose: 1.2, rcv: 1.6, hap: 1.66, stopEnd: 1.88, slowEnd: 2.18, stagEnd: 2.66, turnEnd: 3.0, shock: 4.1, back: 5.6 };
+const SLOW = 0.35;
+function gameTime(tau) {
+  if (tau < T.hap) return tau;
+  if (tau < T.stopEnd) return T.hap;
+  if (tau < T.slowEnd) return T.hap + (tau - T.stopEnd) * SLOW;
+  return T.hap + (T.slowEnd - T.stopEnd) * SLOW + (tau - T.slowEnd);
+}
+const G_END = gameTime(LOOP);
+const TAU_SHOCK = T.shock + (T.slowEnd - gameTime(T.slowEnd));
+
+const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const EASE = { lin: k => k, io: k => k * k * (3 - 2 * k), out: k => 1 - (1 - k) ** 3 };
+function track(keys) {
+  return g => {
+    if (g <= keys[0][0]) return keys[0][1];
+    for (let i = 1; i < keys.length; i++) {
+      if (g <= keys[i][0]) {
+        const [t0, a] = keys[i - 1], [t1, b, e] = keys[i];
+        const k = (EASE[e] || EASE.io)((g - t0) / (t1 - t0));
+        return typeof a === 'number' ? lerp(a, b, k) : a.clone().lerp(b, k);
+      }
+    }
+    return keys[keys.length - 1][1];
+  };
+}
+const D1 = V(-1, 0, 1).normalize(), D2 = V(1, 0, -1).normalize();
+const at = (d, s) => d.clone().multiplyScalar(s);
+const P1_START = at(D1, 3.6), P2_START = V(5.0, 0, 1.4);
+const BOSS_R = 1.6;
+const p1Track = track([[0, P1_START], [T.rcv, P1_START], [2.1, at(D1, 4.3), 'out'], [4.22, at(D1, 4.3)], [4.5, at(D1, 2.95), 'out'], [T.back, at(D1, 2.95)], [G_END, P1_START]]);
+const p2Track = track([[0, P2_START], [0.3, P2_START], [0.8, V(4.4, 0, -1.7), 'lin'], [1.25, at(D2, 3.5), 'out'], [1.48, at(D2, 3.5)], [T.hap, at(D2, 2.7), 'out'], [4.12, at(D2, 2.7)], [4.42, at(D2, 4.4), 'out'], [T.back, at(D2, 4.4)], [G_END, P2_START]]);
+const Y1 = Math.atan2(D1.x, D1.z);
+const bossYaw = track([[0, Y1], [T.stagEnd, Y1], [T.turnEnd, Y1 - Math.PI], [T.back, Y1 - Math.PI], [G_END, Y1]]);
+const SLAM_C = at(D1, 2.4), SLAM_R = 2.0;
+const OPEN_DIR = D2.clone();
+const GAP_HALF = (100 * Math.PI) / 180;
+
+function sample(tau) {
+  const g = gameTime(tau);
+  const s = { tau, g };
+  // 보스
+  const B = { yaw: bossYaw(g), lean: null, ang: 0, armX: 0, em: [0, 0, 0], dim: false, plate: 0, weak: false, bob: 0 };
+  const fwd = V(Math.sin(B.yaw), 0, Math.cos(B.yaw));
+  if (g >= T.windup && g < T.rcv) { const p = (g - T.windup) / (T.rcv - T.windup); B.lean = fwd.clone().negate(); B.ang = 0.25 * p; B.armX = -2.4 * p; }
+  else if (g >= T.rcv && g < T.hap) { B.lean = D1; B.ang = 0.32; B.armX = -0.3; }
+  else if (g >= T.hap && g < T.stagEnd) { B.lean = D1; B.ang = 0.35 + Math.sin(g * 22) * 0.08; B.armX = 0.2; }
+  else if (g >= T.turnEnd && g < T.shock) { const p = (g - T.turnEnd) / (T.shock - T.turnEnd); B.armX = 0.6 * p; B.bob = -0.25 * p; const v = 0.3 + 0.3 * Math.sin(g * 30); B.em = [0.9 * v * 0.6, 0.2 * v, 1.8 * v * 0.6]; }
+  else if (g >= T.shock && g < T.shock + 0.5) { B.armX = lerp(0.9, 0, (g - T.shock) / 0.5); }
+  else B.bob = Math.sin(tau * 2.2) * 0.06;
+  if (tau >= T.hap && tau < T.hap + 0.1) B.em = [0.7, 0.7, 0.7];
+  B.dim = g >= T.rcv && g < T.stagEnd;
+  B.weak = g >= T.rcv && (g < T.hap || tau < T.stopEnd);
+  B.plate = g < T.rcv ? 0 : g < T.rcv + 0.08 ? (g - T.rcv) / 0.08 : g < T.stagEnd ? 1 : g < T.turnEnd ? 1 - (g - T.stagEnd) / (T.turnEnd - T.stagEnd) : 0;
+  B.target = g >= T.hap && g < G_END - 0.6 ? 1 : 0;
+  s.boss = B;
+  // 1P: 받는 쪽
+  const p1 = { pos: p1Track(g), state: 'free', lean: null, ang: 0, arm: 0.25 };
+  if (g >= T.recvPose && g < T.rcv) p1.state = 'receive';
+  else if (g >= T.rcv && g < 2.1) { p1.state = 'recoil'; p1.lean = D1; p1.ang = 0.4 * (1 - (g - T.rcv) / 0.5); }
+  else if (g >= 4.22 && g < 4.5) { p1.state = 'dodge'; p1.lean = D1.clone().negate(); p1.ang = 0.45; }
+  p1.white = g >= 1.45 && g < T.rcv;
+  p1.yaw = Math.atan2(-p1.pos.x, -p1.pos.z);
+  // 2P: 치는 쪽
+  const p2 = { pos: p2Track(g), state: 'free', lean: null, ang: 0, arm: 0.25 };
+  if (g > 0.3 && g < 1.25) { const d = p2Track(g + 0.05).sub(p2Track(g - 0.05)); p2.yaw = Math.atan2(d.x, d.z); }
+  else p2.yaw = Math.atan2(-p2.pos.x, -p2.pos.z);
+  if (g >= 1.48 && g < T.hap) { p2.state = 'attack'; p2.arm = lerp(0.25, 1.5, (g - 1.48) / 0.18); p2.lean = V(Math.sin(p2.yaw), 0, Math.cos(p2.yaw)); p2.ang = -0.15; }
+  else if (g >= T.hap && g < 1.88 + 0.0) { p2.state = 'attack'; p2.arm = lerp(-1.6, 0.25, clamp((g - T.hap) / 0.22, 0, 1)); p2.lean = V(Math.sin(p2.yaw), 0, Math.cos(p2.yaw)); p2.ang = 0.25; }
+  else if (g >= 4.12 && g < 4.42) { p2.state = 'dodge'; p2.lean = D2; p2.ang = 0.45; }
+  const glow = tau >= T.hap ? clamp((0.7 - (tau - T.hap)) / 0.7, 0, 1) : 0;
+  p1.glow = p2.glow = glow;
+  s.p = [p1, p2];
+  // 예고와 효과
+  s.slam = g >= T.windup && g < T.rcv ? (g - T.windup) / (T.rcv - T.windup) : -1;
+  s.shockTele = g >= T.turnEnd && g < T.shock ? (g - T.turnEnd) / (T.shock - T.turnEnd) : -1;
+  s.shockR = g >= T.shock && g < T.shock + 1.7 ? BOSS_R + 9 * (g - T.shock) : -1;
+  s.rcvT = tau >= T.rcv ? tau - T.rcv : -1;
+  s.hapT = tau >= T.hap ? tau - T.hap : -1;
+  s.flash = s.hapT >= 0 ? Math.max(0, 0.9 - s.hapT * 3.2) : 0;
+  let sh = 0;
+  if (s.hapT >= 0) sh = Math.max(sh, 0.7 - s.hapT * 2.4);
+  if (s.rcvT >= 0 && tau < T.hap) sh = Math.max(sh, 0.35 - s.rcvT * 2.4);
+  if (tau >= TAU_SHOCK) sh = Math.max(sh, 0.25 - (tau - TAU_SHOCK) * 2.4);
+  s.shake = Math.max(0, sh);
+  s.punch = s.hapT >= 0 ? Math.max(0, 1 - s.hapT * 2.2) : 0;
+  s.splat = s.hapT >= 0 ? clamp(1 - (tau - 6.2) / 0.6, 0, 1) : 0;
+  s.phase = tau < T.windup ? '대치 · 보스는 1P를 노린다'
+    : g < T.recvPose ? '예비 동작 · 주황 채움 = 받을 수 있음'
+    : g < T.rcv ? '1P 받기 자세 · 2P는 받기 전에 먼저 휘두른다'
+    : tau < T.hap ? '정확한 받기 · 틈은 반대편(2P 쪽)에'
+    : tau < T.slowEnd ? '완벽한 합 · 히트스톱'
+    : g < T.turnEnd ? '보스 휘청 · 시선이 2P로 넘어감'
+    : g < T.shock ? '충격파 예비 동작 · 사선 = 받기 불가'
+    : g < T.back ? '충격파 · 둘 다 회피'
+    : '자리로 돌아가는 중';
+  return s;
+}
+
+// ───────────────────────── GLSL ─────────────────────────
+const NOISE = /* glsl */`
+float hash21(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash21(i),hash21(i+vec2(1.,0.)),f.x), mix(hash21(i+vec2(0.,1.)),hash21(i+vec2(1.,1.)),f.x), f.y); }
+float vnoise3(vec3 p){ float z=floor(p.z); return mix(vnoise(p.xy+z*17.13), vnoise(p.xy+(z+1.)*17.13), smoothstep(0.,1.,fract(p.z))); }
+`;
+const FOG = /* glsl */`
+uniform vec3 uFogColor; uniform float uFogNear, uFogFar;
+vec3 applyFog(vec3 c, vec3 w){ return mix(c, uFogColor, smoothstep(uFogNear, uFogFar, length(w-cameraPosition))); }
+`;
+const VS_WORLD = /* glsl */`
+varying vec3 vN; varying vec3 vW; varying vec2 vUv;
+void main(){ vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; vN=normalize(mat3(modelMatrix)*normal); vUv=uv; gl_Position=projectionMatrix*viewMatrix*w; }
+`;
+const FS_TOON = /* glsl */`
+uniform vec3 uColor, uEmissive, uRimColor, uShadowTint, uPatColor, uLight, uLv;
+uniform float uT1, uT2, uSoft, uRim, uRimW, uSpec, uPatScale, uUnit, uPatAmt;
+uniform int uPattern;
+varying vec3 vN; varying vec3 vW;
+${NOISE}${FOG}
+void main(){
+  vec3 N=normalize(vN); if(!gl_FrontFacing) N=-N;
+  vec3 Vd=normalize(cameraPosition-vW);
+  float l=dot(N,uLight)*0.5+0.5;
+  float b1=smoothstep(uT1-uSoft,uT1+uSoft,l), b2=smoothstep(uT2-uSoft,uT2+uSoft,l);
+  vec3 sh=uColor*uShadowTint*uLv.x;
+  vec3 md=uColor*mix(uShadowTint,vec3(1.),0.55)*uLv.y;
+  vec3 lt=uColor*uLv.z;
+  vec3 c = uT2>1. ? mix(sh,lt,b1) : mix(mix(sh,md,b1),lt,b2);
+  float dark=1.-b1;
+  vec2 fc=gl_FragCoord.xy/(uPatScale*uUnit);
+  if(uPattern==1){
+    float h=abs(fract((fc.x+fc.y)*0.5)-0.5)*2.;
+    float h2=abs(fract((fc.x-fc.y)*0.5)-0.5)*2.;
+    float a=1.-smoothstep(0.2,0.36,h);
+    float b=(1.-smoothstep(0.2,0.36,h2))*smoothstep(0.3,0.18,l);
+    c=mix(c,uPatColor,clamp(a*dark+b,0.,1.)*uPatAmt);
+  } else if(uPattern==2){
+    vec2 q=mat2(0.707,-0.707,0.707,0.707)*fc; vec2 cell=fract(q)-0.5;
+    float rad=sqrt(clamp((1.-l-0.28)*1.35,0.,1.))*0.64;
+    c=mix(c,uPatColor,(1.-smoothstep(rad-0.08,rad+0.08,length(cell)))*uPatAmt);
+  }
+  float ndh=max(dot(N,normalize(uLight+Vd)),0.);
+  c+=uSpec*smoothstep(0.955,0.965,ndh);
+  float fres=1.-max(dot(N,Vd),0.);
+  float rim=smoothstep(1.-uRimW,1.-uRimW+0.05,fres)*uRim*mix(0.45,1.,b1);
+  c=mix(c,uRimColor,clamp(rim,0.,1.));
+  c+=uEmissive;
+  gl_FragColor=vec4(applyFog(c,vW),1.);
+}`;
+const VS_HULL = /* glsl */`
+attribute vec3 aOutN;
+uniform float uW, uWobble, uUnit; uniform vec2 uRes;
+varying vec3 vW;
+${NOISE}
+void main(){
+  vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz;
+  vec4 clip=projectionMatrix*viewMatrix*w;
+  vec3 wn=normalize(mat3(modelMatrix)*aOutN);
+  vec2 sn=(projectionMatrix*viewMatrix*vec4(wn,0.)).xy;
+  float len=length(sn); vec2 dir= len>1e-5 ? sn/len : vec2(0.);
+  float wob=1.+uWobble*(vnoise3(w.xyz*2.2)*2.-1.);
+  clip.xy+=dir*uW*uUnit*wob*2.*clip.w/uRes;
+  gl_Position=clip;
+}`;
+const FS_HULL = /* glsl */`
+uniform vec3 uColor; varying vec3 vW;
+${FOG}
+void main(){ gl_FragColor=vec4(applyFog(uColor,vW),1.); }`;
+const FS_FLOOR = /* glsl */`
+uniform int uKind; uniform vec3 uC1,uC2,uLine,uMarkCol; uniform float uMarkA;
+varying vec3 vW;
+${NOISE}${FOG}
+void main(){
+  vec2 p=vW.xz; float r=length(p); float a=atan(p.y,p.x);
+  vec3 c=uC1;
+  if(uKind==0){
+    float rw=2.2; float ring=floor(r/rw); float n=8.+ring*6.; float f=(a/6.2832+0.5)*n; float seg=floor(f);
+    c=mix(uC1,uC2,hash21(vec2(ring,seg))*0.8);
+    float dr=abs(fract(r/rw+0.5)-0.5)*rw; float da=abs(fract(f+0.5)-0.5)*(6.2832*max(r,0.5)/n);
+    c=mix(c,uLine,(1.-smoothstep(0.03,0.07,min(dr,da)))*0.85);
+  } else if(uKind==1){
+    float n=vnoise(p*0.7)*0.6+vnoise(p*3.1)*0.4;
+    c=mix(uC1,uC2,smoothstep(0.35,0.85,n)*0.7);
+    float wob=(vnoise(vec2(a*5.,3.))-0.5)*0.9+(vnoise(vec2(a*23.,7.))-0.5)*0.25;
+    float br=abs(r-12.9-wob*0.6); float w=0.32+0.32*vnoise(vec2(a*3.,1.));
+    float stroke=(1.-smoothstep(w-0.05,w+0.05,br))*step(0.3,vnoise(vec2(a*60.,r*3.)));
+    c=mix(c,uLine,stroke*0.92);
+  } else if(uKind==2){
+    float gx=abs(fract(p.x/1.6)-0.5)*1.6, gz=abs(fract(p.y/1.6)-0.5)*1.6, gm=min(gx,gz);
+    c=uC1+uLine*exp(-gm*gm*90.)*0.6*(1.-smoothstep(4.,15.,r)*0.5);
+    c+=uC2*exp(-pow(r-14.6,2.)*6.)*1.1+uC2*0.06*smoothstep(15.,6.,r);
+  } else if(uKind==3){
+    float n=vnoise(p*0.32)*0.65+vnoise(p*1.1)*0.35;
+    c=mix(uC1,uC2,smoothstep(0.45,0.6,n));
+    float dirt=smoothstep(8.5,5.5,r+(vnoise(p*0.5)-0.5)*3.);
+    c=mix(c,uLine,dirt*0.85);
+    c*=0.94+0.06*vnoise(p*6.);
+  } else if(uKind==4){
+    vec2 q=mat2(0.966,-0.259,0.259,0.966)*p/0.32; vec2 cell=fract(q)-0.5;
+    float rad=sqrt(0.06+0.4*smoothstep(5.,14.5,r))*0.56;
+    c=mix(uC1,uC2,(1.-smoothstep(rad-0.06,rad+0.06,length(cell)))*0.85);
+  }
+  float m=(1.-smoothstep(0.09,0.14,abs(r-14.)))+(1.-smoothstep(0.09,0.14,abs(r-9.5)))*0.32+(1.-smoothstep(0.09,0.14,abs(r-5.)))*0.32;
+  c=mix(c,uMarkCol,clamp(m,0.,1.)*uMarkA);
+  gl_FragColor=vec4(applyFog(c,vW),1.);
+}`;
+const FS_TELE = /* glsl */`
+uniform vec3 uColor; uniform float uProg,uInner,uHalf,uAng,uNoise,uStripe,uOpacity,uBase,uFill,uEdge;
+varying vec2 vUv; varying vec3 vW;
+${NOISE}
+void main(){
+  vec2 q=vUv*2.-1.; float a=atan(q.y,q.x); float r=length(q);
+  if(uNoise>0.) r+=(vnoise(vec2(a*4.+11.,2.))-0.5)*uNoise+(vnoise(vec2(a*19.,5.))-0.5)*uNoise*0.5;
+  if(r>1.||r<uInner) discard;
+  if(uHalf<3.1){ float d=abs(atan(sin(a-uAng),cos(a-uAng))); if(d>uHalf) discard; }
+  float al=uBase+step(r,uProg)*uFill+smoothstep(0.88,0.9,r)*uEdge;
+  if(uStripe>0.5) al*=mix(0.18,1.,step(0.5,fract((vW.x-vW.z)*1.3)));
+  gl_FragColor=vec4(uColor,clamp(al*uOpacity,0.,1.));
+}`;
+const FS_BLOB = /* glsl */`
+uniform vec3 uColor; uniform float uOpacity,uHard; varying vec2 vUv;
+void main(){ float r=length(vUv*2.-1.); gl_FragColor=vec4(uColor,(1.-smoothstep(uHard,1.,r))*uOpacity); }`;
+const VS_PTS = /* glsl */`
+attribute vec3 aSeed; uniform float uTime,uSize,uUnit; uniform int uKind; varying float vA;
+void main(){
+  vec3 p=position; float t=uTime*(0.5+aSeed.x);
+  if(uKind==0){ p.y=mod(p.y+t*0.35,7.); p.x+=sin(t+aSeed.y*6.)*0.6; }
+  else if(uKind==1){ p.y=mod(p.y+t*1.1,8.); p.x+=sin(t*1.7+aSeed.y*6.)*0.4; }
+  else if(uKind==2){ p.y=7.-mod(7.-p.y+t*0.8,7.); p.x+=sin(t*0.9+aSeed.y*6.)*1.4; p.z+=cos(t*0.7+aSeed.z*6.)*1.; }
+  else { p.y=mod(p.y+t*0.15,6.); p.x+=sin(t*0.4+aSeed.y*6.)*1.2; }
+  vA=smoothstep(0.,0.8,p.y)*(1.-smoothstep(5.,7.,p.y));
+  vec4 mv=modelViewMatrix*vec4(p,1.);
+  gl_PointSize=uSize*uUnit*(26./-mv.z)*(0.6+aSeed.z*0.8);
+  gl_Position=projectionMatrix*mv;
+}`;
+const FS_PTS = /* glsl */`
+uniform vec3 uColor; uniform int uKind; varying float vA;
+void main(){ vec2 q=gl_PointCoord*2.-1.;
+  if(uKind==2) q.x*=1.8;
+  float r=length(q); if(r>1.) discard;
+  float a= uKind==3 ? step(r,0.8) : 1.-smoothstep(0.4,1.,r);
+  gl_FragColor=vec4(uColor,a*vA*(uKind==1?1.:0.8)); }`;
+const FS_POST = /* glsl */`
+uniform sampler2D tDiffuse; uniform vec2 uRes; uniform float uUnit,uTime;
+uniform float uGrain,uVig,uPaper,uMisreg,uSat,uBloom,uBloomTh,uFxT,uFlash;
+uniform vec3 uFlashCol,uPaperCol,uInkCol; uniform vec2 uCenter; uniform int uFx,uCheck;
+varying vec2 vUv;
+${NOISE}
+float lum(vec3 c){ return dot(c,vec3(0.299,0.587,0.114)); }
+void main(){
+  vec2 uv=vUv, px=1./uRes; float asp=uRes.x/uRes.y;
+  float mis=uMisreg*uUnit;
+  if(uFx==4 && uFxT>=0.) mis+=uUnit*7.*max(0.,1.-uFxT*1.8);
+  vec3 c=texture2D(tDiffuse,uv).rgb;
+  if(mis>0.){ c.r=texture2D(tDiffuse,uv+vec2(mis,mis*0.6)*px).r; c.b=texture2D(tDiffuse,uv-vec2(mis*0.8,-mis*0.3)*px).b; }
+  float bl=uBloom;
+  if(uFx==3 && uFxT>=0.) bl+=2.*max(0.,1.-uFxT*1.6);
+  if(bl>0.){
+    vec3 acc=vec3(0.); float rad=5.*uUnit;
+    for(int i=0;i<12;i++){ float a=float(i)*0.5236+0.26;
+      for(int j=1;j<=2;j++){ vec2 o=vec2(cos(a),sin(a))*rad*float(j*j)*px; acc+=max(texture2D(tDiffuse,uv+o).rgb-uBloomTh,0.); } }
+    c+=acc/24.*bl*1.6;
+  }
+  c=mix(vec3(lum(c)),c,uSat);
+  if(uPaper>0.){ vec2 f=gl_FragCoord.xy/uUnit; float n=vnoise(f/3.)*0.55+vnoise(f/17.)*0.45; float fib=step(0.985,vnoise(vec2(f.x/1.5,f.y/40.))); c*=1.-uPaper*((n-0.5)*0.22+fib*0.08); }
+  vec2 d=(uv-uCenter)*vec2(asp,1.); float dist=length(d);
+  if(uFxT>=0.){
+    if(uFx==0){ c=mix(c,uFlashCol,uFlash*0.85*(1.-smoothstep(0.,0.9,dist))); }
+    else if(uFx==1){
+      if(uFxT<0.1){ c= lum(c)>0.42 ? uInkCol : uPaperCol; }
+      else c=mix(c,uFlashCol,uFlash*0.35*(1.-smoothstep(0.,0.5,dist)));
+    } else if(uFx==2){
+      float a=atan(d.y,d.x);
+      float s=step(0.62,vnoise(vec2(a*28.,floor(uFxT*24.)*3.1)));
+      float fade=clamp(1.-uFxT/0.9,0.,1.);
+      c=mix(c,vec3(1.),s*smoothstep(0.18,0.75,dist)*fade*0.9);
+      c=mix(c,uFlashCol,uFlash*0.7*(1.-smoothstep(0.,0.6,dist)));
+    } else if(uFx==3){ c+=uFlashCol*uFlash*0.9*(1.-smoothstep(0.,1.,dist)); }
+    else if(uFx==4){
+      vec2 q=mat2(0.966,-0.259,0.259,0.966)*(gl_FragCoord.xy/(9.*uUnit)); vec2 cell=fract(q)-0.5;
+      float k=clamp(1.-uFxT/0.9,0.,1.); float rad=0.5*k*(1.-smoothstep(0.,0.45+uFxT*0.8,dist));
+      c=mix(c,uFlashCol*c.g+uFlashCol*0.15,(1.-smoothstep(rad-0.08,rad+0.08,length(cell))));
+    }
+  }
+  c*=1.-uVig*pow(clamp(length((uv-0.5)*vec2(1.,1.))*1.35,0.,1.),2.2);
+  c+=(hash21(gl_FragCoord.xy+fract(uTime*7.)*91.)-0.5)*uGrain;
+  if(uCheck==1) c=vec3(lum(c));
+  gl_FragColor=vec4(c,1.);
+}`;
+
+// ───────────────────────── 공용 자원 ─────────────────────────
+const canvas = document.getElementById('cv');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.autoClear = false;
+const DPR = Math.min(devicePixelRatio || 1, 2);
+renderer.setPixelRatio(DPR);
+const rt = new THREE.WebGLRenderTarget(4, 4, { samples: 4 });
+const GLOBAL = { uUnit: { value: 1 }, uRes: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 } };
+
+// 외곽선용 매끈한 법선(같은 자리의 꼭짓점 법선 평균). 상자/원기둥 모서리에서 껍데기가 갈라지지 않게.
+function prep(geo) {
+  if (geo.attributes.aOutN) return geo;
+  const pos = geo.attributes.position, nor = geo.attributes.normal, map = new Map();
+  const key = i => `${Math.round(pos.getX(i) * 1000)},${Math.round(pos.getY(i) * 1000)},${Math.round(pos.getZ(i) * 1000)}`;
+  for (let i = 0; i < pos.count; i++) { const k = key(i); const v = map.get(k) || V(); v.x += nor.getX(i); v.y += nor.getY(i); v.z += nor.getZ(i); map.set(k, v); }
+  const out = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) { const v = map.get(key(i)).clone().normalize(); out.set([v.x, v.y, v.z], i * 3); }
+  geo.setAttribute('aOutN', new THREE.BufferAttribute(out, 3));
+  return geo;
+}
+const flatGeo = (geo) => { geo.rotateX(-Math.PI / 2); return geo; };
+const GEO = {
+  pBody: new THREE.CapsuleGeometry(0.45, 0.8, 6, 16), pBlade: new THREE.BoxGeometry(0.1, 0.1, 1.25), pVisor: new THREE.BoxGeometry(0.52, 0.15, 0.2),
+  aBody: new THREE.CapsuleGeometry(0.5, 0.5, 6, 16), aMantle: new THREE.ConeGeometry(0.85, 0.42, 6), aHead: new THREE.SphereGeometry(0.3, 16, 12), aVisor: new THREE.BoxGeometry(0.42, 0.12, 0.18), aBlade: new THREE.BoxGeometry(0.34, 0.08, 1.0),
+  bBody: new THREE.CapsuleGeometry(0.34, 1.0, 6, 16), bHead: new THREE.SphereGeometry(0.27, 16, 12), bHood: new THREE.ConeGeometry(0.36, 0.9, 10), bVisor: new THREE.BoxGeometry(0.36, 0.1, 0.16), bTail: new THREE.BoxGeometry(0.12, 0.04, 0.95), bSpear: new THREE.BoxGeometry(0.06, 0.06, 2.0), bTip: new THREE.ConeGeometry(0.11, 0.34, 6),
+  boss: new THREE.CapsuleGeometry(1.25, 1.5, 8, 24), horn: new THREE.ConeGeometry(0.22, 0.95, 10), eye: new THREE.SphereGeometry(0.13, 12, 8), fore: new THREE.CylinderGeometry(0.28, 0.36, 1.1, 10), fist: new THREE.SphereGeometry(0.55, 16, 12),
+  xBody: new THREE.CapsuleGeometry(1.3, 1.3, 8, 24), xHead: new THREE.SphereGeometry(0.62, 18, 14), xHornBig: new THREE.ConeGeometry(0.3, 2.0, 10), xHornSmall: new THREE.ConeGeometry(0.26, 0.75, 10), xSpike: new THREE.ConeGeometry(0.18, 0.6, 8), xPlate: new THREE.BoxGeometry(0.95, 0.2, 1.55), xCore: new THREE.SphereGeometry(0.5, 18, 14), xFist: new THREE.SphereGeometry(0.68, 16, 12),
+  weak: new THREE.SphereGeometry(0.36, 16, 12), halo: new THREE.SphereGeometry(0.75, 16, 12),
+  pillar: new THREE.CylinderGeometry(0.7, 0.95, 1, 7), pole: new THREE.CylinderGeometry(0.09, 0.12, 1, 6), flag: new THREE.BoxGeometry(1.1, 2.4, 0.06), lamp: new THREE.SphereGeometry(0.42, 14, 10),
+  trunk: new THREE.CylinderGeometry(0.22, 0.32, 1.6, 7), crown: new THREE.SphereGeometry(1.3, 14, 10), crown2: new THREE.SphereGeometry(0.95, 14, 10), block: new THREE.BoxGeometry(1.4, 1, 1.4), peak: new THREE.ConeGeometry(1, 1, 5),
+  floor: new THREE.CylinderGeometry(15, 15.8, 1, 72), ground: flatGeo(new THREE.PlaneGeometry(200, 200)),
+  plane: flatGeo(new THREE.PlaneGeometry(2, 2)), foot: flatGeo(new THREE.RingGeometry(0.55, 0.68, 32)), ring: flatGeo(new THREE.RingGeometry(0.82, 1.08, 40)), shield: new THREE.CircleGeometry(0.62, 28), mark: new THREE.ConeGeometry(0.2, 0.42, 4),
+  beam: new THREE.CylinderGeometry(0.07, 0.07, 1, 8, 1, true), spark: new THREE.IcosahedronGeometry(0.09, 0),
+};
+Object.values(GEO).forEach(prep);
+
+// 결정적인 난수 (일시정지 화면이 매번 같게)
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const BURST = { rcv: [], hap: [], extra: [] };
+for (const [k, n, sp] of [['rcv', 18, 7], ['hap', 36, 11], ['extra', 26, 8]]) {
+  for (let i = 0; i < n; i++) {
+    const v = V(rnd() - 0.5, rnd() * 0.9 + 0.2, rnd() - 0.5).normalize().multiplyScalar(sp * (0.5 + rnd() * 0.7));
+    BURST[k].push({ v, life: 0.45 + rnd() * 0.35, ci: i });
+  }
+}
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 220);
+const CAM_OFFSET = V(13, 16, 13);
+const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const postMat = new THREE.ShaderMaterial({
+  uniforms: { tDiffuse: { value: rt.texture }, uRes: GLOBAL.uRes, uUnit: GLOBAL.uUnit, uTime: GLOBAL.uTime,
+    uGrain: { value: 0 }, uVig: { value: 0 }, uPaper: { value: 0 }, uMisreg: { value: 0 }, uSat: { value: 1 }, uBloom: { value: 0 }, uBloomTh: { value: 0.7 },
+    uFxT: { value: -1 }, uFlash: { value: 0 }, uFlashCol: { value: new THREE.Color() }, uPaperCol: { value: new THREE.Color() }, uInkCol: { value: new THREE.Color() },
+    uCenter: { value: new THREE.Vector2(0.5, 0.5) }, uFx: { value: 0 }, uCheck: { value: 0 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
+  fragmentShader: FS_POST, depthTest: false, depthWrite: false,
+});
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
+const SIL_MAT = new THREE.MeshBasicMaterial({ color: 0x14161c });
+
+// ───────────────────────── 스타일별 장면 ─────────────────────────
+function setLean(group, dir, ang) {
+  if (dir && ang) group.quaternion.setFromAxisAngle(V(dir.z, 0, -dir.x).normalize(), ang);
+  else group.quaternion.identity();
+}
+const C = c => new THREE.Color(c);
+
+class Lab {
+  constructor(S) {
+    this.S = S;
+    const P = S.pal, sh = S.shade;
+    this.scene = new THREE.Scene();
+    this.shared = {
+      uLight: { value: V(...sh.light).normalize() }, uT1: { value: sh.t1 }, uT2: { value: sh.t2 }, uSoft: { value: sh.soft }, uLv: { value: V(...sh.lv) },
+      uShadowTint: { value: C(sh.tint) }, uRim: { value: sh.rim }, uRimW: { value: sh.rimW }, uSpec: { value: sh.spec },
+      uPattern: { value: sh.pattern }, uPatScale: { value: sh.patScale }, uPatColor: { value: C(sh.patColor) }, uPatAmt: { value: sh.patAmt },
+      uFogColor: { value: C(P.bg) }, uFogNear: { value: S.fog[0] }, uFogFar: { value: S.fog[1] }, uUnit: GLOBAL.uUnit,
+    };
+    this.hullShared = { uW: { value: S.outline.w }, uWobble: { value: S.outline.wobble }, uRes: GLOBAL.uRes, uUnit: GLOBAL.uUnit,
+      uFogColor: this.shared.uFogColor, uFogNear: this.shared.uFogNear, uFogFar: this.shared.uFogFar };
+    this.buildArena();
+    this.buildActors();
+    this.buildFx();
+  }
+  toon(color, rimColor) {
+    return new THREE.ShaderMaterial({
+      uniforms: { ...this.shared, uColor: { value: C(color) }, uEmissive: { value: C(0) }, uRimColor: { value: C(rimColor ?? this.S.shade.rimColor) } },
+      vertexShader: VS_WORLD, fragmentShader: FS_TOON, side: THREE.FrontSide,
+    });
+  }
+  hullMat(color) {
+    return new THREE.ShaderMaterial({ uniforms: { ...this.hullShared, uColor: { value: C(color) } }, vertexShader: VS_HULL, fragmentShader: FS_HULL, side: THREE.BackSide });
+  }
+  basic(color, opacity = 1, opts = {}) {
+    const add = opts.add ?? false;
+    return new THREE.MeshBasicMaterial({ color, transparent: opacity < 1 || add, opacity, depthWrite: opacity >= 1 && !add, side: opts.double ? THREE.DoubleSide : THREE.FrontSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, fog: false });
+  }
+  // 물체 하나 = 툰 몸 + 외곽선 껍데기. identity: 네온처럼 자기 색으로 빛나는 스타일에서 쓰는 정체성 색.
+  part(geo, color, { identity = null, outline = true, actor = false, dark = false } = {}) {
+    const S = this.S, mode = S.outline.mode;
+    const body = S.bodyMul && identity != null ? C(color).multiplyScalar(S.bodyMul) : C(color);
+    const rim = S.shade.rimSelf ? (identity ?? color) : S.shade.rimColor;
+    const mat = this.toon(body, rim);
+    const g = new THREE.Group();
+    const mesh = new THREE.Mesh(geo, mat); g.add(mesh);
+    let hull = null, hullBase = null;
+    if (outline) {
+      hullBase = mode === 'fixed' ? C(S.outline.color)
+        : mode === 'self' ? C(identity ?? (dark ? 0x05060a : 0x2a2f4a))
+        : C(color).multiplyScalar(0.3).lerp(C(S.outline.color), 0.35);
+      hull = new THREE.Mesh(geo, this.hullMat(hullBase)); g.add(hull);
+    }
+    if (actor) g.traverse(o => o.layers.enable(1));
+    return { group: g, mat, hull, hullBase };
+  }
+  buildArena() {
+    const S = this.S, P = S.pal, A = S.arena, scn = this.scene;
+    const floorMat = (kind, c1, c2, line, mark, markA) => new THREE.ShaderMaterial({
+      uniforms: { uKind: { value: kind }, uC1: { value: C(c1) }, uC2: { value: C(c2) }, uLine: { value: C(line) }, uMarkCol: { value: C(mark) }, uMarkA: { value: markA },
+        uFogColor: this.shared.uFogColor, uFogNear: this.shared.uFogNear, uFogFar: this.shared.uFogFar },
+      vertexShader: VS_WORLD, fragmentShader: FS_FLOOR,
+    });
+    const ground = new THREE.Mesh(GEO.ground, floorMat(5, P.ground, P.ground, P.ground, P.ground, 0));
+    ground.position.y = -1; scn.add(ground);
+    const side = this.toon(P.side);
+    const floor = new THREE.Mesh(GEO.floor, [side, floorMat(A.floorKind, P.floor, P.floor2, P.floorLine, P.mark, P.markA), side]);
+    floor.position.y = -0.5; scn.add(floor);
+    // 소품 11개 (게임과 같은 자리)
+    for (let i = 0; i < 11; i++) {
+      const a = (i / 11) * Math.PI * 2 + 0.3, R = 15 + 3.4, h = 2.5 + ((i * 7) % 5) * 0.8;
+      const x = Math.cos(a) * R, z = Math.sin(a) * R;
+      const holder = new THREE.Group(); holder.position.set(x, 0, z); holder.rotation.y = a; scn.add(holder);
+      if (A.props === 'pillar') {
+        const p = this.part(GEO.pillar, i % 3 ? P.prop : P.prop2); p.group.scale.set(1, h, 1); p.group.position.y = h / 2 - 0.9; holder.add(p.group);
+      } else if (A.props === 'banner') {
+        const pole = this.part(GEO.pole, P.prop2); pole.group.scale.set(1, h + 1.6, 1); pole.group.position.y = (h + 1.6) / 2 - 0.9; holder.add(pole.group);
+        const flag = this.part(GEO.flag, i % 4 === 1 ? P.p1 : P.prop); flag.group.position.set(0.62, h - 1.2, 0); flag.group.rotation.y = Math.PI / 2; holder.add(flag.group);
+      } else if (A.props === 'lantern') {
+        const pole = this.part(GEO.pole, P.prop, { dark: true }); pole.group.scale.set(1.6, h, 1.6); pole.group.position.y = h / 2 - 0.9; holder.add(pole.group);
+        const lc = [P.p1, P.p2, P.boss][i % 3];
+        const lamp = new THREE.Mesh(GEO.lamp, this.basic(lc)); lamp.position.y = h - 0.7; holder.add(lamp);
+        const halo = new THREE.Mesh(GEO.halo, this.basic(lc, 0.25, { add: true })); halo.position.y = h - 0.7; halo.scale.setScalar(1.4); holder.add(halo);
+      } else if (A.props === 'tree') {
+        const t = this.part(GEO.trunk, P.prop); t.group.position.y = 0.0; holder.add(t.group);
+        const c1 = this.part(GEO.crown, P.prop2); c1.group.position.y = 1.7 + (i % 3) * 0.3; c1.group.scale.setScalar(0.9 + (i % 4) * 0.15); holder.add(c1.group);
+        const c2 = this.part(GEO.crown2, i % 2 ? 0x86ad62 : P.prop2); c2.group.position.set(0.5, 2.9 + (i % 3) * 0.3, 0.2); holder.add(c2.group);
+      } else if (A.props === 'block') {
+        const b = this.part(GEO.block, i % 2 ? P.prop : P.prop2); b.group.scale.set(1, h * 0.7, 1); b.group.position.y = (h * 0.7) / 2 - 0.9; holder.add(b.group);
+        const c = this.part(GEO.block, i % 2 ? P.prop2 : P.prop); c.group.scale.set(0.7, 0.7, 0.7); c.group.position.y = h * 0.7 - 0.55; c.group.rotation.y = 0.6; holder.add(c.group);
+      }
+    }
+    if (A.far === 'peaks') {
+      const m = this.toon(P.far);
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * Math.PI * 2 + 0.1, R = 30 + (i % 3) * 4, h = 6 + ((i * 5) % 7) * 1.5;
+        const mesh = new THREE.Mesh(GEO.peak, m); mesh.scale.set(5 + (i % 4), h, 5 + (i % 4)); mesh.position.set(Math.cos(a) * R, h / 2 - 1, Math.sin(a) * R); this.scene.add(mesh);
+      }
+    }
+    if (A.particles) {
+      const pp = A.particles, n = pp.count, pos = new Float32Array(n * 3), sd = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { pos.set([(rnd() - 0.5) * 30, rnd() * 7, (rnd() - 0.5) * 30], i * 3); sd.set([rnd(), rnd(), rnd()], i * 3); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(sd, 3));
+      const m = new THREE.ShaderMaterial({ uniforms: { uTime: GLOBAL.uTime, uUnit: GLOBAL.uUnit, uSize: { value: pp.size }, uKind: { value: pp.kind }, uColor: { value: C(pp.color) } },
+        vertexShader: VS_PTS, fragmentShader: FS_PTS, transparent: true, depthWrite: false, blending: pp.kind === 1 ? THREE.AdditiveBlending : THREE.NormalBlending });
+      const pts = new THREE.Points(g, m); pts.frustumCulled = false; this.scene.add(pts);
+    }
+  }
+  blob(r) {
+    const P = this.S.pal;
+    const m = new THREE.Mesh(GEO.plane, new THREE.ShaderMaterial({ uniforms: { uColor: { value: C(P.shadow) }, uOpacity: { value: P.shadowA }, uHard: { value: P.shadowHard } },
+      vertexShader: VS_WORLD, fragmentShader: FS_BLOB, transparent: true, depthWrite: false }));
+    m.scale.setScalar(r); m.position.y = 0.012; this.scene.add(m);
+    return m;
+  }
+  makePlayer(idx, variant) {
+    const P = this.S.pal, color = idx ? P.p2 : P.p1;
+    const root = new THREE.Group(), tilt = new THREE.Group(), spin = new THREE.Group(), arm = new THREE.Group();
+    root.add(tilt); tilt.add(spin);
+    const hulls = [], mats = [];
+    const add = (geo, col, x, y, z, parent = spin, opt = {}) => {
+      const p = this.part(geo, col, { identity: color, actor: true, ...opt });
+      p.group.position.set(x, y, z); parent.add(p.group);
+      if (p.hull) hulls.push(p); mats.push(p.mat);
+      return p.group;
+    };
+    const visor = (geo, x, y, z) => { const m = new THREE.Mesh(geo, this.basic(P.visor)); m.position.set(x, y, z); m.layers.enable(1); spin.add(m); };
+    const darker = C(color).multiplyScalar(0.72);
+    let tails = null;
+    if (variant === 0) {
+      add(GEO.pBody, color, 0, 0.88, 0);
+      visor(GEO.pVisor, 0, 1.32, 0.36);
+      arm.position.set(0, 1.0, 0);
+      add(GEO.pBlade, P.blade, 0.5, 0, 0.55, arm, { identity: null });
+    } else if (idx === 0) {
+      // A: 넓은 위 — 망토 어깨, 짧고 단단한 몸, 넓은 칼
+      add(GEO.aBody, color, 0, 0.82, 0);
+      add(GEO.aMantle, darker, 0, 1.36, 0);
+      add(GEO.aHead, color, 0, 1.72, 0);
+      visor(GEO.aVisor, 0, 1.74, 0.24);
+      arm.position.set(0, 1.0, 0);
+      add(GEO.aBlade, P.blade, 0.66, 0, 0.5, arm, { identity: null });
+    } else {
+      // B: 뾰족하고 긴 — 가는 몸, 뒤로 꺾인 두건, 휘날리는 끈, 긴 창
+      add(GEO.bBody, color, 0, 0.95, 0);
+      add(GEO.bHead, color, 0, 1.76, 0);
+      const hood = add(GEO.bHood, darker, 0, 2.02, -0.08); hood.rotation.x = -0.45;
+      visor(GEO.bVisor, 0, 1.76, 0.21);
+      tails = new THREE.Group(); tails.position.set(0, 1.5, -0.22); spin.add(tails);
+      for (const s of [-1, 1]) { const t = add(GEO.bTail, darker, 0.09 * s, 0, -0.45, tails); t.rotation.y = 0.12 * s; }
+      arm.position.set(0, 1.0, 0);
+      add(GEO.bSpear, P.blade, 0.48, 0, 0.6, arm, { identity: null });
+      const tip = add(GEO.bTip, P.blade, 0.48, 0, 1.75, arm, { identity: null }); tip.rotation.x = Math.PI / 2;
+    }
+    spin.add(arm);
+    const shield = new THREE.Mesh(GEO.shield, this.basic(color, 0.4, { double: true })); shield.position.set(0, 1.0, variant ? 0.78 : 0.72); spin.add(shield);
+    const mark = new THREE.Mesh(GEO.mark, this.basic(P.recv)); mark.rotation.x = Math.PI; root.add(mark);
+    this.scene.add(root);
+    return { root, tilt, spin, arm, hulls, mats, tails, shield, mark, markY: variant && idx === 1 ? 3.0 : 2.45 };
+  }
+  makeBoss(variant) {
+    const P = this.S.pal;
+    const root = new THREE.Group(), tilt = new THREE.Group(), spin = new THREE.Group();
+    root.add(tilt); tilt.add(spin);
+    const idB = P.boss, mats = [], eyes = [];
+    const add = (geo, col, x, y, z, parent = spin) => { const p = this.part(geo, col, { identity: idB, actor: true }); p.group.position.set(x, y, z); parent.add(p.group); mats.push(p.mat); return p.group; };
+    const eyeMat = this.basic(P.eye);
+    const arms = [];
+    let plates = null, coreMat = null, corePos = null;
+    if (variant === 0) {
+      add(GEO.boss, idB, 0, 2.05, 0);
+      for (const s of [-1, 1]) { const h = add(GEO.horn, P.horn, 0.62 * s, 3.55, 0.1); h.rotation.z = -0.5 * s; }
+      for (const s of [-1, 1]) { const e = new THREE.Mesh(GEO.eye, eyeMat); e.position.set(0.4 * s, 2.85, 1.15); spin.add(e); }
+      for (const s of [-1, 1]) {
+        const arm = new THREE.Group(); arm.position.set(1.45 * s, 2.6, 0); spin.add(arm);
+        add(GEO.fore, P.bossDark, 0, -0.5, 0.1, arm); add(GEO.fist, P.bossDark, 0, -1.1, 0.25, arm); arms.push(arm);
+      }
+    } else {
+      // 굽은 덩어리 + 작은 머리 + 비대칭 뿔 + 등껍질(틈 자리)
+      const body = add(GEO.xBody, idB, 0, 2.0, -0.1); body.rotation.x = 0.35;
+      add(GEO.xHead, idB, 0, 2.55, 1.3);
+      const hb = add(GEO.xHornBig, P.horn, 0.42, 3.25, 1.1); hb.rotation.set(-0.5, 0, -0.75);
+      const hs = add(GEO.xHornSmall, P.horn, -0.42, 2.95, 1.35); hs.rotation.set(-0.2, 0, 0.7);
+      for (const s of [-1, 1]) { const e = new THREE.Mesh(GEO.eye, eyeMat); e.position.set(0.24 * s, 2.66, 1.86); e.scale.setScalar(0.85); spin.add(e); }
+      [[0, 3.55, 0.35], [0, 3.42, -0.25], [0, 3.1, -0.8]].forEach(([x, y, z], i) => { const sp = add(GEO.xSpike, P.bossDark, x, y, z); sp.rotation.x = -0.4 - i * 0.25; });
+      corePos = V(0, 2.55, -1.05);
+      coreMat = this.basic(P.bossDark);
+      const core = new THREE.Mesh(GEO.xCore, coreMat); core.position.copy(corePos); core.layers.enable(1); spin.add(core);
+      plates = [];
+      for (const s of [-1, 1]) {
+        const pivot = new THREE.Group(); pivot.position.set(0, 2.95, -0.75); pivot.rotation.x = -0.75; spin.add(pivot);
+        const pl = add(GEO.xPlate, P.bossDark, 0.5 * s, 0, -0.55, pivot); pl.rotation.z = -0.12 * s;
+        plates.push({ pivot, s });
+      }
+      for (const s of [-1, 1]) {
+        const arm = new THREE.Group(); arm.position.set(1.55 * s, 2.45, 0.35); spin.add(arm);
+        add(GEO.fore, P.bossDark, 0, -0.5, 0.1, arm); add(GEO.xFist, P.bossDark, 0, -1.15, 0.3, arm); arms.push(arm);
+      }
+    }
+    this.scene.add(root);
+    return { root, tilt, spin, arms, mats, eyeMat, plates, coreMat, corePos };
+  }
+  buildActors() {
+    const P = this.S.pal;
+    this.players = [[this.makePlayer(0, 0), this.makePlayer(1, 0)], [this.makePlayer(0, 1), this.makePlayer(1, 1)]];
+    this.bosses = [this.makeBoss(0), this.makeBoss(1)];
+    this.ind = [0, 1].map(i => {
+      const col = i ? P.p2 : P.p1, g = new THREE.Group();
+      const foot = new THREE.Mesh(GEO.foot, this.basic(col, 0.6)); foot.position.y = 0.025;
+      const ring = new THREE.Mesh(GEO.ring, this.basic(col, 0.95)); ring.position.y = 0.035;
+      g.add(foot, ring); this.scene.add(g);
+      return { g, foot, ring, blob: this.blob(0.62), col };
+    });
+    this.bossBlob = this.blob(1.9);
+    const fxAdd = this.S.fx.add;
+    this.weak = new THREE.Group();
+    this.weak.add(new THREE.Mesh(GEO.weak, this.basic(P.core)));
+    this.weak.add(new THREE.Mesh(GEO.halo, this.basic(P.gold, 0.4, { add: fxAdd })));
+    this.scene.add(this.weak);
+  }
+  tele(color, { stripe = false, noise = 0 } = {}) {
+    const m = new THREE.Mesh(GEO.plane, new THREE.ShaderMaterial({
+      uniforms: { uColor: { value: C(color) }, uProg: { value: 0 }, uInner: { value: 0 }, uHalf: { value: 4 }, uAng: { value: 0 }, uNoise: { value: noise }, uStripe: { value: stripe ? 1 : 0 },
+        uOpacity: { value: 1 }, uBase: { value: 0.14 }, uFill: { value: 0.34 }, uEdge: { value: 0.6 } },
+      vertexShader: VS_WORLD, fragmentShader: FS_TELE, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    m.visible = false; this.scene.add(m);
+    return m;
+  }
+  buildFx() {
+    const S = this.S, P = S.pal, F = S.fx;
+    this.slamTele = this.tele(P.recv, { noise: F.teleNoise });
+    this.shockTele = this.tele(P.unblock, { stripe: true, noise: F.teleNoise * 0.5 });
+    this.shockWave = this.tele(P.unblock, { stripe: true, noise: F.teleNoise * 0.3 });
+    this.gapArc = this.tele(P.gold);
+    this.impact = this.tele(S.fx.rcv[0]);
+    this.hapRing = this.tele(P.gold);
+    this.splat = F.extra === 'splat' ? this.tele(P.shadow, { noise: 0.45 }) : null;
+    const beamMat = () => this.basic(P.gold, 0.95, { add: F.add });
+    this.beams = [new THREE.Mesh(GEO.beam, beamMat()), new THREE.Mesh(GEO.beam, beamMat())];
+    this.beams.forEach(b => { b.visible = false; this.scene.add(b); });
+    const pool = (list, colors) => list.map(p => { const m = new THREE.Mesh(GEO.spark, this.basic(colors[p.ci % colors.length])); m.visible = false; this.scene.add(m); return { m, ...p }; });
+    this.sparks = { rcv: pool(BURST.rcv, F.rcv), hap: pool(BURST.hap, F.hap), extra: pool(BURST.extra, F.extra === 'splat' ? [P.shadow] : F.hap) };
+  }
+  // 타임라인 상태를 이 장면에 입힌다
+  apply(s, shape) {
+    const P = this.S.pal, B = s.boss;
+    const bossObj = this.bosses[shape];
+    this.bosses.forEach((b, i) => (b.root.visible = i === shape));
+    bossObj.root.position.set(0, 0, 0); bossObj.spin.rotation.y = B.yaw; bossObj.tilt.position.y = B.bob;
+    setLean(bossObj.tilt, B.lean, B.ang);
+    bossObj.arms.forEach(a => (a.rotation.x = B.armX));
+    bossObj.mats.forEach(m => m.uniforms.uEmissive.value.setRGB(...B.em));
+    bossObj.eyeMat.color.set(B.dim ? 0x6b5a2a : P.eye);
+    if (bossObj.plates) {
+      bossObj.plates.forEach(({ pivot, s: sd }) => { pivot.rotation.z = -sd * B.plate * 1.05; pivot.rotation.x = -0.75 - B.plate * 0.25; });
+      bossObj.coreMat.color.set(P.bossDark).lerp(C(P.core), B.plate);
+    }
+    // 약점 위치: 지금 보스는 몸 바깥 떠 있는 구, 제안 보스는 등껍질 속 핵
+    const weakPos = shape === 1 ? bossObj.corePos.clone().applyAxisAngle(V(0, 1, 0), B.yaw) : at(OPEN_DIR, BOSS_R * 0.95).setY(2.1);
+    this.weakPos = weakPos;
+    this.weak.visible = B.weak;
+    this.weak.position.copy(weakPos);
+    this.weak.scale.setScalar((shape === 1 ? 1.1 : 1.4) + Math.sin(s.tau * 14) * 0.18);
+    this.bossBlob.position.set(0, 0.012, 0);
+    // 플레이어
+    this.players.forEach((pair, v) => pair.forEach(p => (p.root.visible = v === shape)));
+    s.p.forEach((st, i) => {
+      const pl = this.players[shape][i], ind = this.ind[i];
+      pl.root.position.copy(st.pos); pl.spin.rotation.y = st.yaw;
+      setLean(pl.tilt, st.lean, st.ang);
+      pl.arm.rotation.y = st.arm;
+      if (pl.tails) { pl.tails.rotation.x = -0.5 + Math.sin(GLOBAL.uTime.value * 5 + i) * 0.12 + (st.state === "dodge" ? 0.35 : 0); pl.tails.rotation.y = Math.sin(GLOBAL.uTime.value * 3.1) * 0.15; }
+      const gold = C(P.gold);
+      pl.hulls.forEach(h => h.hull.material.uniforms.uColor.value.copy(h.hullBase).lerp(gold, st.glow));
+      const glow = st.glow;
+      pl.mats.forEach(m => m.uniforms.uEmissive.value.setRGB(0.5 * glow, 0.38 * glow, 0.05 * glow).add(st.state === 'dodge' ? C(0x3a3a48) : C(0)));
+      ind.g.position.copy(st.pos);
+      ind.blob.position.set(st.pos.x, 0.012, st.pos.z);
+      const recv = st.state === 'receive';
+      ind.ring.visible = recv;
+      ind.ring.material.color.set(st.white ? 0xffffff : ind.col);
+      ind.ring.scale.setScalar(st.white ? 1.18 : 1);
+      pl.shield.visible = recv;
+      pl.mark.visible = B.target === i;
+      pl.mark.position.y = pl.markY + Math.sin(GLOBAL.uTime.value * 6) * 0.08;
+    });
+    // 예고
+    const tA = this.S.fx.teleA;
+    this.slamTele.visible = s.slam >= 0;
+    if (s.slam >= 0) { const u = this.slamTele.material.uniforms; this.slamTele.position.set(SLAM_C.x, 0.03, SLAM_C.z); this.slamTele.scale.setScalar(SLAM_R); u.uProg.value = s.slam; u.uOpacity.value = tA; }
+    this.shockTele.visible = s.shockTele >= 0;
+    if (s.shockTele >= 0) {
+      const sc = 1 + s.shockTele * 0.6 + Math.sin(s.g * 30) * 0.03, outer = (BOSS_R + 0.6) * sc, u = this.shockTele.material.uniforms;
+      this.shockTele.position.set(0, 0.04, 0); this.shockTele.scale.setScalar(outer);
+      Object.assign(u.uInner, { value: (BOSS_R + 0.2) / (BOSS_R + 0.6) }); u.uBase.value = 0.9; u.uFill.value = 0; u.uEdge.value = 0; u.uOpacity.value = tA;
+    }
+    this.shockWave.visible = s.shockR >= 0;
+    if (s.shockR >= 0) {
+      const outer = s.shockR + 0.45, u = this.shockWave.material.uniforms;
+      this.shockWave.position.set(0, 0.07, 0); this.shockWave.scale.setScalar(outer);
+      u.uInner.value = Math.max(0, s.shockR - 0.45) / outer; u.uBase.value = 0.85; u.uFill.value = 0; u.uEdge.value = 0; u.uOpacity.value = tA;
+    }
+    this.gapArc.visible = B.weak;
+    if (B.weak) {
+      const outer = BOSS_R + 3.6, u = this.gapArc.material.uniforms;
+      this.gapArc.position.set(0, 0.05, 0); this.gapArc.scale.setScalar(outer);
+      u.uInner.value = (BOSS_R + 0.35) / outer; u.uHalf.value = GAP_HALF; u.uAng.value = Math.atan2(-OPEN_DIR.z, OPEN_DIR.x);
+      u.uBase.value = 0.45; u.uFill.value = 0; u.uEdge.value = 0.4;
+    }
+    // 효과
+    const ringFx = (mesh, t, life, from, to, center, op) => {
+      mesh.visible = t >= 0 && t < life;
+      if (!mesh.visible) return;
+      const k = t / life, u = mesh.material.uniforms, r = lerp(from, to, 1 - (1 - k) ** 3);
+      mesh.position.set(center.x, 0.06, center.z); mesh.scale.setScalar(r);
+      u.uInner.value = 0.9; u.uBase.value = op * (1 - k); u.uFill.value = 0; u.uEdge.value = 0;
+    };
+    ringFx(this.impact, s.rcvT, 0.35, 0.5, SLAM_R + 0.6, SLAM_C, 0.7);
+    ringFx(this.hapRing, s.hapT, 0.6, BOSS_R, 9, V(), 0.85);
+    if (this.splat) {
+      this.splat.visible = s.splat > 0;
+      if (this.splat.visible) {
+        const u = this.splat.material.uniforms, grow = clamp(s.hapT / 0.12, 0, 1);
+        this.splat.position.set(weakPos.x * 1.3, 0.02, weakPos.z * 1.3); this.splat.scale.setScalar(2.6 * (0.4 + 0.6 * grow));
+        u.uBase.value = 0.9; u.uFill.value = 0; u.uEdge.value = 0; u.uOpacity.value = s.splat;
+      }
+    }
+    const chest = p => p.pos.clone().setY(1.1);
+    const beamOn = s.hapT >= 0 && s.hapT < 0.6;
+    [[chest(s.p[0]), weakPos], [weakPos, chest(s.p[1])]].forEach(([a, b], i) => {
+      const m = this.beams[i]; m.visible = beamOn;
+      if (!beamOn) return;
+      m.position.copy(a).add(b).multiplyScalar(0.5); m.scale.set(1, a.distanceTo(b), 1);
+      m.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize());
+      m.material.opacity = 0.95 * (1 - s.hapT / 0.6);
+    });
+    const contact = s.p[0].pos.clone().lerp(V(), 0.45).setY(1.2);
+    const spark = (list, t, origin, grav = 18) => list.forEach(p => {
+      p.m.visible = t >= 0 && t < p.life;
+      if (!p.m.visible) return;
+      p.m.position.copy(origin).addScaledVector(p.v, t); p.m.position.y -= 0.5 * grav * t * t;
+      p.m.scale.setScalar(Math.max(0.01, 1 - t / p.life) * (list === this.sparks.extra && this.splat ? 2 : 1));
+    });
+    spark(this.sparks.rcv, s.rcvT, contact);
+    spark(this.sparks.hap, s.hapT, weakPos);
+    spark(this.sparks.extra, this.S.fx.extra === 'splat' || this.S.fx.hap.length > 1 ? s.hapT : -1, weakPos, this.S.id === 'gouache' ? 4 : 18);
+  }
+}
+
+const labs = STYLES.map(S => new Lab(S));
+
+// ───────────────────────── 화면 구성 ─────────────────────────
+const stage = document.getElementById('stage'), tilesEl = document.getElementById('tiles'), infoEl = document.getElementById('info');
+const app = document.getElementById('app');
+const UI = { view: 'grid', single: 0, shape: 0, check: 0, playing: true, tau: 0 };
+const tiles = STYLES.map((S, i) => {
+  const el = document.createElement('div');
+  el.className = 'tile'; el.tabIndex = 0; el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', `${S.name} · ${S.sub} 크게 보기`);
+  el.innerHTML = `<span class="lbl"><b>${S.name}</b><span>${S.sub}</span></span><div class="ht ${S.ht}" hidden><span class="x">완벽한 합!</span><small>×3 · 30</small></div>`;
+  const open = () => { if (UI.view === 'grid') setView('single', i); };
+  el.addEventListener('click', open);
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  tilesEl.appendChild(el);
+  const lbl = el.querySelector('.lbl');
+  return { el, ht: el.querySelector('.ht'), lbl, lblHtml: lbl.innerHTML };
+});
+
+function hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
+function renderInfo() {
+  const S = STYLES[UI.single], P = S.pal;
+  const sw = [['1P', P.p1], ['2P', P.p2], ['보스', P.boss], ['받기 예고', P.recv], ['받기 불가', P.unblock], ['합', P.gold], ['바닥', P.floor]];
+  infoEl.innerHTML = `
+    <div><h2>${S.name}</h2><p class="sub">${S.sub} · ${UI.single + 1} / ${STYLES.length}</p></div>
+    <p class="lead">${S.lead}</p>
+    <div class="sw" aria-label="팔레트">${sw.map(([n, c]) => `<i style="--c:${hex(c)}">${n}</i>`).join('')}</div>
+    <dl class="recipe"><div><dt>감정과 연결</dt><dd>${S.feel}</dd></div>${Object.entries(S.recipe).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    <div class="risk"><b>위험</b>${S.risk}</div>
+    <div class="ref">${S.refs.map(r => `<span>${r}</span>`).join('')}</div>
+    <div class="common"><h3>어느 스타일을 고르든 지킬 것</h3><ul>${COMMON_RULES.map(r => `<li>${r}</li>`).join('')}</ul></div>
+    <p class="hint">키보드: <kbd>←</kbd><kbd>→</kbd> 스타일, <kbd>Space</kbd> 재생/멈춤, <kbd>G</kbd> 모아 보기. 폰: 화면을 좌우로 밀기.</p>`;
+}
+function setView(v, idx = UI.single) {
+  UI.view = v; UI.single = (idx + STYLES.length) % STYLES.length;
+  app.classList.toggle('single', v === 'single');
+  document.getElementById('vGrid').setAttribute('aria-pressed', String(v === 'grid'));
+  document.getElementById('vSingle').setAttribute('aria-pressed', String(v === 'single'));
+  infoEl.hidden = v !== 'single';
+  document.getElementById('prev').hidden = document.getElementById('next').hidden = v !== 'single';
+  tiles.forEach((t, i) => (t.el.hidden = v === 'single' && i !== UI.single));
+  if (v === 'single') { renderInfo(); try { history.replaceState(null, '', '#' + STYLES[UI.single].id); } catch {} }
+  else { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
+  layout();
+}
+function layout() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, true);
+  if (UI.view === 'single') { tilesEl.style.gridTemplateColumns = '1fr'; tilesEl.style.gridTemplateRows = '1fr'; }
+  else {
+    const cols = w / Math.max(1, h) > 1.15 ? 3 : 2;
+    tilesEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    tilesEl.style.gridTemplateRows = `repeat(${Math.ceil(STYLES.length / cols)}, 1fr)`;
+  }
+}
+new ResizeObserver(layout).observe(stage);
+
+const SIL_MOMENTS = [[1.3, '예비 동작'], [1.78, '완벽한 합'], [4.8, '충격파 회피']];
+const SIL_SAMPLES = SIL_MOMENTS.map(([t]) => sample(t));
+const scrub = document.getElementById('scrub'), phaseEl = document.getElementById('phase');
+function setPlaying(on) {
+  UI.playing = on;
+  document.getElementById('mPlay').setAttribute('aria-pressed', String(on));
+  document.getElementById('mPlay').textContent = on ? '❚❚ 흐름' : '▶ 흐름';
+  document.querySelectorAll('#moments [data-tau]').forEach(b => b.setAttribute('aria-pressed', String(!on && Math.abs(+b.dataset.tau - UI.tau) < 0.005)));
+}
+document.getElementById('mPlay').addEventListener('click', () => setPlaying(!UI.playing));
+document.querySelectorAll('#moments [data-tau]').forEach(b => b.addEventListener('click', () => { UI.tau = +b.dataset.tau; setPlaying(false); }));
+scrub.addEventListener('input', () => { UI.tau = +scrub.value; setPlaying(false); });
+document.getElementById('vGrid').addEventListener('click', () => setView('grid'));
+document.getElementById('vSingle').addEventListener('click', () => setView('single'));
+document.getElementById('prev').addEventListener('click', () => setView('single', UI.single - 1));
+document.getElementById('next').addEventListener('click', () => setView('single', UI.single + 1));
+const segPick = (id, attr, fn) => document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll(`#${id} button`).forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+  fn(+b.dataset[attr]);
+}));
+segPick('shapeSeg', 'shape', v => (UI.shape = v));
+segPick('checkSeg', 'check', v => (UI.check = v));
+addEventListener('keydown', e => {
+  if (e.target instanceof HTMLInputElement) return;
+  if (e.code === 'Space') { e.preventDefault(); setPlaying(!UI.playing); }
+  if (e.code === 'KeyG') setView(UI.view === 'grid' ? 'single' : 'grid');
+  if (UI.view === 'single' && e.code === 'ArrowLeft') setView('single', UI.single - 1);
+  if (UI.view === 'single' && e.code === 'ArrowRight') setView('single', UI.single + 1);
+  if (e.code === 'Escape' && UI.view === 'single') setView('grid');
+});
+let swipeX = null;
+stage.addEventListener('pointerdown', e => { swipeX = e.clientX; });
+stage.addEventListener('pointerup', e => {
+  if (swipeX == null || UI.view !== 'single') return;
+  const dx = e.clientX - swipeX; swipeX = null;
+  if (Math.abs(dx) > 50) setView('single', UI.single + (dx < 0 ? 1 : -1));
+});
+
+// ───────────────────────── 그리기 ─────────────────────────
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const tmp = V();
+let last = performance.now();
+function frame(ms) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (ms - last) / 1000); last = ms;
+  GLOBAL.uTime.value += dt;
+  if (UI.playing) { UI.tau = (UI.tau + dt) % LOOP; scrub.value = UI.tau.toFixed(2); }
+  draw();
+}
+function draw() {
+  const base = sample(UI.tau);
+  phaseEl.textContent = base.phase;
+  const sr = stage.getBoundingClientRect(), H = stage.clientHeight;
+  renderer.setRenderTarget(null); renderer.setScissorTest(false); renderer.setClearColor(0x0e1118); renderer.clear();
+  const sil = UI.check === 2, silGrid = sil && UI.view === 'grid';
+  scrub.value = UI.tau.toFixed(2);
+  labs.forEach((lab, i) => {
+    const t = tiles[i];
+    t.lbl.innerHTML = silGrid ? `<b>${['지금 캡슐', '실루엣 제안'][i % 2]}</b><span>${SIL_MOMENTS[i >> 1][1]}</span>` : t.lblHtml;
+    if (t.el.hidden) return;
+    const s = silGrid ? SIL_SAMPLES[i >> 1] : base;
+    const shape = silGrid ? i % 2 : UI.shape;
+    const r = t.el.getBoundingClientRect();
+    const x = r.left - sr.left, y = r.top - sr.top, w = r.width, h = r.height;
+    if (w < 4 || h < 4) return;
+    const pw = Math.round(w * DPR), ph = Math.round(h * DPR);
+    if (rt.width !== pw || rt.height !== ph) rt.setSize(pw, ph);
+    GLOBAL.uRes.value.set(pw, ph);
+    GLOBAL.uUnit.value = Math.max(ph / 720, 0.6 * DPR);
+    // 카메라: 게임과 같은 쿼터뷰. 타일 비율에 맞춰 거리만 조절
+    const aspect = w / h, k = clamp(0.95 / aspect, 0.72, 1.7) * (1 - s.punch * 0.1);
+    camera.aspect = aspect; camera.updateProjectionMatrix();
+    camera.position.copy(CAM_OFFSET).multiplyScalar(k);
+    const shk = REDUCED ? 0 : s.shake * s.shake * 0.6;
+    camera.position.add(V(Math.sin(s.tau * 93) * shk, Math.sin(s.tau * 71 + 1) * shk, Math.sin(s.tau * 87 + 2) * shk));
+    camera.lookAt(0, 1, 0);
+    camera.layers.set(sil ? 1 : 0);
+    lab.apply(s, shape);
+    lab.scene.overrideMaterial = sil ? SIL_MAT : null;
+    renderer.setRenderTarget(rt);
+    renderer.setClearColor(sil ? 0xe8e6e0 : lab.S.pal.bg); renderer.clear();
+    renderer.render(lab.scene, camera);
+    // 후처리 → 화면의 이 타일 자리
+    renderer.setRenderTarget(null);
+    renderer.setViewport(x, H - y - h, w, h); renderer.setScissor(x, H - y - h, w, h); renderer.setScissorTest(true);
+    const S = lab.S, PP = S.post, u = postMat.uniforms;
+    tmp.copy(lab.weakPos).project(camera);
+    u.uCenter.value.set(tmp.x * 0.5 + 0.5, tmp.y * 0.5 + 0.5);
+    const off = sil;
+    u.uGrain.value = off ? 0 : PP.grain; u.uVig.value = off ? 0 : PP.vig; u.uPaper.value = off ? 0 : PP.paper; u.uMisreg.value = off ? 0 : PP.misreg;
+    u.uSat.value = PP.sat; u.uBloom.value = off ? 0 : PP.bloom; u.uBloomTh.value = PP.bloomTh;
+    u.uFx.value = off ? -1 : PP.fx; u.uFxT.value = s.hapT; u.uFlash.value = s.flash;
+    u.uFlashCol.value.set(PP.flash); u.uPaperCol.value.set(PP.paperCol); u.uInkCol.value.set(PP.inkCol);
+    u.uCheck.value = UI.check === 1 ? 1 : 0;
+    renderer.render(postScene, postCam);
+    // 합 글자
+    const showHt = s.hapT >= 0 && s.hapT < 1.3 && !sil;
+    t.ht.hidden = !showHt;
+    if (showHt) {
+      tmp.copy(lab.weakPos).setY(lab.weakPos.y + 2.4 + s.hapT * 1.1).project(camera);
+      const sc = 1 + 0.7 * Math.max(0, 1 - s.hapT / 0.14);
+      t.ht.style.transform = `translate(${(tmp.x * 0.5 + 0.5) * w}px, ${(-tmp.y * 0.5 + 0.5) * h}px) translate(-50%, -50%) scale(${sc})`;
+      t.ht.style.opacity = String(clamp((1.3 - s.hapT) / 0.25, 0, 1));
+    }
+  });
+  renderer.setScissorTest(false);
+}
+
+// 시작
+const start = STYLES.findIndex(S => '#' + S.id === location.hash);
+setView(start >= 0 ? 'single' : 'grid', Math.max(0, start));
+setPlaying(true);
+requestAnimationFrame(frame);
+
+// 테스트용 핸들
+window.__lab = {
+  STYLES, UI, sample, draw,
+  set(opts) { Object.assign(UI, opts); if ('playing' in opts) setPlaying(opts.playing); if (opts.view) setView(opts.view, opts.single ?? UI.single); draw(); },
+};
+</script>
