@@ -203,15 +203,17 @@ import GUI from 'lil-gui';
 // ───────────────────────── 조정값 (기획서 초기 수치) ─────────────────────────
 const CFG = {
   perfectWindow: 0.15,   // 정확한 받기 판정창: 받기 누른 뒤 이 시간 안에 맞으면 정확한 받기
-  gapPerfect: 1.5,       // 정확한 받기 → 틈 길이
-  gapGuard: 0.8,         // 버티기 → 틈 길이
+  gapPerfect: 3.0,       // 정확한 받기 → 틈 길이 (혼자 테스트용으로 늘림, 기획서 초기값 1.5)
+  gapGuard: 2.0,         // 버티기 → 틈 길이 (기획서 초기값 0.8)
+  gapReachBonus: 1.6,    // 틈이 열렸을 때 약점 피격 거리 보너스
+  infiniteHP: true,      // 아군 피 무한 (테스트용)
   guardChip: 0.2,        // 버티기로 받을 때 받는 피해 비율
   recoil: 0.5,           // 받은 사람 반동 시간
   perfectHap: 0.25,      // 받기 후 이 시간 안에 들어가면 완벽한 합
   preHap: 0.12,          // 받기 직전에 먼저 들어간 공격도 이 시간 안이면 완벽한 합
   hapMul: 2,
   perfectHapMul: 3,
-  openHalfAngle: 100,    // 틈이 열리는 범위 (반대편 기준 ±도)
+  openHalfAngle: 130,    // 틈이 열리는 범위 (반대편 기준 ±도, 기획서 초기값 100)
   attackWindup: 0.18,
   attackRecover: 0.22,
   attackDamage: 10,
@@ -572,7 +574,8 @@ class Player {
         this.t += dt;
         if (!this.hitDone) {
           const gap = distXZ(this.pos, B.pos) - B.R - PLAYER_R;
-          if (this.lunge && gap < 3.2 && !B.dead) {
+          const lungeRange = 3.2 + (B.state === 'gap' && !B.hapDone ? CFG.gapReachBonus : 0);
+          if (this.lunge && gap < lungeRange && !B.dead) {
             const to = dirTo(this.pos, B.pos);
             this.faceDir(to, dt * 25);
             if (gap > 0.6) this.pos.addScaledVector(to, Math.min(gap - 0.6, 9 * dt));
@@ -735,7 +738,7 @@ class Boss {
     this.weak.position.copy(this.openDir).multiplyScalar(this.R * 0.95).setY(2.1);
     if (this.arc) disposeTree(this.arc);
     const half = (CFG.openHalfAngle * Math.PI) / 180;
-    this.arc = new THREE.Mesh(new THREE.RingGeometry(this.R + 0.35, this.R + 2.0, 48, 1, -half, half * 2), basicT(COLOR.gold, 0.45));
+    this.arc = new THREE.Mesh(new THREE.RingGeometry(this.R + 0.35, this.R + 2.0 + CFG.gapReachBonus, 48, 1, -half, half * 2), basicT(COLOR.gold, 0.45));
     this.arc.rotation.x = -Math.PI / 2;
     this.arcHolder.add(this.arc);
     this.arcHolder.rotation.y = -Math.atan2(this.openDir.z, this.openDir.x);
@@ -892,7 +895,7 @@ class Boss {
     else if (this.state === 'gap') e.setRGB(0.12, 0.09, 0.0);
     else e.setRGB(0, 0, 0);
     this.eyeMat.color.set(this.state === 'gap' || this.state === 'stagger' ? 0x6b5a2a : COLOR.gold);
-    if (this.weak.visible) this.weak.scale.setScalar(1 + Math.sin(G.time * 14) * 0.15);
+    if (this.weak.visible) this.weak.scale.setScalar(1.4 + Math.sin(G.time * 14) * 0.18);
   }
 }
 
@@ -923,12 +926,13 @@ function bossHitsPlayer(p, A, src) {
     if (!A.receivable) popText(above(p, 3.1), '받기 불가!', 'warn');
     else {
       if (G.now - p.receiveStart <= CFG.perfectWindow) return 'perfect';
-      p.hp -= A.dmg * CFG.guardChip;
+      if (!CFG.infiniteHP) p.hp -= A.dmg * CFG.guardChip;
       if (p.hp <= 0) { downPlayer(p); return 'hit'; }
       return 'guard';
     }
   }
-  p.hp -= A.dmg; p.flash = 0.2;
+  if (!CFG.infiniteHP) p.hp -= A.dmg;
+  p.flash = 0.2;
   SFX.hurt(); G.shake = Math.max(G.shake, 0.25);
   popText(above(p), `-${A.dmg}`, 'hurt', 0.7);
   p.state = 'hurt'; p.t = 0.35; p.kb = dirTo(src, p.pos).multiplyScalar(9);
@@ -1005,9 +1009,11 @@ function playerHitsBoss(p) {
   const B = G.boss;
   if (B.dead) return;
   const d = distXZ(p.pos, B.pos), to = dirTo(p.pos, B.pos);
-  if (d > B.R + PLAYER_R + CFG.reach || p.forward().dot(to) < 0.2) { SFX.swing(); return; }
+  const gapOpen = B.state === 'gap' && !B.hapDone && !B.gapReceivers.includes(p);
+  const reach = CFG.reach + (gapOpen ? CFG.gapReachBonus : 0), minDot = gapOpen ? -0.3 : 0.2;
+  if (d > B.R + PLAYER_R + reach || p.forward().dot(to) < minDot) { SFX.swing(); return; }
   const base = CFG.attackDamage;
-  if (B.state === 'gap' && !B.hapDone && !B.gapReceivers.includes(p)) {
+  if (gapOpen) {
     if (inOpenSide(p)) {
       const dtr = G.now - B.gapStart, grade = dtr <= CFG.perfectHap ? 'perfect' : 'hap';
       B.damage(base * (grade === 'perfect' ? CFG.perfectHapMul : CFG.hapMul));
@@ -1148,6 +1154,7 @@ fR.add(CFG, 'gapPerfect', 0.3, 3, 0.05).name('틈 길이: 정확한 받기');
 fR.add(CFG, 'gapGuard', 0.2, 2, 0.05).name('틈 길이: 버티기');
 fR.add(CFG, 'recoil', 0.1, 1.2, 0.05).name('받은 사람 반동 (초)');
 fR.add(CFG, 'openHalfAngle', 30, 180, 5).name('틈 범위 (±도)');
+fR.add(CFG, 'gapReachBonus', 0, 4, 0.1).name('약점 피격 거리 보너스');
 const fH = gui.addFolder('합');
 fH.add(CFG, 'perfectHap', 0.05, 0.6, 0.01).name('완벽한 합: 받기 후 (초)');
 fH.add(CFG, 'preHap', 0, 0.4, 0.01).name('완벽한 합: 받기 전 (초)');
@@ -1160,6 +1167,7 @@ fA.add(CFG, 'attackWindup', 0.05, 0.5, 0.01).name('공격 예비 동작 (초)');
 fA.add(CFG, 'tagWindup', 0, 0.3, 0.01).name('태그 진입 공격 (초)');
 fA.add(CFG, 'bossTempo', 0.5, 2, 0.05).name('보스 공격 빈도');
 fA.add(CFG, 'bossHP', 100, 2000, 50).name('보스 체력 (다시 시작 시)');
+gui.add(CFG, 'infiniteHP').name('아군 피 무한');
 gui.add(CFG, 'style', Object.keys(STYLES)).name('아트 스타일').onChange(applyStyle);
 gui.add({ restart: () => G.mode && start(G.mode) }, 'restart').name('다시 시작');
 function toggleGui() { guiEl.hidden = !guiEl.hidden; }
@@ -1187,7 +1195,7 @@ function drawHud() {
   const label = p => ({ receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: G.mode === 'duo' ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
   G.players.forEach((p, i) => {
     $('hp' + i).style.width = `${clamp(p.hp, 0, 100)}%`;
-    $('state' + i).textContent = G.mode === 'solo' && i !== G.active && p.alive ? '대기' : label(p);
+    $('state' + i).textContent = (G.mode === 'solo' && i !== G.active && p.alive ? '대기' : label(p)) + (CFG.infiniteHP ? ' · 피 무한' : '');
     $('card' + i).classList.toggle('bench', G.mode === 'solo' && i !== G.active);
   });
   const s = G.stats;
