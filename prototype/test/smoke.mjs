@@ -243,11 +243,32 @@ results.soloAimHap = await ev(() => __game.G.stats.aimHap);
 results.soloBenchAimAfter = await ev(() => __game.G.players[0].aim);
 await page.screenshot({ path: path.join(out, '5_solo_aim_hap.png') });
 
-// 3) 모바일 폭에서 가로 스크롤이 없는지
+// 10) [A] 합 연출 보기: 자동으로 합과 완벽한 합이 나오는지, 완벽한 합 정지 화면, 기존 연출로 바꿔도 도는지
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit4');
+await waitState(() => __game.G.mode === 'demo' && __game.G.running);
+await ev(() => { __game.CFG.freezePerfect = 2.5; }); // 헤드리스는 느려서 정지 화면을 찍으려면 길게
+await waitState(() => __game.G.stats.hap - __game.G.stats.perfect >= 1, 180000);
+results.demoHap = await ev(() => __game.G.stats.hap);
+await waitState(() => !!__game.G.release && __game.G.impact === 0, 180000);
+await page.screenshot({ path: path.join(out, 'A1_demo_perfect_freeze.png') });
+results.demoFreeze = await ev(() => ({ cine: document.body.classList.contains('cine'), stamp: document.getElementById('stamp').classList.contains('go') }));
+await ev(() => { __game.CFG.freezePerfect = 0.3; });
+await waitState(() => !__game.G.release && __game.G.slow, 60000);
+await page.screenshot({ path: path.join(out, 'A2_demo_release.png') });
+await waitState(() => __game.G.stats.perfect >= 2, 240000); // 'trust' (믿고 먼저) 순서까지
+results.demoPerfect = await ev(() => __game.G.stats.perfect);
+await page.click('#fxBtn');
+const before = await ev(() => __game.G.stats.hap);
+await page.waitForFunction(n => __game.G.stats.hap > n, before, { timeout: 180000 });
+results.demoOldFx = await ev(() => __game.CFG.fx);
+
+
+// 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
 results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > innerWidth);
-await page.screenshot({ path: path.join(out, '3_mobile_title.png') });
+await page.screenshot({ path: path.join(out, '5_mobile_title.png') });
 
 await browser.close();
 const alpha = results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
@@ -259,6 +280,7 @@ const ok = alpha && results.duoReceive === 'gap' && results.duoHap === 1 && resu
   && results.fit === 'strong,weak,weak,strong' && results.jebiCharge.state === 'gap' && results.jebiCharge.fit === 2
   && results.moruDropHap.hap === 2 && results.moruDropHap.active === 0
   && results.practiceReceive === 'gap' && results.practiceHap === 1 && results.practiceFin === 1 && results.aimHap === 1 && results.aimHapDamage >= 45 && results.aimClearedAfter === 0 && results.soloAimHap === 1
-  && !results.mobileOverflow && !errors.length;
+  && !results.mobileOverflow && !errors.length
+  && results.demoHap >= 1 && results.demoFreeze?.cine && results.demoFreeze?.stamp && results.demoPerfect >= 2 && results.demoOldFx === '기존';
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);

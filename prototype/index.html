@@ -89,6 +89,38 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 
 #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 45%, rgba(255,240,190,0.9), rgba(255,210,63,0.25) 45%, transparent 75%); mix-blend-mode: screen; }
 
+/* 완벽한 합 연출: 레터박스, 집중선, 도장 글자 */
+#lines { position: fixed; inset: 0; pointer-events: none; width: 100%; height: 100%; }
+.lb { position: fixed; left: 0; right: 0; height: 0; background: #07080d; pointer-events: none; transition: height 0.12s cubic-bezier(.2,.9,.3,1); z-index: 2; }
+.lb.top { top: 0; } .lb.bot { bottom: 0; }
+body.cine .lb { height: 11vh; }
+#hud { transition: opacity 0.15s; }
+body.cine #hud { opacity: 0; }
+#stamp { position: fixed; left: 50%; top: 27%; z-index: 3; pointer-events: none; display: grid; justify-items: center; gap: 4px; opacity: 0; transform: translate(-50%, -50%); }
+#stamp .w { position: relative; font-family: var(--font-display); font-size: clamp(56px, 13vw, 132px); line-height: 1; color: #fff; letter-spacing: 0.02em; white-space: nowrap;
+  -webkit-text-stroke: 3px #120d1f; paint-order: stroke fill; text-shadow: 0 0 28px rgba(255,210,63,0.9), 0 6px 0 #120d1f; }
+#stamp .w::before { content: ""; position: absolute; left: -12%; right: -12%; top: 38%; height: 34%; z-index: -1; background: var(--gold); transform: skewX(-18deg) scaleX(0); transform-origin: left center; }
+#stamp .s { font-family: var(--font-body); font-weight: 600; font-size: clamp(14px, 2.6vw, 20px); color: var(--gold); background: #120d1f; padding: 2px 12px; border-radius: 2px; letter-spacing: 0.08em; }
+#stamp .s:empty { display: none; }
+body.cine #caption { opacity: 0; }
+#caption { transition: opacity 0.15s; }
+#stamp.go { animation: stampIn 1.45s cubic-bezier(.2,.8,.2,1) forwards; }
+#stamp.go .w::before { animation: swipe 0.22s 0.04s cubic-bezier(.2,.9,.2,1) forwards; }
+@keyframes stampIn {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(2.6) rotate(-7deg); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(0.92) rotate(-3deg); }
+  20% { transform: translate(-50%, -50%) scale(1.05) rotate(-3deg); }
+  28% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); }
+  78% { opacity: 1; transform: translate(-50%, -50%) scale(1.02) rotate(-3deg); }
+  100% { opacity: 0; transform: translate(-50%, -54%) scale(1.06) rotate(-3deg); }
+}
+@keyframes swipe { to { transform: skewX(-18deg) scaleX(1); } }
+#caption { position: fixed; left: 50%; top: calc(86px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 4; pointer-events: none; width: min(560px, calc(100% - 32px)); text-align: center; font-size: 15px; line-height: 1.5; background: rgba(10, 13, 22, 0.7); border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; }
+#caption b { color: var(--gold); font-family: var(--font-display); font-weight: 400; font-size: 19px; letter-spacing: 0.03em; }
+#demoBar { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 5; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: calc(100% - 32px); }
+#demoBar .btn { background: rgba(10, 13, 22, 0.8); color: var(--ink); }
+#demoBar .btn.on { border-color: var(--gold); color: var(--gold); }
+
 /* 오버레이 */
 .overlay { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px 16px; background: rgba(12, 16, 26, 0.72); backdrop-filter: blur(3px); overflow-y: auto; }
 .card { width: min(680px, 100%); display: grid; gap: 20px; }
@@ -144,6 +176,15 @@ td:first-child { color: var(--ink-dim); }
 <div id="view"></div>
 <div id="flash"></div>
 <div id="texts"></div>
+<canvas id="lines"></canvas>
+<div class="lb top"></div><div class="lb bot"></div>
+<div id="stamp"><div class="w" id="stampWord">완벽한 합</div><div class="s" id="stampSub"></div></div>
+<div id="caption" hidden></div>
+<div id="demoBar" hidden>
+  <button class="btn" id="fxBtn" type="button">연출: 새 연출</button>
+  <button class="btn" id="speedBtn" type="button">속도 1배</button>
+  <button class="btn" id="demoExit" type="button">나가기</button>
+</div>
 
 <div id="hud" hidden>
   <div class="top">
@@ -227,6 +268,10 @@ td:first-child { color: var(--ink-dim); }
         <span class="big">혼자 듀오 연습</span>
         <span class="desc"><kbd>3</kbd>둘 다 필드에, Q로 조작 캐릭터 바꾸기</span>
       </button>
+      <button class="mode" id="demoBtn" type="button">
+        <span class="big">합 연출 보기</span>
+        <span class="desc"><kbd>4</kbd>조작 없이 합과 완벽한 합을 번갈아 관람</span>
+      </button>
     </div>
     <div class="table-wrap">
       <table>
@@ -307,6 +352,16 @@ const CFG = {
   bossTempo: 1.0,
   respawn: 6,
   style: '기본 툰',
+  // 합 연출 (A 세션)
+  fx: '새 연출',         // '기존'으로 바꾸면 이전 연출과 비교할 수 있다
+  freezePerfect: 0.3,    // 완벽한 합 정지 시간 (실제 초)
+  slowFrom: 0.2,         // 정지가 풀린 뒤 이 배속에서 시작해 1배로 돌아온다
+  slowDur: 0.9,
+  zoomPerfect: 0.58,     // 정지 중 카메라 거리 배율 (작을수록 가까이)
+  impactFrames: true,    // 흑백 반전 임팩트 프레임
+  speedLines: true,
+  letterbox: true,
+  rumble: true,          // 게임패드 진동
   // 알파-2: 시선과 노림 — 보스가 보지 않는 쪽에서 기다린 만큼 합이 커진다
   aimOn: true,
   gazeHalfAngle: 60,     // 보스 시선 부채꼴 (정면 ±도). 노려지지 않은 사람이 이 안에 들어가면 노림이 빠진다
@@ -472,16 +527,17 @@ function disposeTree(obj) {
   obj.parent?.remove(obj);
 }
 
-// 아레나
+// 아레나 (임팩트 프레임 때 통째로 숨긴다)
+const arena = new THREE.Group(); scene.add(arena);
 const groundMat = new THREE.MeshBasicMaterial({ color: style.ground });
 const ground = new THREE.Mesh(new THREE.CircleGeometry(90, 48), groundMat);
-ground.rotation.x = -Math.PI / 2; ground.position.y = -1.0; scene.add(ground);
+ground.rotation.x = -Math.PI / 2; ground.position.y = -1.0; arena.add(ground);
 const floorMat = toon(style.floor);
 const floor = new THREE.Mesh(new THREE.CylinderGeometry(ARENA_R + 1, ARENA_R + 1.8, 1, 72), floorMat);
-floor.position.y = -0.5; floor.receiveShadow = true; scene.add(floor);
+floor.position.y = -0.5; floor.receiveShadow = true; arena.add(floor);
 for (const [r, op] of [[ARENA_R, 0.22], [9.5, 0.07], [5, 0.07]]) {
   const ring = new THREE.Mesh(new THREE.RingGeometry(r - 0.12, r + 0.12, 96), basicT(0xffffff, op));
-  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; scene.add(ring);
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; arena.add(ring);
 }
 const stoneMats = [];
 for (let i = 0; i < 11; i++) {
@@ -491,7 +547,7 @@ for (let i = 0; i < 11; i++) {
   const p = outlined(new THREE.CylinderGeometry(0.7, 0.95, h, 7), m);
   p.group.position.set(Math.cos(a) * (ARENA_R + 3.4), h / 2 - 0.9, Math.sin(a) * (ARENA_R + 3.4));
   p.group.rotation.y = a;
-  scene.add(p.group);
+  arena.add(p.group);
 }
 
 // ───────────────────────── 효과 ─────────────────────────
@@ -508,22 +564,91 @@ function popText(pos, str, cls, life = 0.9) {
   texts.push({ el, pos: pos.clone(), t: 0, life, pop: /perfect|hap/.test(cls) });
 }
 const partMats = new Map();
-function burst(pos, color, n, speed) {
+const shardGeo = new THREE.OctahedronGeometry(0.1, 0); shardGeo.scale(0.7, 0.7, 4.2);
+function burst(pos, color, n, speed, shard = false) {
   if (!partMats.has(color)) partMats.set(color, new THREE.MeshBasicMaterial({ color }));
   const mat = partMats.get(color);
   for (let i = 0; i < n; i++) {
-    const m = new THREE.Mesh(partGeo, mat);
+    const m = new THREE.Mesh(shard ? shardGeo : partGeo, mat);
     m.position.copy(pos);
     const v = V(Math.random() - 0.5, Math.random() * 0.9 + 0.2, Math.random() - 0.5).normalize().multiplyScalar(speed * (0.5 + Math.random() * 0.7));
     scene.add(m);
-    parts.push({ m, v, t: 0, life: 0.45 + Math.random() * 0.35 });
+    parts.push({ m, v, t: 0, life: 0.45 + Math.random() * 0.35, shard });
   }
 }
-function fxRing(pos, color, from, to, life, opacity = 0.8) {
-  const m = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), basicT(color, opacity));
+function fxRing(pos, color, from, to, life, opacity = 0.8, delay = 0, width = 0.08) {
+  const m = new THREE.Mesh(new THREE.RingGeometry(1 - width, 1, 64), basicT(color, opacity));
   m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.06, pos.z);
+  m.scale.setScalar(from); m.visible = delay <= 0;
   scene.add(m);
-  fxObjs.push({ obj: m, t: 0, life, from, to, opacity, kind: 'ring' });
+  fxObjs.push({ obj: m, t: -delay, life, from, to, opacity, kind: 'ring' });
+}
+// 툰 임팩트 별: 검은 테두리 + 금색 + 흰 속. 카메라를 향한다.
+function starGeo(spikes, inner) {
+  const sh = new THREE.Shape();
+  for (let i = 0; i <= spikes * 2; i++) {
+    const a = (i / (spikes * 2)) * Math.PI * 2, r = i % 2 ? inner * (0.8 + Math.random() * 0.4) : 1 * (0.75 + Math.random() * 0.5);
+    i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  return new THREE.ShapeGeometry(sh);
+}
+function impactStar(pos, size, life, perfect) {
+  const g = new THREE.Group(); g.position.copy(pos);
+  const geo = starGeo(perfect ? 11 : 8, 0.36);
+  const layer = (color, sc, z) => { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false })); m.scale.setScalar(sc); m.position.z = z; m.renderOrder = 10; g.add(m); };
+  layer(0x120d1f, 1.14, 0); layer(COLOR.gold, 1, 0.01); layer(0xffffff, 0.5, 0.02);
+  g.scale.setScalar(0.001); scene.add(g);
+  fxObjs.push({ obj: g, t: 0, life, size, kind: 'star', spin: (Math.random() - 0.5) * 2 });
+}
+// 빛기둥: 완벽한 합 때 약점에서 솟는다
+function lightPillar(pos, life) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 30, 24, 1, true),
+    new THREE.MeshBasicMaterial({ color: COLOR.gold, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  m.position.set(pos.x, 15, pos.z); scene.add(m);
+  fxObjs.push({ obj: m, t: 0, life, opacity: 0.8, kind: 'pillar' });
+}
+// 잔상: 합을 만든 두 사람의 실루엣이 금색으로 남는다
+const ghostGeo = new THREE.CapsuleGeometry(0.47, 0.8, 4, 12);
+function ghost(p) {
+  const m = new THREE.Mesh(ghostGeo, new THREE.MeshBasicMaterial({ color: COLOR.gold, transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending }));
+  m.position.copy(p.pos).setY(0.88); m.quaternion.copy(p.tilt.quaternion);
+  scene.add(m);
+  fxObjs.push({ obj: m, t: 0, life: 0.32, opacity: 0.4, kind: 'fade' });
+}
+function rumble(strong, weak, ms) {
+  if (!CFG.rumble) return;
+  for (const p of pads()) p.vibrationActuator?.playEffect?.('dual-rumble', { duration: ms, strongMagnitude: strong, weakMagnitude: weak }).catch?.(() => {});
+}
+
+// 집중선 (2D 캔버스). 중심 주변을 비우고 바깥에서 안쪽으로 찌르는 흰 쐐기를 그린다.
+const linesEl = document.getElementById('lines'), lctx = linesEl.getContext('2d');
+let linesFrame = 0;
+function drawLines(cx, cy, alpha) {
+  const w = innerWidth, h = innerHeight;
+  if (linesEl.width !== w || linesEl.height !== h) { linesEl.width = w; linesEl.height = h; }
+  if (alpha <= 0.01) { if (linesFrame) { lctx.clearRect(0, 0, w, h); linesFrame = 0; } return; }
+  if (linesFrame++ % 2) return; // 두 프레임마다 새로 그려서 지글거리게
+  lctx.clearRect(0, 0, w, h);
+  const R = Math.hypot(w, h), r0 = Math.min(w, h) * 0.3;
+  lctx.fillStyle = `rgba(255,255,255,${alpha})`;
+  for (let i = 0; i < 90; i++) {
+    const a = Math.random() * Math.PI * 2, wd = 0.004 + Math.random() * 0.014, r = r0 * (0.8 + Math.random() * 0.9);
+    lctx.beginPath();
+    lctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    lctx.lineTo(cx + Math.cos(a - wd) * R, cy + Math.sin(a - wd) * R);
+    lctx.lineTo(cx + Math.cos(a + wd) * R, cy + Math.sin(a + wd) * R);
+    lctx.fill();
+  }
+}
+
+// 임팩트 프레임: 아레나를 숨기고 캐릭터와 보스를 단색 실루엣으로 그린다 (흰 바탕 검은 그림자 → 검은 바탕 금빛 그림자)
+const impactMats = [new THREE.MeshBasicMaterial({ color: 0x0b0a12 }), new THREE.MeshBasicMaterial({ color: COLOR.gold })];
+const impactBg = [new THREE.Color(0xfffbef), new THREE.Color(0x0b0a12)];
+function renderImpact(phase) {
+  const bg = scene.background, fog = scene.fog;
+  arena.visible = false; scene.overrideMaterial = impactMats[phase]; scene.background = impactBg[phase]; scene.fog = null;
+  renderer.render(scene, camera);
+  arena.visible = true; scene.overrideMaterial = null; scene.background = bg; scene.fog = fog;
 }
 function beam(a, b, color, life) {
   const len = a.distanceTo(b);
@@ -536,12 +661,18 @@ function beam(a, b, color, life) {
 }
 
 // 효과음 (WebAudio로 합성)
-let AC = null, master = null, noiseBuf = null;
+let AC = null, master = null, noiseBuf = null, duck = null, revIn = null;
 function audio() {
   if (!AC) {
     try {
       AC = new (window.AudioContext || window.webkitAudioContext)();
-      master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination);
+      // master → duck(로우패스: 완벽한 합 정지 중 소리가 물속처럼 먹먹해진다) → 출력, 잔향 버스는 따로
+      duck = AC.createBiquadFilter(); duck.type = 'lowpass'; duck.frequency.value = 20000; duck.connect(AC.destination);
+      master = AC.createGain(); master.gain.value = 0.55; master.connect(duck);
+      const conv = AC.createConvolver(), ir = AC.createBuffer(2, AC.sampleRate * 2.6, AC.sampleRate);
+      for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3.2); }
+      conv.buffer = ir;
+      revIn = AC.createGain(); revIn.gain.value = 0.55; revIn.connect(conv).connect(duck);
       noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     } catch { AC = null; }
@@ -549,20 +680,23 @@ function audio() {
   if (AC?.state === 'suspended') AC.resume();
   return AC;
 }
-function tone(f, dur, { type = 'sine', vol = 0.2, delay = 0, to = null } = {}) {
+function tone(f, dur, { type = 'sine', vol = 0.2, delay = 0, to = null, rev = 0, atk = 0.006 } = {}) {
   if (!AC) return;
   const t0 = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0);
   if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
-  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + atk); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(g).connect(master); o.start(t0); o.stop(t0 + dur + 0.02);
+  if (rev) { const sg = AC.createGain(); sg.gain.value = rev; g.connect(sg).connect(revIn); }
 }
-function noise(dur, { vol = 0.2, delay = 0, freq = 1200, type = 'bandpass' } = {}) {
+function noise(dur, { vol = 0.2, delay = 0, freq = 1200, type = 'bandpass', to = null, rev = 0 } = {}) {
   if (!AC) return;
   const t0 = AC.currentTime + delay, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
-  s.buffer = noiseBuf; f.type = type; f.frequency.value = freq;
+  s.buffer = noiseBuf; f.type = type; f.frequency.setValueAtTime(freq, t0);
+  if (to) f.frequency.exponentialRampToValueAtTime(to, t0 + dur);
   g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   s.connect(f).connect(g).connect(master); s.start(t0); s.stop(t0 + dur + 0.02);
+  if (rev) { const sg = AC.createGain(); sg.gain.value = rev; g.connect(sg).connect(revIn); }
 }
 const SFX = {
   swing() { noise(0.07, { vol: 0.06, freq: 3200, type: 'highpass' }); },
@@ -580,6 +714,34 @@ const SFX = {
   miss() { tone(330, 0.15, { type: 'triangle', vol: 0.07 }); tone(247, 0.22, { type: 'triangle', vol: 0.07, delay: 0.12 }); },
   windup(kind) { tone(kind === 'shock' ? 160 : 110, 0.3, { vol: 0.07, to: kind === 'shock' ? 330 : 220 }); },
   dodge() { noise(0.1, { vol: 0.06, freq: 2500 }); },
+  // ── 새 연출: 캐릭터마다 자기 음이 있다. 받기는 받은 사람의 음, 합은 친 사람의 음.
+  //    합이면 두 음이 시차를 두고 들리고(실제 시차 그대로), 완벽한 합이면 한 화음으로 겹친다.
+  rcvVoice(v, perfect) {
+    if (perfect) { tone(v * 2, 0.9, { vol: 0.13, rev: 0.4 }); tone(v * 5.4, 0.35, { vol: 0.03 }); noise(0.04, { vol: 0.22, freq: 6000 }); }
+    else { tone(v, 0.4, { type: 'triangle', vol: 0.12, rev: 0.2 }); noise(0.05, { vol: 0.1, freq: 4000 }); }
+  },
+  hapVoice(v, k) {
+    tone(v, 0.7, { type: 'triangle', vol: 0.13, rev: 0.25 }); tone(v * 2, 0.5, { vol: 0.05 * (0.5 + k), rev: 0.2 });
+    tone(95, 0.35, { vol: 0.3 + 0.15 * k, to: 45 }); noise(0.12, { vol: 0.22, freq: 800 });
+  },
+  perfectImpact(rv, hv, freeze) {
+    if (!AC) return;
+    noise(0.06, { vol: 0.55, freq: 5200, type: 'highpass' });
+    tone(130, 1.1, { vol: 0.65, to: 26 });
+    noise(0.35, { vol: 0.35, freq: 900, type: 'lowpass', to: 120 });
+    // 정지하는 동안 두 음만 높게 울린다 (귀가 멍해지는 순간)
+    tone(rv * 4, freeze + 0.4, { vol: 0.035 }); tone(hv * 4, freeze + 0.4, { vol: 0.035 });
+    const t = AC.currentTime;
+    duck.frequency.cancelScheduledValues(t); duck.frequency.setValueAtTime(20000, t); duck.frequency.exponentialRampToValueAtTime(650, t + 0.05);
+  },
+  perfectRelease(rv, hv) {
+    if (!AC) return;
+    const t = AC.currentTime;
+    duck.frequency.cancelScheduledValues(t); duck.frequency.setValueAtTime(650, t); duck.frequency.exponentialRampToValueAtTime(20000, t + 0.18);
+    [rv / 2, rv, hv, rv * 2, hv * 2, rv * 3].forEach((f, i) => tone(f, 2.2 - i * 0.15, { type: i < 2 ? 'triangle' : 'sine', vol: 0.1, rev: 0.7, atk: 0.01 }));
+    tone(62, 0.8, { vol: 0.5, to: 30 });
+    noise(0.7, { vol: 0.25, freq: 6000, type: 'lowpass', to: 300, rev: 0.5 });
+  },
   aimFull() { tone(1567.98, 0.22, { type: 'triangle', vol: 0.05 }); tone(2349.3, 0.3, { vol: 0.035, delay: 0.06 }); },
   aimHap(a) { tone(3135.96, 0.7 + a * 0.5, { vol: 0.05 + a * 0.05, delay: 0.03 }); tone(1174.66, 0.8, { type: 'triangle', vol: 0.06 * a, delay: 0.02 }); tone(55, 0.7, { vol: 0.3 * a, to: 28 }); },
   // 맺기: 합 화음(도미솔)을 한 옥타브 위에서 받아 닫는 소리
@@ -595,6 +757,7 @@ const SFX = {
   crack() { noise(0.25, { vol: 0.3, freq: 2600 }); tone(160, 0.4, { type: 'sawtooth', vol: 0.12, to: 60 }); },
   release(n) { for (let i = 0; i < n; i++) tone(392 * Math.pow(1.26, i), 0.4, { type: 'triangle', vol: 0.08, delay: 0.04 * i }); },
 };
+const VOICE = [523.25, 783.99]; // 1P/캐릭터 A = 도, 2P/캐릭터 B = 솔 → 겹치면 완전5도
 
 // ───────────────────────── 입력 ─────────────────────────
 const KB = [
@@ -617,6 +780,7 @@ addEventListener('keydown', e => {
   if (!titleEl.hidden && (e.code === 'Digit1' || e.code === 'Numpad1')) start('solo');
   if (!titleEl.hidden && (e.code === 'Digit2' || e.code === 'Numpad2')) start('duo');
   if (!titleEl.hidden && (e.code === 'Digit3' || e.code === 'Numpad3')) start('practice');
+  if (!titleEl.hidden && (e.code === 'Digit4' || e.code === 'Numpad4')) start('demo');
 });
 addEventListener('keyup', e => keysDown.delete(e.code));
 addEventListener('blur', () => keysDown.clear());
@@ -1016,7 +1180,7 @@ class Boss {
   reset() {
     this.tele?.dispose();
     if (this.shockMesh) disposeTree(this.shockMesh);
-    Object.assign(this, { hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null });
+    Object.assign(this, { squash: 0, sqT: 0, hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null });
     this.root.position.set(0, 0, -4);
     this.root.visible = true;
     this.hideOpen();
@@ -1236,20 +1400,26 @@ class Boss {
     else e.setRGB(0, 0, 0);
     this.eyeMat.color.set(this.state === 'gap' || this.state === 'stagger' ? 0x6b5a2a : COLOR.gold);
     if (this.weak.visible) this.weak.scale.setScalar(1.4 + Math.sin(G.time * 14) * 0.18);
+    // 합을 맞으면 찌그러졌다가 출렁이며 돌아온다 (정지 중에는 찌그러진 채로 멈춤)
+    this.sqT = (this.sqT || 0) + dt;
+    const sq = (this.squash || 0) * Math.exp(-this.sqT * 6) * Math.cos(this.sqT * 26);
+    this.spin.scale.set(1 + 0.16 * sq, 1 - 0.2 * sq, 1 + 0.16 * sq);
   }
 }
 
 // ───────────────────────── 전투 규칙 ─────────────────────────
 const G = {
   mode: null, running: false, ended: false, endT: 0, now: 0, time: 0,
-  hitstop: 0, slowmo: 0, shake: 0, punch: 0, flash: 0,
+  hitstop: 0, slow: null, shake: 0, punch: 0, flash: 0,
+  // 합 연출
+  timeScale: 1, freezeFx: false, release: null, impact: 0, cine: null, lines: 0, linesPos: V(), dim: 0, cineBody: 0, afterglow: 0, glowList: [], ghostT: 0, demo: null,
   players: [], boss: null, active: 0, tagCd: 0, autoTag: 0,
   recentHits: [], stats: null, mom: 0, fin: null,
 };
 G.players = [new Player(0, CHARS.moru), new Player(1, CHARS.jebi)];
 G.boss = new Boss();
 
-const isDuo = () => G.mode === 'duo' || G.mode === 'practice';
+const isDuo = () => G.mode === 'duo' || G.mode === 'practice' || G.mode === 'demo';
 const above = (o, h = 2.6) => V(o.pos.x, (o.root?.position.y || 0) + h, o.pos.z);
 function activePlayers() {
   if (G.mode === 'solo') { const p = G.players[G.active]; return p.alive ? [p] : []; }
@@ -1400,6 +1570,7 @@ function openGap(list) {
   const best = fits.includes('strong') ? 'strong' : fits.includes('even') ? 'even' : 'weak';
   B.tele?.dispose(); B.tele = null;
   Object.assign(B, { state: 'gap', gapT: (perfect ? CFG.gapPerfect : CFG.gapGuard) * FIT.gap(best), gapStart: G.now, gapReceivers: receivers, hapDone: false });
+  B.gapLen = B.gapT;
   const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
   B.openDir = distXZ(avg, B.pos) > 0.05 ? dirTo(avg, B.pos) : B.forward().negate();
   B.showOpen();
@@ -1411,12 +1582,17 @@ function openGap(list) {
   G.stats.receive++; if (perfect) G.stats.perfectReceive++; if (best === 'strong') G.stats.fitReceive++;
   addMom(perfect ? CFG.momPerfectReceive : CFG.momReceive);
   const r0 = receivers[0], contact = r0.pos.clone().lerp(B.pos, 0.45).setY(1.2);
+  const newFx = CFG.fx !== '기존';
   if (perfect) {
-    SFX.perfectRcv(); popText(above(r0, 3.0), '정확한 받기!', 'rcv perfect-rcv');
-    burst(contact, 0xffffff, 18, 7); G.hitstop = Math.max(G.hitstop, 0.06);
+    newFx ? SFX.rcvVoice(VOICE[r0.idx], true) : SFX.perfectRcv();
+    popText(above(r0, 3.0), '정확한 받기!', 'rcv perfect-rcv');
+    burst(contact, 0xffffff, 18, 7, newFx); G.hitstop = Math.max(G.hitstop, 0.06);
+    if (newFx) { impactStar(contact, 0.9, 0.2, false); rumble(0.5, 0.2, 80); }
   } else {
-    SFX.guard(); popText(above(r0, 3.0), '받기', 'rcv');
+    newFx ? SFX.rcvVoice(VOICE[r0.idx], false) : SFX.guard();
+    popText(above(r0, 3.0), '받기', 'rcv');
     burst(contact, r0.color, 10, 5);
+    if (newFx) rumble(0.25, 0, 60);
   }
   if (fits[0] === 'strong') popText(above(r0, 2.45), `${r0.char.name}의 몫`, 'sub', 0.9);
   else if (fits[0] === 'weak') popText(above(r0, 2.45), '버겁다', 'small', 0.9);
@@ -1453,45 +1629,28 @@ function doHap(p, grade, dtr, dmg, rel = 0, aim = 0) {
   let mul = (perfect ? CFG.perfectHapMul : CFG.hapMul) + aim * CFG.aimBonusMul;
   if (unison) { const per = dmg / mul, um = CFG.unisonMul + aim * CFG.aimBonusMul; B.damage(per * (um - mul)); mul = um; dmg = per * mul; }
   B.hapDone = true; B.hideOpen();
-  const mulStr = String(+mul.toFixed(1));
   if (!B.dead) { B.state = 'stagger'; B.t = (unison ? CFG.unisonStagger : perfect ? CFG.staggerPerfect : CFG.staggerHap) + aim * 0.5; }
   if (isDuo()) { B.target = p; G.players.forEach(q => (q.aggro = 0)); }
   G.stats.hap++; if (perfect) G.stats.perfect++;
   G.stats.last = dtr;
   if (aim > 0.05) { G.stats.aimHap++; G.stats.aimSum += aim; }
   const partners = B.gapReceivers.filter(q => q !== p);
-  // 연출
-  if (unison) {
-    G.stats.unison++; G.mom = 0;
-    G.hitstop = Math.max(G.hitstop, 0.32); G.slowmo = 0.9; G.shake = 1; G.punch = 1.3; G.flash = 1;
-    SFX.unison();
-    popText(above(B, 4.9), '합기!', 'unison', 1.8);
-    burst(weakPos, COLOR.gold, 60, 13); burst(weakPos, COLOR.fin, 30, 10);
-    fxRing(B.pos, COLOR.gold, B.R, 14, 0.9); fxRing(B.pos, COLOR.fin, B.R, 9, 0.7);
-    // 받은 사람도 반동을 털고 바로 맺기로 이어 갈 수 있다
-    for (const r of partners) if (r.state === 'recoil') r.t = Math.min(r.t, 0.08);
-  } else {
-    addMom(perfect ? CFG.momPerfectHap : CFG.momHap);
-    G.hitstop = Math.max(G.hitstop, (perfect ? CFG.hitstopPerfect : CFG.hitstopHap) + aim * 0.07);
-    if (perfect) G.slowmo = 0.3;
-    G.shake = Math.max(G.shake, perfect ? 0.7 : 0.4);
-    G.punch = perfect ? 1 : 0.55;
-    G.flash = perfect ? 0.9 : 0.45;
-    (perfect ? SFX.perfectHap : SFX.hap)();
-    popText(above(B, 4.6), perfect ? '완벽한 합!' : '합!', perfect ? 'perfect' : 'hap', perfect ? 1.3 : 1.0);
-    burst(weakPos, COLOR.gold, (perfect ? 36 : 20) + Math.round(aim * 24), (perfect ? 11 : 8) + aim * 3);
-    fxRing(B.pos, COLOR.gold, B.R, (perfect ? 9 : 6) + aim * 4, perfect ? 0.6 : 0.45);
-  }
-  if (aim > 0.05) { SFX.aimHap(aim); fxRing(p.pos, p.color, 0.4, 2.5 + aim * 2, 0.4, 0.8); }
-  if (full) popText(above(B, 5.8), '등 뒤에서', 'aim big', 1.3);
-  popText(above(B, 3.8), `×${mulStr} · ${Math.round(dmg)}` + (aim > 0.05 ? ` · 노림 ${Math.round(aim * 100)}%` : ''), 'sub', unison ? 1.8 : perfect ? 1.3 : 1.0);
-  if (rel > 0) { popText(above(B, 3.1), `충격 해방 ${'◆'.repeat(rel)}`, 'release', 1.2); SFX.release(rel); G.stats.released += rel; }
-  const chest = q => q.pos.clone().setY(1.1);
   const beamers = partners.slice();
   if (G.mode === 'solo') beamers.push(G.players[1 - G.active]);
-  for (const r of beamers) { beam(chest(r), weakPos, rel > 0 ? COLOR.impact : COLOR.gold, perfect ? 0.6 : 0.4); r.hapGlow = unison ? 1.2 : 0.7; }
-  beam(weakPos, chest(p), COLOR.gold, perfect ? 0.6 : 0.4);
-  p.hapGlow = unison ? 1.2 : 0.7;
+  if (unison) { G.stats.unison++; G.mom = 0; for (const r of partners) if (r.state === 'recoil') r.t = Math.min(r.t, 0.08); } // 받은 사람도 반동을 털고 바로 맺기로
+  else addMom(perfect ? CFG.momPerfectHap : CFG.momHap);
+  // 연출: [A] 새 연출이면 합기도 완벽한 합 시네마틱을 쓰고 도장 글자만 바뀐다
+  if (CFG.fx === '기존') hapFxOld(p, perfect, unison, weakPos, beamers, mul, dmg, rel, aim);
+  else {
+    if (perfect || unison) perfectFx(p, weakPos, beamers, dtr, unison);
+    else hapFx(p, weakPos, beamers, dtr);
+    G.hitstop += aim * 0.07; // 알파-2: 노림이 찬 만큼 정지가 길어진다 (완벽한 합이면 정지 자체가 늘어남)
+    if (aim > 0.05) popText(above(B, 3.8), `노림 ${Math.round(aim * 100)}%`, 'sub', 1.1);
+  }
+  // 알파-2: 노림 (두 연출 공통)
+  if (aim > 0.05) { SFX.aimHap(aim); fxRing(p.pos, p.color, 0.4, 2.5 + aim * 2, 0.4, 0.8); }
+  if (full) popText(above(B, 5.8), '등 뒤에서', 'aim big', 1.3);
+  if (rel > 0) { popText(above(B, 3.1), `충격 해방 ${'◆'.repeat(rel)}`, 'release', 1.2); SFX.release(rel); G.stats.released += rel; }
   // 솔로: 합 직후 바로 되돌려 태그(맺기)할 수 있게. 제비는 합을 친 칼이 두 번 더 이어진다
   if (G.mode === 'solo') G.tagCd = 0;
   if (p.ch.flurry) p.combo = p.ch.flurry;
@@ -1502,6 +1661,34 @@ function doHap(p, grade, dtr, dmg, rel = 0, aim = 0) {
     B.t = Math.max(B.t, CFG.finWindow);
     B.showOpen(G.fin.dir, COLOR.fin, CFG.finHalfAngle);
   }
+}
+
+const chest = q => q.pos.clone().setY(1.1);
+
+// 이전 연출 (비교용으로 그대로 둔다. 알파-1의 합기 연출 포함)
+function hapFxOld(p, perfect, unison, weakPos, beamers, mul, dmg, rel, aim) {
+  const B = G.boss;
+  if (unison) {
+    G.hitstop = Math.max(G.hitstop, 0.32); G.slow = { left: 0.9, dur: 0.9, from: 0.35, ramp: false }; G.shake = 1; G.punch = 1.3; G.flash = 1;
+    SFX.unison();
+    popText(above(B, 4.9), '합기!', 'unison', 1.8);
+    burst(weakPos, COLOR.gold, 60, 13); burst(weakPos, COLOR.fin, 30, 10);
+    fxRing(B.pos, COLOR.gold, B.R, 14, 0.9); fxRing(B.pos, COLOR.fin, B.R, 9, 0.7);
+  } else {
+    G.hitstop = Math.max(G.hitstop, (perfect ? CFG.hitstopPerfect : CFG.hitstopHap) + aim * 0.07);
+    if (perfect) G.slow = { left: 0.3, dur: 0.3, from: 0.35, ramp: false };
+    G.shake = Math.max(G.shake, perfect ? 0.7 : 0.4);
+    G.punch = perfect ? 1 : 0.55;
+    G.flash = perfect ? 0.9 : 0.45;
+    (perfect ? SFX.perfectHap : SFX.hap)();
+    popText(above(B, 4.6), perfect ? '완벽한 합!' : '합!', perfect ? 'perfect' : 'hap', perfect ? 1.3 : 1.0);
+    burst(weakPos, COLOR.gold, (perfect ? 36 : 20) + Math.round(aim * 24), (perfect ? 11 : 8) + aim * 3);
+    fxRing(B.pos, COLOR.gold, B.R, (perfect ? 9 : 6) + aim * 4, perfect ? 0.6 : 0.45);
+  }
+  popText(above(B, 3.8), `×${String(+mul.toFixed(1))} · ${Math.round(dmg)}` + (aim > 0.05 ? ` · 노림 ${Math.round(aim * 100)}%` : ''), 'sub', unison ? 1.8 : perfect ? 1.3 : 1.0);
+  for (const r of beamers) { beam(chest(r), weakPos, rel > 0 ? COLOR.impact : COLOR.gold, perfect ? 0.6 : 0.4); r.hapGlow = unison ? 1.2 : 0.7; }
+  beam(weakPos, chest(p), COLOR.gold, perfect ? 0.6 : 0.4);
+  p.hapGlow = unison ? 1.2 : 0.7;
 }
 
 function finFor(p) {
@@ -1546,6 +1733,79 @@ function addMom(n) {
     const p = G.players[G.active];
     popText(above(p, 3.2), CFG.unisonNeedsPerfect ? '기세 가득 · 완벽한 합으로 합기' : '기세 가득 · 다음 합이 합기', 'sub', 1.6);
   }
+}
+
+// 합: 세계 안에서 터진다. 완벽한 합에 가까울수록(k → 1) 조금씩 커진다.
+function hapFx(p, weakPos, partners, dtr) {
+  const B = G.boss;
+  const late = dtr - CFG.perfectHap;
+  const k = clamp(1 - late / Math.max(0.05, (B.gapLen || CFG.gapGuard) - CFG.perfectHap), 0, 1);
+  G.hitstop = Math.max(G.hitstop, CFG.hitstopHap * (0.8 + 0.6 * k));
+  G.shake = Math.max(G.shake, 0.3 + 0.2 * k);
+  G.flash = 0.3 + 0.2 * k;
+  G.cine = { t: 0, inT: 0.04, hold: 0.06, outT: 0.3, focus: weakPos.clone().setY(0), lookY: 1.3, zoom: 0.9 - 0.06 * k, roll: 0 };
+  SFX.hapVoice(VOICE[p.idx], k);
+  popText(above(B, 4.6), '합!', 'hap', 1.0);
+  if (late < 0.15) popText(above(B, 3.8), `아깝다 · ${late.toFixed(2)}초 늦음`, 'sub', 1.1);
+  impactStar(weakPos, 1.2 + 0.5 * k, 0.24, false);
+  burst(weakPos, COLOR.gold, Math.round(14 + 10 * k), 8, true);
+  fxRing(B.pos, COLOR.gold, B.R, 6, 0.45);
+  for (const r of partners) { beam(chest(r), weakPos, COLOR.gold, 0.4); r.hapGlow = 0.7; }
+  beam(weakPos, chest(p), COLOR.gold, 0.4);
+  p.hapGlow = 0.7;
+  B.squash = 0.45; B.sqT = 0;
+  rumble(0.3, 0.6, 90);
+}
+
+// 완벽한 합: 화면 전체가 반응한다.
+//   0.00  임팩트 프레임(흑백 실루엣 2장) + 정지 + 카메라가 두 사람과 약점을 한 프레임에 담는다
+//         집중선, 레터박스, 도장 글자, 소리는 먹먹해지고 두 음만 높게 운다
+//   정지가 풀리면  화음이 터지고 충격파·빛기둥·파편이 한 번에 퍼진다 → 아주 느린 데서 1배로 돌아온다
+//         두 사람에게 금빛 잔상이 남는다
+function perfectFx(p, weakPos, partners, dtr, unison = false) {
+  const B = G.boss, f = CFG.freezePerfect + (unison ? 0.12 : 0);
+  const rv = VOICE[(partners[0] ?? p).idx], hv = VOICE[p.idx];
+  G.hitstop = Math.max(G.hitstop, f);
+  G.freezeFx = true;
+  G.release = { rv, hv, weakPos, unison };
+  G.impact = CFG.impactFrames && !REDUCED ? 4 : 0;
+  G.flash = G.impact ? 0.5 : 0.9;
+  G.shake = Math.max(G.shake, 0.45);
+  const seen = [p, ...partners.filter(q => q.root.visible && q.alive)];
+  const focus = weakPos.clone(); seen.forEach(q => focus.add(q.pos)); focus.divideScalar(seen.length + 1).setY(0);
+  const spread = Math.max(...seen.map(q => distXZ(q.pos, focus)), distXZ(weakPos, focus));
+  G.cine = { t: 0, inT: 0.05, hold: f, outT: CFG.slowDur, focus, lookY: 1.4, zoom: clamp(CFG.zoomPerfect + spread * 0.035, CFG.zoomPerfect, 0.92), roll: (p.idx ? 1 : -1) * 0.06 };
+  if (CFG.speedLines) { G.lines = 0.85; G.linesPos.copy(weakPos); }
+  G.dim = 1;
+  if (CFG.letterbox) { document.body.classList.add('cine'); G.cineBody = f + CFG.slowDur * 0.9; }
+  const st = $('stamp');
+  $('stampWord').textContent = unison ? '합기' : '완벽한 합';
+  $('stampSub').textContent = unison ? '둘이 모은 기세' : dtr < 0 ? '믿고 먼저 휘둘렀다' : '동시에';
+  st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
+  SFX.perfectImpact(rv, hv, f);
+  impactStar(weakPos, 2.2, 0.5, true);
+  fxObjs[fxObjs.length - 1].t = 0.07; // 정지 중에도 다 핀 모양으로 멈춰 있게
+  for (const r of partners) { beam(chest(r), weakPos, COLOR.gold, 0.7); r.hapGlow = 1.2; }
+  beam(weakPos, chest(p), COLOR.gold, 0.7);
+  p.hapGlow = 1.2;
+  G.glowList = seen;
+  B.squash = 1; B.sqT = 0;
+  rumble(1, 1, f * 1000 + 120);
+}
+function releasePerfect() {
+  const R = G.release, B = G.boss;
+  G.release = null; G.freezeFx = false;
+  SFX.perfectRelease(R.rv, R.hv);
+  G.slow = { left: CFG.slowDur, dur: CFG.slowDur, from: CFG.slowFrom, ramp: true };
+  G.afterglow = CFG.slowDur; G.ghostT = 0;
+  G.shake = Math.max(G.shake, 0.85);
+  burst(R.weakPos, COLOR.gold, 40, 14, true); burst(R.weakPos, 0xffffff, 18, 9);
+  fxRing(B.pos, COLOR.gold, B.R, 12, 0.75, 0.9, 0, 0.14);
+  fxRing(B.pos, 0xffffff, B.R, 8, 0.5, 0.85, 0.05, 0.1);
+  fxRing(B.pos, 0x120d1f, B.R, 14, 0.9, 0.55, 0.1, 0.03);
+  lightPillar(B.pos, 0.9);
+  if (R.unison) { fxRing(B.pos, COLOR.fin, B.R, 16, 1.1, 0.8, 0.18, 0.1); burst(R.weakPos, COLOR.fin, 30, 11, true); tone(VOICE[0] / 4, 1.6, { type: 'triangle', vol: 0.2, rev: 0.6 }); }
+  rumble(0.5, 0.3, 280);
 }
 
 function playerHitsBoss(p) {
@@ -1635,6 +1895,72 @@ function idleCtrl(p) {
   return { move: IDLE_MOVE, atk: false, rcvHeld: !!p.latchRcv, rcvPressed: false, dodge: false, tag: false };
 }
 
+// ───────────────────────── 합 연출 보기 (자동 관람) ─────────────────────────
+// 사람이 조작하지 않아도 받기 → 합 / 완벽한 합이 번갈아 나온다. 폰으로도 연출을 볼 수 있게.
+const DEMO_SEQ = ['hap', 'perfect', 'trust'];
+const DEMO_TEXT = {
+  hap: ['합', '받기 성공을 <u>보고 나서</u> 친다 — 두 음이 따로 들려요'],
+  perfect: ['완벽한 합', '받기와 <u>동시에</u> 친다 — 두 음이 한 화음으로'],
+  trust: ['완벽한 합 · 믿고 먼저', '받기 성공을 <u>보기 전에</u> 이미 휘두른다'],
+};
+const demoCtrl = () => ({ move: V(), atk: false, rcvHeld: false, rcvPressed: false, dodge: false, tag: false });
+function walkTo(p, goal, c) {
+  const d = V(goal.x - p.pos.x, 0, goal.z - p.pos.z), l = d.length();
+  if (l > 0.12) c.move.copy(d.divideScalar(l).multiplyScalar(Math.min(1, l / 0.6)));
+  return l;
+}
+function walkAround(p, B, goalAng, rr, c) {
+  const a = Math.atan2(p.pos.z - B.pos.z, p.pos.x - B.pos.x);
+  let diff = goalAng - a; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  const na = a + Math.sign(diff) * Math.min(Math.abs(diff), 0.9);
+  walkTo(p, V(B.pos.x + Math.cos(na) * rr, 0, B.pos.z + Math.sin(na) * rr), c);
+  return Math.abs(diff);
+}
+function demoCaption(kind) {
+  const [t, d] = DEMO_TEXT[kind];
+  $('caption').innerHTML = `다음 · <b>${t}</b><br>${d}`;
+}
+function demoCtrls(dt) {
+  const D = G.demo, B = G.boss, P = G.players;
+  B.cd = 99;
+  if (B.hp < B.maxHp * 0.3) B.hp = B.maxHp;
+  D.t += dt;
+  const c = [demoCtrl(), demoCtrl()];
+  const rc = D.rcv, ht = P[1 - rc.idx], cr = c[rc.idx], ch = c[ht.idx];
+  switch (D.phase) {
+    case 'setup': {
+      const toR = dirTo(B.pos, rc.pos);
+      const lr = walkTo(rc, B.pos.clone().addScaledVector(toR, B.R + 1.6), cr);
+      const la = walkAround(ht, B, Math.atan2(-toR.z, -toR.x), B.R + 1.3, ch);
+      if (B.state === 'chase' && ((D.t > 1.2 && lr < 0.4 && la < 0.25) || D.t > 3.5)) {
+        B.target = rc; B.begin('slam'); D.phase = 'windup'; D.t = 0;
+      }
+      break;
+    }
+    case 'windup': {
+      if (B.state !== 'windup') { D.phase = 'gap'; D.t = 0; break; }
+      const left = B.atk.windup - B.t;
+      if (left <= 0.07) { cr.rcvHeld = true; cr.rcvPressed = !D.pressed; D.pressed = true; }
+      const lead = D.kind === 'perfect' ? CFG.attackWindup - 0.03 : D.kind === 'trust' ? CFG.attackWindup + 0.06 : -1;
+      if (lead > 0 && left <= lead && !D.swung) { ch.atk = true; D.swung = true; }
+      break;
+    }
+    case 'gap':
+      if (D.kind === 'hap' && !D.swung && B.state === 'gap' && G.now - B.gapStart >= 0.75) { ch.atk = true; D.swung = true; }
+      if ((B.state !== 'gap' && D.t > 0.2) || D.t > 5) { D.phase = 'after'; D.t = 0; }
+      break;
+    case 'after':
+      if (D.t > 1.4 && B.state === 'chase') {
+        D.i++; D.kind = DEMO_SEQ[D.i % DEMO_SEQ.length];
+        D.rcv = B.target && B.target.alive ? B.target : P[0]; // 합을 친 사람이 다음엔 노려진다 → 역할이 바뀐다
+        Object.assign(D, { phase: 'setup', t: 0, pressed: false, swung: false });
+        demoCaption(D.kind);
+      }
+      break;
+  }
+  return c;
+}
+
 function resolveCollisions() {
   const B = G.boss, list = activePlayers();
   for (const p of list) {
@@ -1668,6 +1994,10 @@ function step(dt) {
     me.update(dt, c);
     other.update(dt, idleCtrl(other));
     if (other.state !== 'receive') other.latchRcv = false;
+  } else if (G.mode === 'demo') {
+    const [c0, c1] = demoCtrls(dt);
+    G.players[0].update(dt, c0);
+    G.players[1].update(dt, c1);
   } else {
     G.players[0].update(dt, getCtrl(0));
     G.players[1].update(dt, getCtrl(1));
@@ -1694,7 +2024,8 @@ const $ = id => document.getElementById(id);
 function start(mode) {
   audio();
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
-  G.hitstop = G.slowmo = G.shake = G.punch = G.flash = 0; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
+  G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
+  resetCine();
   G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
@@ -1703,11 +2034,18 @@ function start(mode) {
   camTarget.set(0, 0, 1);
   titleEl.hidden = resultEl.hidden = true; hudEl.hidden = false; tuneBtn.hidden = false;
   G.players.forEach(p => (p.latchRcv = false));
+  const demo = mode === 'demo';
+  G.demo = demo ? { i: 0, kind: DEMO_SEQ[0], phase: 'setup', t: 0, rcv: G.players[0], pressed: false, swung: false } : null;
+  $('caption').hidden = $('demoBar').hidden = !demo;
+  if (demo) { demoCaption(G.demo.kind); G.players[1].reset(V(1.5, 0, -8.5), 0); }
+  else G.timeScale = 1;
+  syncDemoBar();
   G.players.forEach((p, i) => ($('name' + i).textContent = (mode === 'duo' ? `${i + 1}P ` : '') + p.char.name));
   $('hint').innerHTML = {
     solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받기 → <kbd>Q</kbd> 합 → <kbd>Q</kbd> 맺기 · 공격 범위 안에서 <kbd>Q</kbd> = 교대 받기',
     duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피 · 파트너가 위험할 때 받기 = 끼어들기',
     practice: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 조작 바꾸기 — 받기를 누른 채 바꾸면 받기 자세 유지 · 다른 캐릭터가 위험할 때 받기 = 끼어들기',
+    demo: '자동 관람 중 — 조작하지 않아도 돼요. 오른쪽 아래에서 연출을 기존/새 연출로 바꿔 비교할 수 있어요. <kbd>Esc</kbd> 나가기',
   }[mode];
   renderer.domElement.focus?.();
 }
@@ -1731,16 +2069,28 @@ function showResult() {
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
   resultEl.hidden = false; hudEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
+  $('caption').hidden = $('demoBar').hidden = true; resetCine();
   $('againBtn').focus();
 }
 function showTitle() {
   G.running = false;
   resultEl.hidden = true; hudEl.hidden = true; titleEl.hidden = false; tuneBtn.hidden = true; guiEl.hidden = true;
+  $('caption').hidden = $('demoBar').hidden = true; resetCine(); G.timeScale = 1;
   texts.forEach(t => t.el.remove()); texts.length = 0;
 }
 $('soloBtn').addEventListener('click', () => start('solo'));
 $('duoBtn').addEventListener('click', () => start('duo'));
 $('practiceBtn').addEventListener('click', () => start('practice'));
+$('demoBtn').addEventListener('click', () => start('demo'));
+const SPEEDS = [1, 0.5, 0.25];
+function syncDemoBar() {
+  $('fxBtn').textContent = `연출: ${CFG.fx}`;
+  $('fxBtn').classList.toggle('on', CFG.fx !== '기존');
+  $('speedBtn').textContent = `속도 ${G.timeScale}배`;
+}
+$('fxBtn').addEventListener('click', () => { CFG.fx = CFG.fx === '기존' ? '새 연출' : '기존'; syncDemoBar(); gui.controllersRecursive().forEach(c => c.updateDisplay()); });
+$('speedBtn').addEventListener('click', () => { G.timeScale = SPEEDS[(SPEEDS.indexOf(G.timeScale) + 1) % SPEEDS.length]; syncDemoBar(); });
+$('demoExit').addEventListener('click', showTitle);
 $('againBtn').addEventListener('click', () => start(G.mode));
 $('menuBtn').addEventListener('click', showTitle);
 
@@ -1765,6 +2115,16 @@ fA.add(CFG, 'attackWindup', 0.05, 0.5, 0.01).name('공격 예비 동작 (초)');
 fA.add(CFG, 'tagWindup', 0, 0.3, 0.01).name('태그 진입 공격 (초)');
 fA.add(CFG, 'bossTempo', 0.5, 2, 0.05).name('보스 공격 빈도');
 fA.add(CFG, 'bossHP', 100, 2000, 50).name('보스 체력 (다시 시작 시)');
+const fX = gui.addFolder('합 연출');
+fX.add(CFG, 'fx', ['새 연출', '기존']).name('연출').onChange(() => syncDemoBar());
+fX.add(CFG, 'freezePerfect', 0, 0.8, 0.01).name('완벽한 합 정지 (초)');
+fX.add(CFG, 'slowFrom', 0.05, 1, 0.05).name('정지 후 슬로모션 시작 배속');
+fX.add(CFG, 'slowDur', 0, 2, 0.05).name('슬로모션 → 1배 (초)');
+fX.add(CFG, 'zoomPerfect', 0.35, 1, 0.01).name('정지 중 카메라 거리');
+fX.add(CFG, 'impactFrames').name('흑백 임팩트 프레임');
+fX.add(CFG, 'speedLines').name('집중선');
+fX.add(CFG, 'letterbox').name('레터박스');
+fX.add(CFG, 'rumble').name('패드 진동');
 const fG = gui.addFolder('시선과 노림 (알파-2)');
 fG.add(CFG, 'aimOn').name('켜기 (끄면 원래 규칙)');
 fG.add(CFG, 'aimTime', 0.5, 6, 0.1).name('노림 가득까지 (초)');
@@ -1872,7 +2232,23 @@ function drawHud() {
   $('momLabel').textContent = G.mom >= 100 ? '기세 가득' : '기세';
   $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b> · 맺기 <b>${s.fin}</b> · 합기 <b>${s.unison}</b> · 노림 합 <b>${s.aimHap}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 잘 맞는 받기 ${s.fitReceive} · 놓친 틈 ${s.missed}<br>구함 ${s.save} · 풀어 준 충격 ${s.released} · 무너짐 ${s.broken}<br>마지막 합: ${last}`;
 }
-function fxUpdate(dt) {
+const DIM = new THREE.Color(0x05060b), tmpC = new THREE.Color();
+function fxUpdate(dt, fdt = dt) {
+  // 화면 연출 (실제 시간)
+  if (G.release) G.dim = 1; else G.dim = Math.max(0, G.dim - dt * 2.2);
+  const dm = G.dim * 0.72;
+  floorMat.color.set(style.floor).lerp(DIM, dm);
+  stoneMats.forEach(m => m.color.set(style.stone).lerp(DIM, dm));
+  groundMat.color.set(style.ground).lerp(DIM, dm);
+  scene.background.set(style.bg).lerp(DIM, dm);
+  if (!G.release) G.lines = Math.max(0, G.lines - dt * 4);
+  tmpV.copy(G.linesPos).project(camera);
+  drawLines((tmpV.x * 0.5 + 0.5) * innerWidth, (-tmpV.y * 0.5 + 0.5) * innerHeight, G.lines);
+  if (G.cineBody > 0) { G.cineBody -= dt; if (G.cineBody <= 0) document.body.classList.remove('cine'); }
+  if (G.afterglow > 0) {
+    G.afterglow -= dt; G.ghostT -= dt;
+    if (G.ghostT <= 0) { G.ghostT = 0.045; G.glowList.forEach(p => p.root.visible && ghost(p)); }
+  }
   for (let i = texts.length - 1; i >= 0; i--) {
     const t = texts[i]; t.t += dt;
     if (t.t >= t.life) { t.el.remove(); texts.splice(i, 1); continue; }
@@ -1883,16 +2259,27 @@ function fxUpdate(dt) {
     t.el.style.opacity = String(clamp((t.life - t.t) / 0.25, 0, 1));
   }
   for (let i = parts.length - 1; i >= 0; i--) {
-    const p = parts[i]; p.t += dt;
-    p.v.y -= 18 * dt; p.m.position.addScaledVector(p.v, dt);
+    const p = parts[i]; p.t += fdt;
+    p.v.y -= 18 * fdt; p.m.position.addScaledVector(p.v, fdt);
+    if (p.shard) p.m.lookAt(tmpV.copy(p.m.position).add(p.v));
     p.m.scale.setScalar(Math.max(0.01, 1 - p.t / p.life));
     if (p.t >= p.life) { scene.remove(p.m); parts.splice(i, 1); }
   }
   for (let i = fxObjs.length - 1; i >= 0; i--) {
-    const f = fxObjs[i]; f.t += dt;
+    const f = fxObjs[i]; f.t += fdt;
+    if (f.t < 0) continue;
+    f.obj.visible = true;
     const k = clamp(f.t / f.life, 0, 1);
-    if (f.kind === 'ring') f.obj.scale.setScalar(lerp(f.from, f.to, 1 - (1 - k) ** 3));
-    f.obj.material.opacity = f.opacity * (1 - k);
+    if (f.kind === 'star') {
+      f.obj.quaternion.copy(camera.quaternion);
+      f.obj.children.forEach(c => (c.rotation.z += f.spin * fdt));
+      const sc = f.t < 0.07 ? f.t / 0.07 : 1 - ((f.t - 0.07) / (f.life - 0.07)) ** 2;
+      f.obj.scale.setScalar(Math.max(0.001, f.size * sc));
+    } else {
+      if (f.kind === 'ring') f.obj.scale.setScalar(lerp(f.from, f.to, 1 - (1 - k) ** 3));
+      if (f.kind === 'pillar') f.obj.scale.set(1 - k * 0.9, 1, 1 - k * 0.9);
+      f.obj.material.opacity = f.opacity * (1 - k);
+    }
     if (k >= 1) { disposeTree(f.obj); fxObjs.splice(i, 1); }
   }
   G.flash = Math.max(0, G.flash - dt * 3.2);
@@ -1907,34 +2294,61 @@ function drawCamera(dt) {
   else focus.copy(G.boss.pos).multiplyScalar(0.5);
   focus.y = 0;
   camTarget.lerp(focus, 1 - Math.exp(-dt * 4));
-  const f = 1 - G.punch * 0.12;
-  camera.position.copy(camTarget).addScaledVector(CAM_OFFSET, f);
+  // 합 연출 카메라: 빠르게 다가가서 정지 동안 머물고, 슬로모션과 함께 천천히 빠진다
+  let a = 0;
+  const C = G.cine;
+  if (C) {
+    C.t += dt;
+    const out = C.t - C.inT - C.hold;
+    a = C.t < C.inT ? 1 - (1 - C.t / C.inT) ** 3 : out < 0 ? 1 : 1 - smooth(clamp(out / C.outT, 0, 1));
+    if (out >= C.outT) G.cine = null;
+  }
+  const base = tmpV.copy(camTarget);
+  if (a > 0) base.lerp(C.focus, a);
+  // 세로 화면(폰)에서는 아레나가 잘리지 않게 조금 물러난다
+  const fit = camera.aspect < 1.1 ? Math.pow(1.1 / camera.aspect, 0.7) : 1;
+  const f = (1 - G.punch * 0.12) * (a > 0 ? lerp(1, C.zoom, a) : 1) * fit;
+  camera.position.copy(base).addScaledVector(CAM_OFFSET, f);
   const sh = G.shake * G.shake * (REDUCED ? 0.25 : 1) * 0.6;
   if (sh > 0) camera.position.add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh));
-  camera.lookAt(camTarget.x, 1, camTarget.z);
+  camera.lookAt(base.x, a > 0 ? lerp(1, C.lookY, a) : 1, base.z);
+  if (a > 0 && C.roll && !REDUCED) camera.rotateZ(C.roll * a);
+}
+const smooth = k => k * k * (3 - 2 * k);
+function resetCine() {
+  Object.assign(G, { freezeFx: false, release: null, impact: 0, cine: null, lines: 0, dim: 0, cineBody: 0, afterglow: 0, glowList: [] });
+  document.body.classList.remove('cine');
+  $('stamp').classList.remove('go');
 }
 
 let lastMs = performance.now();
 function frame(ms) {
   requestAnimationFrame(frame);
-  const raw = Math.min(0.05, (ms - lastMs) / 1000);
+  const raw = Math.min(0.05, (ms - lastMs) / 1000) * G.timeScale;
   lastMs = ms;
   G.time += raw;
   if (G.running) {
-    if (G.hitstop > 0) G.hitstop -= raw;
+    if (G.hitstop > 0) { G.hitstop -= raw; if (G.hitstop <= 0 && G.release) releasePerfect(); }
     else {
       let dt = raw;
-      if (G.slowmo > 0) { G.slowmo -= raw; dt *= 0.35; }
+      if (G.slow) {
+        const s = G.slow; s.left -= raw;
+        const k = 1 - Math.max(0, s.left) / s.dur;
+        dt *= s.ramp ? lerp(s.from, 1, k * k) : s.from;
+        if (s.left <= 0) G.slow = null;
+      }
       step(dt);
       clearInputEdges();
     }
     drawHud();
   } else clearInputEdges();
-  G.players.forEach(p => p.draw(raw));
-  G.boss.draw(raw);
-  fxUpdate(raw);
+  const fdt = G.freezeFx ? 0 : raw; // 완벽한 합 정지 중에는 모양과 파티클도 멈춘다
+  G.players.forEach(p => p.draw(fdt));
+  G.boss.draw(fdt);
+  fxUpdate(raw, fdt);
   drawCamera(raw);
-  renderer.render(scene, camera);
+  if (G.impact > 0) { renderImpact(G.impact > 2 ? 0 : 1); G.impact--; }
+  else renderer.render(scene, camera);
 }
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
@@ -1945,5 +2359,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit };
+window.__game = { G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
 </script>
