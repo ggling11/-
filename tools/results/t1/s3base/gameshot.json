@@ -1,0 +1,18 @@
+{
+ "dash": {
+  "note": "dash dodge",
+  "calls": 493,
+  "tris": 33026,
+  "art": 0,
+  "ms": 3775,
+  "errors": []
+ },
+ "qte": {
+  "note": "qte true cells 5 done 2",
+  "calls": 486,
+  "tris": 32958,
+  "art": 0,
+  "ms": 3428,
+  "errors": []
+ }
+}
