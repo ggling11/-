@@ -1,4 +1,4 @@
-<title>합 연출 실험</title>
+<title>합 알파 프로토타입</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
@@ -15,6 +15,7 @@
   --gold: #ffd23f;
   --danger: #ff5a36;
   --unblock: #b06cff;
+  --impact: #ff9a3c;
   --font-display: "Black Han Sans", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
   --font-body: "IBM Plex Sans KR", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
   color-scheme: dark;
@@ -45,6 +46,12 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .pcard.p2 .bar > i { background: var(--p2); }
 .pcard.bench { opacity: 0.5; transform: scale(0.94); }
 .pcard.p2 { justify-self: end; }
+/* [알파] 충격 칸: 받을 때마다 차오르고, 합이 풀어 준다 */
+.imp { display: flex; align-items: center; gap: 7px; min-height: 14px; font-size: 11px; color: var(--ink-dim); }
+.imp i { width: 9px; height: 9px; transform: rotate(45deg); background: rgba(255,255,255,0.1); border: 1px solid var(--line); }
+.imp i.on { background: var(--impact); border-color: var(--impact); }
+.imp.full i.on { background: var(--danger); border-color: var(--danger); }
+.imp.full b { color: var(--danger); font-weight: 600; }
 .hint { flex: 0 1 auto; min-width: 0; margin-inline: auto; text-align: center; font-size: 12px; line-height: 1.8; color: var(--ink-dim); align-self: end; background: rgba(10, 13, 22, 0.55); border-radius: 4px; padding: 4px 10px; }
 .hint kbd { font-family: var(--font-body); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; color: var(--ink); }
 
@@ -60,7 +67,20 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .ft.sub { font-family: var(--font-body); font-weight: 600; font-size: 14px; color: var(--gold); }
 .ft.hint { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink-dim); }
 .ft.warn { font-size: 20px; color: var(--danger); }
+.ft.fin { font-size: 38px; color: #bff6ff; text-shadow: 0 0 16px rgba(120,230,255,0.7), 0 4px 0 rgba(0,0,0,0.6); }
+.ft.unison { font-size: 84px; color: #fff; text-shadow: 0 0 20px #bff6ff, 0 0 36px var(--gold), 0 0 64px rgba(255,210,63,0.8), 0 6px 0 rgba(0,0,0,0.6); }
+.ft.save { font-size: 26px; color: #9ff0c8; text-shadow: 0 0 12px rgba(120,255,190,0.5), 0 3px 0 rgba(0,0,0,0.55); }
+.ft.release { font-size: 20px; color: var(--impact); }
 .ft.small { font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--ink-dim); }
+
+/* 기세: 두 사람이 함께 쌓는 공동 게이지 */
+.mom { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em; }
+.mom .bar { height: 6px; }
+.mom .bar > i { width: 0%; background: linear-gradient(90deg, #7fe3ff, var(--gold)); }
+.mom.full { color: var(--gold); }
+.mom.full .bar { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,210,63,0.7); animation: momPulse 0.6s ease-in-out infinite alternate; }
+@keyframes momPulse { from { box-shadow: 0 0 4px rgba(255,210,63,0.4); } to { box-shadow: 0 0 14px rgba(255,210,63,0.95); } }
+@media (prefers-reduced-motion: reduce) { .mom.full .bar { animation: none; } }
 
 #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 45%, rgba(255,240,190,0.9), rgba(255,210,63,0.25) 45%, transparent 75%); mix-blend-mode: screen; }
 
@@ -147,7 +167,7 @@ td:first-child { color: var(--ink-dim); }
 <div id="texts"></div>
 <canvas id="lines"></canvas>
 <div class="lb top"></div><div class="lb bot"></div>
-<div id="stamp"><div class="w">완벽한 합</div><div class="s" id="stampSub"></div></div>
+<div id="stamp"><div class="w" id="stampWord">완벽한 합</div><div class="s" id="stampSub"></div></div>
 <div id="caption" hidden></div>
 <div id="demoBar" hidden>
   <button class="btn" id="fxBtn" type="button">연출: 새 연출</button>
@@ -160,6 +180,7 @@ td:first-child { color: var(--ink-dim); }
     <div class="boss">
       <div class="boss-name">시험용 보스 · 밤의 문지기</div>
       <div class="bar"><i id="bossHp"></i></div>
+      <div class="mom" id="momWrap"><span id="momLabel">기세</span><div class="bar"><i id="mom"></i></div></div>
     </div>
     <div class="stats" id="stats"></div>
   </div>
@@ -168,11 +189,13 @@ td:first-child { color: var(--ink-dim); }
     <div class="pcard p1" id="card0">
       <div class="row"><span class="name" id="name0">1P</span><span class="state" id="state0"></span></div>
       <div class="bar"><i id="hp0"></i></div>
+      <div class="imp" id="imp0"></div>
     </div>
     <div class="hint" id="hint"></div>
     <div class="pcard p2" id="card1">
       <div class="row"><span class="name" id="name1">2P</span><span class="state" id="state1"></span></div>
       <div class="bar"><i id="hp1"></i></div>
+      <div class="imp" id="imp1"></div>
     </div>
   </div>
 </div>
@@ -189,6 +212,12 @@ td:first-child { color: var(--ink-dim); }
     <p class="rule">한 명이 보스 공격을 <strong>받아내면</strong>, 보스의 틈은 <strong>파트너 쪽</strong>으로 열려요.
       그 틈을 치면 <strong>합</strong>. 받기와 거의 동시에 치면 <strong>완벽한 합</strong>이에요.
       혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
+    <p class="rule">합을 맞으면 보스는 <strong>받아낸 사람 쪽으로</strong> 휘청여요. 반동이 풀린 받은 사람이 그쪽을 치면 <strong>맺기</strong>.
+      (혼자 할 때는 합 직후 한 번 더 태그.) 합과 맺기로 <strong>기세</strong>가 차고, 기세가 가득할 때 완벽한 합을 내면 <strong>합기</strong>가 터져요.</p>
+    <p class="rule"><strong>충격</strong>: 받을 때마다 몸에 충격이 쌓여요(정확한 받기 1칸, 버티기 2칸). 칸이 넘치면 받기가 깨져요.
+      파트너가 합을 치면 쌓인 충격이 <strong>전부 피해로 풀려요</strong>. 네가 받은 만큼 내가 친다.<br>
+      <strong>끼어들기</strong>: 파트너가 공격 범위에 갇혔을 때 받기를 누르면 앞으로 뛰어들어 대신 받아요.
+      혼자 할 때는 공격 범위 안에서 태그하면 들어오는 캐릭터가 받기 자세로 들어와요.</p>
     <div class="modes">
       <button class="mode" id="soloBtn" type="button">
         <span class="big">혼자 하기</span>
@@ -223,6 +252,7 @@ td:first-child { color: var(--ink-dim); }
       <span><i style="background: var(--danger)"></i>주황 표시: 받아낼 수 있는 공격</span>
       <span><i style="background: var(--unblock)"></i>보라 표시: 받을 수 없음, 피하기</span>
       <span><i style="background: #fff"></i>받기 링이 흰색일 때 맞으면 정확한 받기</span>
+      <span><i style="background: var(--impact)"></i>머리 위 마름모: 쌓인 충격 (빨강이면 한계)</span>
     </div>
     <p class="note">키보드나 게임패드가 필요해요. 패드는 연결한 뒤 버튼을 한 번 눌러 주세요. 게임 중 <kbd>`</kbd> 키로 판정 시간과 배율, 아트 스타일을 바꿀 수 있어요. <kbd>Esc</kbd>는 이 화면으로 돌아와요.</p>
   </div>
@@ -293,6 +323,35 @@ const CFG = {
   speedLines: true,
   letterbox: true,
   rumble: true,          // 게임패드 진동
+  // ── 알파-1: 합 다음에 이어지는 것 ──
+  // 맺기: 합을 맞은 보스는 받은 사람 쪽으로 휘청인다. 받은 사람이 그쪽을 치면 맺기.
+  finOn: true,
+  finWindow: 1.3,        // 합 이후 맺기를 칠 수 있는 시간 (이만큼 보스 휘청임이 보장된다)
+  finMul: 2.5,           // 맺기 배율
+  finStaggerAdd: 0.5,    // 맺기가 들어가면 휘청임이 이만큼 늘어난다
+  finHalfAngle: 110,     // 맺기 틈 범위 (받은 사람 쪽 기준 ±도)
+  // 기세: 두 사람이 함께 쌓는 게이지. 가득 차면 다음 완벽한 합이 합기가 된다.
+  momOn: true,
+  momReceive: 4, momPerfectReceive: 8, momHap: 18, momPerfectHap: 26, momFin: 16,
+  momMiss: 15,           // 틈을 놓치면 깎임
+  momHurt: 10,           // 정통으로 맞으면 깎임
+  unisonNeedsPerfect: true,
+  unisonMul: 8,          // 합기 배율 (완벽한 합 배율 대신)
+  unisonStagger: 2.2,
+  // [알파] 충격: 받은 것은 몸에 쌓이고, 합이 풀어 준다
+  impact: true,
+  impactMax: 3,
+  impactPerfect: 1,      // 정확한 받기 1칸
+  impactGuard: 2,        // 버티기 2칸 (무겁게 버틴 만큼 더 쌓임)
+  impactDmg: 10,         // 합 때 충격 1칸당 더해지는 피해 (합 배율 적용 전)
+  impactRest: 7,         // 필드에서 받지 않고 이 시간이 지나면 1칸 풀림
+  impactRestBench: 2.5,  // 솔로 대기 캐릭터는 쉬면서 빨리 풀림
+  breakStun: 1.0,        // 칸이 넘쳐 받기가 깨졌을 때 경직
+  // [알파] 끼어들기: 위험한 파트너 앞으로 뛰어들어 대신 받기
+  cover: true,
+  coverRange: 6,
+  coverDash: 0.16,
+  coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
 };
 
 const ATTACKS = {
@@ -308,7 +367,7 @@ const STYLES = {
   '강한 대비': { bg: 0x0f1218, ground: 0x0b0d12, floor: 0x4a5160, stone: 0x5c6273, steps: [0.16, 1], outline: 0x000000, outlineScale: 1.1, hemi: 1.1, sun: 3.2 },
 };
 
-const COLOR = { p1: 0xff7a59, p2: 0x45c4ff, boss: 0x5b3a8c, gold: 0xffd23f, recv: 0xff5a36, unblock: 0xb06cff };
+const COLOR = { p1: 0xff7a59, p2: 0x45c4ff, boss: 0x5b3a8c, gold: 0xffd23f, recv: 0xff5a36, unblock: 0xb06cff, fin: 0x7fe3ff, impact: 0xff9a3c, save: 0x9ff0c8 };
 const ARENA_R = 14, PLAYER_R = 0.5, SPEED = 6.2;
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -591,6 +650,18 @@ const SFX = {
     tone(62, 0.8, { vol: 0.5, to: 30 });
     noise(0.7, { vol: 0.25, freq: 6000, type: 'lowpass', to: 300, rev: 0.5 });
   },
+  // 맺기: 합 화음(도미솔)을 한 옥타브 위에서 받아 닫는 소리
+  fin() { [1046.5, 1318.5, 1568].forEach((f, i) => tone(f, 0.45, { type: 'triangle', vol: 0.1, delay: i * 0.035 })); tone(130.8, 0.3, { vol: 0.3, to: 65 }); noise(0.08, { vol: 0.18, freq: 1400 }); },
+  momFull() { [783.99, 1046.5, 1318.5, 1568].forEach((f, i) => tone(f, 0.25, { type: 'sine', vol: 0.06, delay: i * 0.06 })); },
+  unison() {
+    SFX.perfectHap();
+    [261.63, 392, 523.25, 659.25, 783.99, 1046.5].forEach(f => tone(f, 1.6, { type: 'triangle', vol: 0.09, delay: 0.12 }));
+    tone(2637, 1.0, { vol: 0.05, delay: 0.14 }); tone(55, 1.1, { vol: 0.55, to: 27, delay: 0.1 }); noise(0.5, { vol: 0.3, freq: 400, delay: 0.1 });
+  },
+  cover() { noise(0.16, { vol: 0.14, freq: 1400 }); tone(440, 0.18, { type: 'triangle', vol: 0.08, to: 880 }); },
+  save() { tone(783.99, 0.3, { type: 'triangle', vol: 0.1 }); tone(1174.66, 0.35, { type: 'triangle', vol: 0.08, delay: 0.06 }); },
+  crack() { noise(0.25, { vol: 0.3, freq: 2600 }); tone(160, 0.4, { type: 'sawtooth', vol: 0.12, to: 60 }); },
+  release(n) { for (let i = 0; i < n; i++) tone(392 * Math.pow(1.26, i), 0.4, { type: 'triangle', vol: 0.08, delay: 0.04 * i }); },
 };
 const VOICE = [523.25, 783.99]; // 1P/캐릭터 A = 도, 2P/캐릭터 B = 솔 → 겹치면 완전5도
 
@@ -687,12 +758,18 @@ class Player {
     this.shield.position.set(0, 1.0, 0.72); this.spin.add(this.shield);
     this.mark = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.42, 4), new THREE.MeshBasicMaterial({ color: COLOR.recv }));
     this.mark.rotation.x = Math.PI; this.mark.position.y = 2.4; this.root.add(this.mark);
+    // [알파] 충격 칸: 머리 위 마름모 (화면 가로 방향으로 나란히)
+    this.pips = [];
+    for (let i = 0; i < 5; i++) {
+      const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), new THREE.MeshBasicMaterial({ color: COLOR.impact, transparent: true, depthWrite: false }));
+      this.root.add(m); this.pips.push(m);
+    }
     scene.add(this.root);
     this.reset(V(), 0);
   }
   reset(pos, yaw) {
     this.root.position.copy(pos); this.yaw = yaw;
-    Object.assign(this, { hp: 100, state: 'free', t: 0, kb: V(), rcvCd: 0, dodgeCd: 0, iframe: 0, flash: 0, aggro: 0, queued: false, hapGlow: 0, respawnT: 0, receiveStart: -9 });
+    Object.assign(this, { hp: 100, state: 'free', t: 0, kb: V(), rcvCd: 0, dodgeCd: 0, iframe: 0, flash: 0, aggro: 0, queued: false, hapGlow: 0, respawnT: 0, receiveStart: -9, impact: 0, restT: 0, coveredBy: null, coverTarget: null, forceRcv: 0 });
     this.root.visible = true;
     this.tilt.quaternion.identity();
   }
@@ -718,7 +795,7 @@ class Player {
     popText(above(this), '복귀', 'small');
   }
   update(dt, c) {
-    this.rcvCd -= dt; this.dodgeCd -= dt; this.iframe -= dt; this.flash -= dt;
+    this.rcvCd -= dt; this.dodgeCd -= dt; this.iframe -= dt; this.flash -= dt; this.forceRcv -= dt;
     if (this.state === 'down') {
       if (isDuo()) { this.respawnT -= dt; if (this.respawnT <= 0) this.revive(); }
       return;
@@ -728,6 +805,7 @@ class Player {
     switch (this.state) {
       case 'free':
         if (c.dodge && this.dodgeCd <= 0) { this.startDodge(dodgeDir()); break; }
+        if (c.rcvPressed && this.tryCover()) break;
         if (c.rcvPressed && this.rcvCd <= 0) { this.state = 'receive'; this.receiveStart = G.now; break; }
         if (c.atk) { this.startAttack(); break; }
         this.pos.addScaledVector(c.move, SPEED * dt);
@@ -735,7 +813,7 @@ class Player {
         break;
       case 'receive':
         if (c.dodge && this.dodgeCd <= 0) { this.startDodge(dodgeDir()); break; }
-        if (!c.rcvHeld) { this.state = 'free'; this.rcvCd = CFG.receiveCooldown; break; }
+        if (!c.rcvHeld && this.forceRcv <= 0) { this.state = 'free'; this.rcvCd = CFG.receiveCooldown; break; }
         this.pos.addScaledVector(c.move, SPEED * 0.25 * dt);
         if (!B.dead) this.faceDir(dirTo(this.pos, B.pos), dt * 10);
         break;
@@ -743,7 +821,7 @@ class Player {
         this.t += dt;
         if (!this.hitDone) {
           const gap = distXZ(this.pos, B.pos) - B.R - PLAYER_R;
-          const lungeRange = 3.2 + (B.state === 'gap' && !B.hapDone ? CFG.gapReachBonus : 0);
+          const lungeRange = 3.2 + ((B.state === 'gap' && !B.hapDone) || finFor(this) ? CFG.gapReachBonus : 0);
           if (this.lunge && gap < lungeRange && !B.dead) {
             const to = dirTo(this.pos, B.pos);
             this.faceDir(to, dt * 25);
@@ -752,6 +830,7 @@ class Player {
           if (this.t >= this.windup) { this.hitDone = true; playerHitsBoss(this); }
         } else {
           if (c.atk) this.queued = true;
+          if (c.rcvPressed && this.tryCover()) break;
           if (c.dodge && this.dodgeCd <= 0) { this.startDodge(dodgeDir()); break; }
           if (this.t >= this.windup + CFG.attackRecover) { if (this.queued) this.startAttack(); else this.state = 'free'; }
         }
@@ -762,8 +841,22 @@ class Player {
         this.t -= dt;
         this.pos.addScaledVector(this.kb, dt);
         this.kb.multiplyScalar(Math.pow(0.02, dt));
-        if (this.t <= 0) this.state = 'free';
+        // 반동 중에 누른 공격은 기억해 뒀다가 반동이 풀리는 순간 나간다 (맺기를 놓치지 않게)
+        if (this.state === 'recoil' && c.atk) this.queued = true;
+        if (this.t <= 0) {
+          const go = this.state === 'recoil' && this.queued;
+          this.state = 'free';
+          if (go) this.startAttack();
+        }
         break;
+      case 'cover': {
+        this.t += dt;
+        const k = clamp(this.t / CFG.coverDash, 0, 1);
+        this.pos.lerpVectors(this.coverFrom, this.coverTo, 1 - (1 - k) ** 2);
+        this.faceDir(dirTo(this.pos, this.coverSrc), dt * 30);
+        if (k >= 1) { this.state = 'receive'; this.receiveStart = G.now; this.forceRcv = CFG.coverHold; }
+        break;
+      }
       case 'dodge':
         this.t -= dt;
         this.pos.addScaledVector(this.dodgeDir, CFG.dodgeSpeed * dt);
@@ -772,22 +865,50 @@ class Player {
         break;
     }
   }
+  // [알파] 끼어들기: 파트너가 받을 수 있는 공격 범위에 갇혔고(받기 안 하는 중이거나 충격이 한계), 나는 범위 밖일 때
+  tryCover() {
+    if (!CFG.cover || G.mode === 'solo') return false;
+    const B = G.boss, A = B.atk, mate = G.players[1 - this.idx];
+    if (B.state !== 'windup' || !A?.receivable || !mate.alive) return false;
+    if (inThreat(this, A) || !inThreat(mate, A)) return false;
+    if (mate.state === 'dodge' || (mate.state === 'receive' && mate.impact < CFG.impactMax)) return false;
+    if (distXZ(this.pos, mate.pos) > CFG.coverRange) return false;
+    let to, src;
+    if (A.kind === 'charge') {
+      src = B.pos.clone();
+      const along = (mate.pos.x - B.pos.x) * A.dir.x + (mate.pos.z - B.pos.z) * A.dir.z;
+      to = B.pos.clone().addScaledVector(A.dir, Math.max(B.R + 0.7, along - 1.05));
+    } else {
+      src = distXZ(mate.pos, A.center) > 0.4 ? A.center.clone() : B.pos.clone();
+      if (A.kind === 'slam') src = B.pos.clone();
+      to = mate.pos.clone().addScaledVector(dirTo(mate.pos, src), 1.05);
+    }
+    to.y = 0;
+    Object.assign(this, { state: 'cover', t: 0, coverFrom: this.pos.clone(), coverTo: to, coverSrc: src, coverTarget: mate, queued: false });
+    mate.coveredBy = this;
+    SFX.cover();
+    popText(above(this, 2.9), '맡을게!', 'small', 0.6);
+    beam(this.pos.clone().setY(1.0), to.clone().setY(1.0), this.color, 0.25);
+    return true;
+  }
   draw(dt) {
     this.spin.rotation.y = this.yaw;
     const s = this.state, k = 1 - Math.exp(-dt * 14);
     if (s === 'recoil' || s === 'hurt') setLean(this.tilt, this.kb.clone().normalize(), 0.4, k);
     else if (s === 'down') setLean(this.tilt, this.forward().negate(), 1.45, k);
     else if (s === 'dodge') setLean(this.tilt, this.dodgeDir, 0.45, k);
+    else if (s === 'cover') setLean(this.tilt, dirTo(this.pos, this.coverTo), 0.5, k);
     else if (s === 'attack') setLean(this.tilt, this.forward(), this.hitDone ? 0.25 : -0.15, k);
     else setLean(this.tilt, null, 0, k);
     let armY = 0.25;
     if (s === 'attack') armY = !this.hitDone ? lerp(0.25, 1.5, this.t / this.windup) : lerp(-1.6, 0.25, clamp((this.t - this.windup) / CFG.attackRecover, 0, 1));
     this.arm.rotation.y = armY;
-    const recv = s === 'receive';
+    const recv = s === 'receive' || s === 'cover';
     this.ring.visible = this.shield.visible = recv;
     if (recv) {
-      const perfect = G.now - this.receiveStart <= CFG.perfectWindow;
-      this.ring.material.color.set(perfect ? 0xffffff : this.color);
+      const perfect = s === 'receive' && G.now - this.receiveStart <= CFG.perfectWindow;
+      const limit = CFG.impact && this.impact >= CFG.impactMax;
+      this.ring.material.color.set(perfect ? 0xffffff : limit ? COLOR.recv : this.color);
       this.ring.scale.setScalar(perfect ? 1.18 : 1);
     }
     this.hapGlow -= dt;
@@ -802,6 +923,19 @@ class Player {
     this.mark.visible = isDuo() && G.boss.target === this && !G.boss.dead && s !== 'down';
     this.mark.position.y = 2.4 + Math.sin(G.time * 6) * 0.08;
     this.foot.visible = s !== 'down';
+    // 충격 칸
+    const n = Math.min(CFG.impactMax, this.pips.length), full = this.impact >= CFG.impactMax;
+    const restFrac = clamp(this.restT / CFG.impactRest, 0, 1);
+    this.pips.forEach((m, i) => {
+      m.visible = CFG.impact && s !== 'down' && i < n;
+      if (!m.visible) return;
+      m.position.copy(RIGHT).multiplyScalar((i - (n - 1) / 2) * 0.32).setY(2.02);
+      const on = i < this.impact;
+      m.material.color.set(on ? (full ? COLOR.recv : COLOR.impact) : 0xffffff);
+      m.material.opacity = on ? (i === this.impact - 1 ? 1 - 0.55 * restFrac : 1) : 0.16;
+      m.scale.setScalar(on && full ? 1.15 + Math.sin(G.time * 12) * 0.15 : on ? 1 : 0.8);
+      m.rotation.y = G.time * 2;
+    });
     const practice = G.mode === 'practice', ctrl = practice && G.active === this.idx;
     this.foot.material.color.set(ctrl ? 0xffffff : this.color);
     this.foot.material.opacity = practice && !ctrl ? 0.25 : ctrl ? 0.95 : 0.55;
@@ -899,22 +1033,23 @@ class Boss {
     this.hp -= n; this.hitFlash = 0.1;
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true; this.state = 'dead';
-      this.tele?.dispose(); this.tele = null; this.hideOpen();
+      this.tele?.dispose(); this.tele = null; this.hideOpen(); G.fin = null;
       if (this.shockMesh) { disposeTree(this.shockMesh); this.shockMesh = null; }
       burst(V(this.pos.x, 2, this.pos.z), COLOR.gold, 40, 9);
       fxRing(this.pos, COLOR.gold, 1, 12, 0.9);
       SFX.perfectHap();
     }
   }
-  showOpen() {
+  showOpen(dir = this.openDir, color = COLOR.gold, halfDeg = CFG.openHalfAngle) {
     this.weak.visible = true;
-    this.weak.position.copy(this.openDir).multiplyScalar(this.R * 0.95).setY(2.1);
+    this.weak.position.copy(dir).multiplyScalar(this.R * 0.95).setY(2.1);
+    this.weak.children[1].material.color.set(color);
     if (this.arc) disposeTree(this.arc);
-    const half = (CFG.openHalfAngle * Math.PI) / 180;
-    this.arc = new THREE.Mesh(new THREE.RingGeometry(this.R + 0.35, this.R + 2.0 + CFG.gapReachBonus, 48, 1, -half, half * 2), basicT(COLOR.gold, 0.45));
+    const half = (halfDeg * Math.PI) / 180;
+    this.arc = new THREE.Mesh(new THREE.RingGeometry(this.R + 0.35, this.R + 2.0 + CFG.gapReachBonus, 48, 1, -half, half * 2), basicT(color, 0.45));
     this.arc.rotation.x = -Math.PI / 2;
     this.arcHolder.add(this.arc);
-    this.arcHolder.rotation.y = -Math.atan2(this.openDir.z, this.openDir.x);
+    this.arcHolder.rotation.y = -Math.atan2(dir.z, dir.x);
   }
   hideOpen() {
     this.weak.visible = false;
@@ -924,6 +1059,7 @@ class Boss {
     this.hideOpen();
     popText(above(this, 4.2), '틈을 놓쳤다', 'hint');
     SFX.miss(); G.stats.missed++;
+    addMom(-CFG.momMiss);
     this.state = 'recover'; this.t = 0.35;
   }
   update(dt) {
@@ -959,7 +1095,11 @@ class Boss {
       case 'active': this.t += dt; this.activeStep(dt); break;
       case 'recover': this.t -= dt; if (this.t <= 0) this.state = 'chase'; break;
       case 'gap': this.gapT -= dt; if (this.gapT <= 0) this.closeGap(); break;
-      case 'stagger': this.t -= dt; if (this.t <= 0) { this.state = 'chase'; this.cd = 0.8; } break;
+      case 'stagger':
+        this.t -= dt;
+        if (G.fin && G.now > G.fin.until) closeFin();
+        if (this.t <= 0) { closeFin(); this.state = 'chase'; this.cd = 0.8; }
+        break;
     }
   }
   choose(d) {
@@ -973,6 +1113,7 @@ class Boss {
   begin(kind) {
     const A = { kind, ...ATTACKS[kind] }, tgt = this.target;
     this.atk = A; this.state = 'windup'; this.t = 0; this.hitSet = new Set();
+    G.players.forEach(q => { q.coveredBy = q.coverTarget = null; });
     if (kind === 'slam') {
       const to = dirTo(this.pos, tgt.pos), d = distXZ(this.pos, tgt.pos);
       A.center = this.pos.clone().addScaledVector(to, clamp(d, this.R + 0.6, this.R + 2.2)).setY(0);
@@ -1002,12 +1143,16 @@ class Boss {
       if (A.kind === 'midSlam') { this.pos.x = A.center.x; this.pos.z = A.center.z; this.root.position.y = 0; }
       G.shake = Math.max(G.shake, 0.35); SFX.slam();
       fxRing(A.center, 0xffffff, 0.5, A.radius + 0.6, 0.35, 0.5);
-      const receivers = [];
-      for (const p of activePlayers()) {
-        if (distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6) {
-          const r = bossHitsPlayer(p, A, A.center);
-          if (r === 'perfect' || r === 'guard') receivers.push({ p, r });
-        }
+      const receivers = [], guarding = p => p.state === 'receive' || p.state === 'cover';
+      const inZone = activePlayers().filter(p => distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6);
+      // 받는 사람 먼저 처리해야 끼어들기로 구해진 파트너를 가릴 수 있다
+      for (const p of inZone.filter(guarding)) {
+        const r = bossHitsPlayer(p, A, A.center);
+        if (r === 'perfect' || r === 'guard') receivers.push({ p, r });
+      }
+      for (const p of inZone.filter(q => !guarding(q))) {
+        if (p.coveredBy && receivers.some(x => x.p === p.coveredBy)) continue;
+        bossHitsPlayer(p, A, A.center);
       }
       if (receivers.length) return openGap(receivers);
       this.state = 'recover'; this.t = 0.7;
@@ -1083,7 +1228,7 @@ const G = {
   // 합 연출
   timeScale: 1, freezeFx: false, release: null, impact: 0, cine: null, lines: 0, linesPos: V(), dim: 0, cineBody: 0, afterglow: 0, glowList: [], ghostT: 0, demo: null,
   players: [], boss: null, active: 0, tagCd: 0, autoTag: 0,
-  recentHits: [], stats: null,
+  recentHits: [], stats: null, mom: 0, fin: null,
 };
 G.players = [new Player(0, COLOR.p1), new Player(1, COLOR.p2)];
 G.boss = new Boss();
@@ -1094,6 +1239,18 @@ function activePlayers() {
   if (G.mode === 'solo') { const p = G.players[G.active]; return p.alive ? [p] : []; }
   return G.players.filter(p => p.alive);
 }
+// [알파] 이 공격 예고 범위 안에 있는가 (끼어들기 판단용)
+function inThreat(p, A) {
+  const B = G.boss;
+  if (!A || !p.alive) return false;
+  if (A.kind === 'slam' || A.kind === 'midSlam') return distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6;
+  if (A.kind === 'charge') {
+    const rx = p.pos.x - B.pos.x, rz = p.pos.z - B.pos.z;
+    const along = rx * A.dir.x + rz * A.dir.z, lat = Math.abs(rx * A.dir.z - rz * A.dir.x);
+    return along > 0 && along < A.len + B.R && lat < B.R + PLAYER_R;
+  }
+  return false;
+}
 function inOpenSide(p) {
   const B = G.boss;
   return dirTo(B.pos, p.pos).dot(B.openDir) >= Math.cos((CFG.openHalfAngle * Math.PI) / 180);
@@ -1102,10 +1259,16 @@ function inOpenSide(p) {
 function bossHitsPlayer(p, A, src) {
   if (!p.alive) return 'none';
   if (p.state === 'dodge' && p.iframe > 0) { popText(above(p), '회피', 'small', 0.6); return 'dodge'; }
-  if (p.state === 'receive') {
+  if (p.state === 'receive' || p.state === 'cover') {
     if (!A.receivable) popText(above(p, 3.1), '받기 불가!', 'warn');
     else {
-      if (G.now - p.receiveStart <= CFG.perfectWindow) return 'perfect';
+      const perfect = p.state === 'receive' && G.now - p.receiveStart <= CFG.perfectWindow;
+      if (CFG.impact) {
+        const add = perfect ? CFG.impactPerfect : CFG.impactGuard;
+        if (p.impact + add > CFG.impactMax) { breakGuard(p, A, src); return 'hit'; }
+        p.impact += add; p.restT = 0;
+      }
+      if (perfect) return 'perfect';
       if (!CFG.infiniteHP) p.hp -= A.dmg * CFG.guardChip;
       if (p.hp <= 0) { downPlayer(p); return 'hit'; }
       return 'guard';
@@ -1113,11 +1276,31 @@ function bossHitsPlayer(p, A, src) {
   }
   if (!CFG.infiniteHP) p.hp -= A.dmg;
   p.flash = 0.2;
+  addMom(-CFG.momHurt);
   SFX.hurt(); G.shake = Math.max(G.shake, 0.25);
   popText(above(p), `-${A.dmg}`, 'hurt', 0.7);
   p.state = 'hurt'; p.t = 0.35; p.kb = dirTo(src, p.pos).multiplyScalar(9);
   if (p.hp <= 0) downPlayer(p);
   return 'hit';
+}
+
+// [알파] 충격이 넘쳐 받기가 깨짐: 칸은 비워지지만 크게 휘청인다
+function breakGuard(p, A, src) {
+  p.impact = 0; p.restT = 0;
+  if (!CFG.infiniteHP) p.hp -= A.dmg;
+  p.flash = 0.35;
+  SFX.crack(); G.shake = Math.max(G.shake, 0.45);
+  popText(above(p, 3.0), '자세 무너짐!', 'warn', 1.1);
+  burst(p.pos.clone().setY(1.2), COLOR.impact, 16, 7);
+  p.state = 'hurt'; p.t = CFG.breakStun; p.kb = dirTo(src, p.pos).multiplyScalar(11);
+  G.stats.broken++;
+  if (p.hp <= 0) downPlayer(p);
+}
+// [알파] 합이 터지면 받은 사람들 몸에 쌓인 충격이 전부 풀려 피해가 된다
+function releaseImpact() {
+  let n = 0;
+  for (const r of G.boss.gapReceivers) { n += r.impact; r.impact = 0; r.restT = 0; }
+  return n;
 }
 
 function downPlayer(p) {
@@ -1137,8 +1320,9 @@ function openGap(list) {
   const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
   B.openDir = distXZ(avg, B.pos) > 0.05 ? dirTo(avg, B.pos) : B.forward().negate();
   B.showOpen();
-  for (const p of receivers) { p.state = 'recoil'; p.t = CFG.recoil; p.kb = dirTo(B.pos, p.pos).multiplyScalar(5); }
+  for (const p of receivers) { p.state = 'recoil'; p.t = CFG.recoil; p.queued = false; p.kb = dirTo(B.pos, p.pos).multiplyScalar(5); }
   G.stats.receive++; if (perfect) G.stats.perfectReceive++;
+  addMom(perfect ? CFG.momPerfectReceive : CFG.momReceive);
   const r0 = receivers[0], contact = r0.pos.clone().lerp(B.pos, 0.45).setY(1.2);
   const newFx = CFG.fx !== '기존';
   if (perfect) {
@@ -1153,49 +1337,123 @@ function openGap(list) {
     if (newFx) rumble(0.25, 0, 60);
   }
   if (receivers.length > 1) popText(above(B, 4.4), '둘 다 받았다… 칠 사람이 없다', 'hint', 1.3);
+  for (const r of receivers) {
+    const m = r.coverTarget;
+    if (!m || m.coveredBy !== r) continue;
+    G.stats.save++; SFX.save();
+    popText(above(G.mode === 'solo' ? r : m, 3.4), G.mode === 'solo' ? '교대 받기!' : '구했다!', 'save', 1.1);
+    if (G.mode !== 'solo') { beam(r.pos.clone().setY(1.1), m.pos.clone().setY(1.1), COLOR.save, 0.45); m.hapGlow = 0.4; }
+  }
   // 받기 직전에 먼저 들어간 파트너 공격 → 동시로 보고 완벽한 합
   for (const h of G.recentHits) {
     if (G.now - h.time <= CFG.preHap && !receivers.includes(h.p) && inOpenSide(h.p)) {
-      B.damage(h.base * (CFG.perfectHapMul - 1));
-      doHap(h.p, 'perfect', -(G.now - h.time));
+      const rel = releaseImpact(), dmg = (h.base + rel * CFG.impactDmg) * CFG.perfectHapMul;
+      B.damage(dmg - h.base);
+      doHap(h.p, 'perfect', -(G.now - h.time), dmg, rel);
       break;
     }
   }
 }
 
-function doHap(p, grade, dtr) {
+function doHap(p, grade, dtr, dmg, rel = 0) {
   const B = G.boss, perfect = grade === 'perfect';
   const weakPos = B.pos.clone().addScaledVector(B.openDir, B.R * 0.95).setY(2.1);
+  const unison = CFG.momOn && G.mom >= 100 && (perfect || !CFG.unisonNeedsPerfect);
+  let mul = perfect ? CFG.perfectHapMul : CFG.hapMul;
+  if (unison) { const per = dmg / mul; B.damage(per * (CFG.unisonMul - mul)); mul = CFG.unisonMul; dmg = per * mul; }
   B.hapDone = true; B.hideOpen();
-  if (!B.dead) { B.state = 'stagger'; B.t = perfect ? CFG.staggerPerfect : CFG.staggerHap; }
+  if (!B.dead) { B.state = 'stagger'; B.t = unison ? CFG.unisonStagger : perfect ? CFG.staggerPerfect : CFG.staggerHap; }
   if (isDuo()) { B.target = p; G.players.forEach(q => (q.aggro = 0)); }
   G.stats.hap++; if (perfect) G.stats.perfect++;
   G.stats.last = dtr;
   const partners = B.gapReceivers.filter(q => q !== p);
-  if (G.mode === 'solo') partners.push(G.players[1 - G.active]);
-  if (CFG.fx === '기존') hapFxOld(p, perfect, weakPos, partners);
-  else if (perfect) perfectFx(p, weakPos, partners, dtr);
-  else hapFx(p, weakPos, partners, dtr);
+  const beamers = partners.slice();
+  if (G.mode === 'solo') beamers.push(G.players[1 - G.active]);
+  if (unison) { G.stats.unison++; G.mom = 0; for (const r of partners) if (r.state === 'recoil') r.t = Math.min(r.t, 0.08); } // 받은 사람도 반동을 털고 바로 맺기로
+  else addMom(perfect ? CFG.momPerfectHap : CFG.momHap);
+  // 연출: [A] 새 연출이면 합기도 완벽한 합 시네마틱을 쓰고 도장 글자만 바뀐다
+  if (CFG.fx === '기존') hapFxOld(p, perfect, unison, weakPos, beamers, mul, dmg, rel);
+  else if (perfect || unison) perfectFx(p, weakPos, beamers, dtr, unison);
+  else hapFx(p, weakPos, beamers, dtr);
+  if (rel > 0) { popText(above(B, 3.1), `충격 해방 ${'◆'.repeat(rel)}`, 'release', 1.2); SFX.release(rel); G.stats.released += rel; }
+  // 맺기: 합을 맞은 보스는 받은 사람 쪽으로 휘청인다
+  const who = partners.filter(q => q.alive);
+  if (CFG.finOn && who.length && !B.dead) {
+    G.fin = { who, by: p, dir: B.openDir.clone().negate(), until: G.now + CFG.finWindow };
+    B.t = Math.max(B.t, CFG.finWindow);
+    B.showOpen(G.fin.dir, COLOR.fin, CFG.finHalfAngle);
+  }
 }
+
 const chest = q => q.pos.clone().setY(1.1);
 
-// 이전 연출 (비교용으로 그대로 둔다)
-function hapFxOld(p, perfect, weakPos, partners) {
+// 이전 연출 (비교용으로 그대로 둔다. 알파-1의 합기 연출 포함)
+function hapFxOld(p, perfect, unison, weakPos, beamers, mul, dmg, rel) {
   const B = G.boss;
-  G.hitstop = Math.max(G.hitstop, perfect ? CFG.hitstopPerfect : CFG.hitstopHap);
-  if (perfect) G.slow = { left: 0.3, dur: 0.3, from: 0.35, ramp: false };
-  G.shake = Math.max(G.shake, perfect ? 0.7 : 0.4);
-  G.punch = perfect ? 1 : 0.55;
-  G.flash = perfect ? 0.9 : 0.45;
-  (perfect ? SFX.perfectHap : SFX.hap)();
-  const mul = perfect ? CFG.perfectHapMul : CFG.hapMul;
-  popText(above(B, 4.6), perfect ? '완벽한 합!' : '합!', perfect ? 'perfect' : 'hap', perfect ? 1.3 : 1.0);
-  popText(above(B, 3.8), `×${mul} · ${CFG.attackDamage * mul}`, 'sub', perfect ? 1.3 : 1.0);
-  burst(weakPos, COLOR.gold, perfect ? 36 : 20, perfect ? 11 : 8);
-  fxRing(B.pos, COLOR.gold, B.R, perfect ? 9 : 6, perfect ? 0.6 : 0.45);
-  for (const r of partners) { beam(chest(r), weakPos, COLOR.gold, perfect ? 0.6 : 0.4); r.hapGlow = 0.7; }
+  if (unison) {
+    G.hitstop = Math.max(G.hitstop, 0.32); G.slow = { left: 0.9, dur: 0.9, from: 0.35, ramp: false }; G.shake = 1; G.punch = 1.3; G.flash = 1;
+    SFX.unison();
+    popText(above(B, 4.9), '합기!', 'unison', 1.8);
+    burst(weakPos, COLOR.gold, 60, 13); burst(weakPos, COLOR.fin, 30, 10);
+    fxRing(B.pos, COLOR.gold, B.R, 14, 0.9); fxRing(B.pos, COLOR.fin, B.R, 9, 0.7);
+  } else {
+    G.hitstop = Math.max(G.hitstop, perfect ? CFG.hitstopPerfect : CFG.hitstopHap);
+    if (perfect) G.slow = { left: 0.3, dur: 0.3, from: 0.35, ramp: false };
+    G.shake = Math.max(G.shake, perfect ? 0.7 : 0.4);
+    G.punch = perfect ? 1 : 0.55;
+    G.flash = perfect ? 0.9 : 0.45;
+    (perfect ? SFX.perfectHap : SFX.hap)();
+    popText(above(B, 4.6), perfect ? '완벽한 합!' : '합!', perfect ? 'perfect' : 'hap', perfect ? 1.3 : 1.0);
+    burst(weakPos, COLOR.gold, perfect ? 36 : 20, perfect ? 11 : 8);
+    fxRing(B.pos, COLOR.gold, B.R, perfect ? 9 : 6, perfect ? 0.6 : 0.45);
+  }
+  popText(above(B, 3.8), `×${mul} · ${dmg}`, 'sub', unison ? 1.8 : perfect ? 1.3 : 1.0);
+  for (const r of beamers) { beam(chest(r), weakPos, rel > 0 ? COLOR.impact : COLOR.gold, perfect ? 0.6 : 0.4); r.hapGlow = unison ? 1.2 : 0.7; }
   beam(weakPos, chest(p), COLOR.gold, perfect ? 0.6 : 0.4);
-  p.hapGlow = 0.7;
+  p.hapGlow = unison ? 1.2 : 0.7;
+}
+
+function finFor(p) {
+  const B = G.boss;
+  return !!G.fin && G.fin.who.includes(p) && B.state === 'stagger' && !B.dead;
+}
+function closeFin() {
+  if (!G.fin) return;
+  G.fin = null;
+  G.boss.hideOpen();
+}
+function doFin(p) {
+  const B = G.boss, by = G.fin.by, dir = G.fin.dir;
+  const weakPos = B.pos.clone().addScaledVector(dir, B.R * 0.95).setY(2.1);
+  closeFin();
+  B.damage(CFG.attackDamage * CFG.finMul);
+  if (!B.dead) B.t += CFG.finStaggerAdd;
+  G.stats.fin++;
+  addMom(CFG.momFin);
+  G.hitstop = Math.max(G.hitstop, 0.12);
+  G.shake = Math.max(G.shake, 0.5); G.punch = Math.max(G.punch, 0.6); G.flash = Math.max(G.flash, 0.5);
+  SFX.fin();
+  // 합 글자와 겹치지 않게 받은 사람 쪽에 띄운다
+  const tp = B.pos.clone().addScaledVector(dir, 2.2);
+  popText(tp.clone().setY(3.4), '맺기!', 'fin', 1.1);
+  popText(tp.clone().setY(2.7), `×${CFG.finMul} · ${CFG.attackDamage * CFG.finMul}`, 'sub', 1.1);
+  burst(weakPos, COLOR.fin, 26, 9);
+  fxRing(B.pos, COLOR.fin, B.R, 7, 0.5);
+  const chest = q => q.pos.clone().setY(1.1);
+  beam(chest(p), weakPos, COLOR.fin, 0.5);
+  if (by.root.visible) beam(chest(by), weakPos, COLOR.fin, 0.5);
+  p.hapGlow = by.hapGlow = 0.7;
+}
+
+function addMom(n) {
+  if (!CFG.momOn || !G.stats) return;
+  const prev = G.mom;
+  G.mom = clamp(prev + n, 0, 100);
+  if (prev < 100 && G.mom >= 100) {
+    SFX.momFull();
+    const p = G.players[G.active];
+    popText(above(p, 3.2), CFG.unisonNeedsPerfect ? '기세 가득 · 완벽한 합으로 합기' : '기세 가득 · 다음 합이 합기', 'sub', 1.6);
+  }
 }
 
 // 합: 세계 안에서 터진다. 완벽한 합에 가까울수록(k → 1) 조금씩 커진다.
@@ -1225,12 +1483,12 @@ function hapFx(p, weakPos, partners, dtr) {
 //         집중선, 레터박스, 도장 글자, 소리는 먹먹해지고 두 음만 높게 운다
 //   정지가 풀리면  화음이 터지고 충격파·빛기둥·파편이 한 번에 퍼진다 → 아주 느린 데서 1배로 돌아온다
 //         두 사람에게 금빛 잔상이 남는다
-function perfectFx(p, weakPos, partners, dtr) {
-  const B = G.boss, f = CFG.freezePerfect;
+function perfectFx(p, weakPos, partners, dtr, unison = false) {
+  const B = G.boss, f = CFG.freezePerfect + (unison ? 0.12 : 0);
   const rv = VOICE[(partners[0] ?? p).idx], hv = VOICE[p.idx];
   G.hitstop = Math.max(G.hitstop, f);
   G.freezeFx = true;
-  G.release = { rv, hv, weakPos };
+  G.release = { rv, hv, weakPos, unison };
   G.impact = CFG.impactFrames && !REDUCED ? 4 : 0;
   G.flash = G.impact ? 0.5 : 0.9;
   G.shake = Math.max(G.shake, 0.45);
@@ -1242,7 +1500,8 @@ function perfectFx(p, weakPos, partners, dtr) {
   G.dim = 1;
   if (CFG.letterbox) { document.body.classList.add('cine'); G.cineBody = f + CFG.slowDur * 0.9; }
   const st = $('stamp');
-  $('stampSub').textContent = dtr < 0 ? '믿고 먼저 휘둘렀다' : '동시에';
+  $('stampWord').textContent = unison ? '합기' : '완벽한 합';
+  $('stampSub').textContent = unison ? '둘이 모은 기세' : dtr < 0 ? '믿고 먼저 휘둘렀다' : '동시에';
   st.classList.remove('go'); void st.offsetWidth; st.classList.add('go');
   SFX.perfectImpact(rv, hv, f);
   impactStar(weakPos, 2.2, 0.5, true);
@@ -1266,6 +1525,7 @@ function releasePerfect() {
   fxRing(B.pos, 0xffffff, B.R, 8, 0.5, 0.85, 0.05, 0.1);
   fxRing(B.pos, 0x120d1f, B.R, 14, 0.9, 0.55, 0.1, 0.03);
   lightPillar(B.pos, 0.9);
+  if (R.unison) { fxRing(B.pos, COLOR.fin, B.R, 16, 1.1, 0.8, 0.18, 0.1); burst(R.weakPos, COLOR.fin, 30, 11, true); tone(VOICE[0] / 4, 1.6, { type: 'triangle', vol: 0.2, rev: 0.6 }); }
   rumble(0.5, 0.3, 280);
 }
 
@@ -1274,14 +1534,18 @@ function playerHitsBoss(p) {
   if (B.dead) return;
   const d = distXZ(p.pos, B.pos), to = dirTo(p.pos, B.pos);
   const gapOpen = B.state === 'gap' && !B.hapDone && !B.gapReceivers.includes(p);
-  const reach = CFG.reach + (gapOpen ? CFG.gapReachBonus : 0), minDot = gapOpen ? -0.3 : 0.2;
+  let reach = CFG.reach + (gapOpen ? CFG.gapReachBonus : 0), minDot = gapOpen ? -0.3 : 0.2;
+  const finOpen = finFor(p);
+  if (finOpen) { reach = CFG.reach + CFG.gapReachBonus; minDot = -0.3; }
   if (d > B.R + PLAYER_R + reach || p.forward().dot(to) < minDot) { SFX.swing(); return; }
   const base = CFG.attackDamage;
+  if (finOpen && dirTo(B.pos, p.pos).dot(G.fin.dir) >= Math.cos((CFG.finHalfAngle * Math.PI) / 180)) return doFin(p);
   if (gapOpen) {
     if (inOpenSide(p)) {
       const dtr = G.now - B.gapStart, grade = dtr <= CFG.perfectHap ? 'perfect' : 'hap';
-      B.damage(base * (grade === 'perfect' ? CFG.perfectHapMul : CFG.hapMul));
-      doHap(p, grade, dtr);
+      const rel = releaseImpact(), dmg = (base + rel * CFG.impactDmg) * (grade === 'perfect' ? CFG.perfectHapMul : CFG.hapMul);
+      B.damage(dmg);
+      doHap(p, grade, dtr, dmg, rel);
       return;
     }
     popText(above(B, 4.2), '반대쪽!', 'hint', 0.7);
@@ -1303,12 +1567,22 @@ function playerHitsBoss(p) {
 
 function tryTag(auto) {
   const out = G.players[G.active], inn = G.players[1 - G.active], B = G.boss;
-  if (!inn.alive || (!auto && G.tagCd > 0)) return;
+  // 혼자 하기: 합 직후 한 번 더 태그하면 받았던 캐릭터가 맺기 쪽으로 들어온다 (쿨타임 무시)
+  const finEntry = !auto && finFor(inn);
+  if (!inn.alive || (!auto && G.tagCd > 0 && !finEntry)) return;
   G.tagCd = CFG.tagCooldown;
   const gapEntry = !auto && B.state === 'gap' && !B.hapDone;
-  if (gapEntry) {
-    inn.pos.copy(B.pos).addScaledVector(B.openDir, B.R + 1.1).setY(0);
-    inn.yaw = Math.atan2(-B.openDir.x, -B.openDir.z);
+  // [알파] 교대 받기: 받을 수 있는 공격 범위 안에서 태그하면 들어오는 캐릭터가 받기 자세로 그 자리에 선다
+  const coverEntry = CFG.cover && !auto && !gapEntry && !finEntry && B.state === 'windup' && B.atk?.receivable && out.alive && inThreat(out, B.atk);
+  if (coverEntry) {
+    inn.pos.copy(out.pos);
+    inn.yaw = Math.atan2(B.pos.x - out.pos.x, B.pos.z - out.pos.z);
+    Object.assign(inn, { state: 'receive', receiveStart: G.now, forceRcv: CFG.coverHold, coverTarget: out });
+    out.coveredBy = inn;
+  } else if (gapEntry || finEntry) {
+    const dir = finEntry ? G.fin.dir : B.openDir;
+    inn.pos.copy(B.pos).addScaledVector(dir, B.R + 1.1).setY(0);
+    inn.yaw = Math.atan2(-dir.x, -dir.z);
     inn.state = 'free';
     inn.startAttack(true);
   } else {
@@ -1446,6 +1720,12 @@ function step(dt) {
     G.players[1].update(dt, getCtrl(1));
   }
   G.boss.update(dt);
+  if (CFG.impact) for (const p of G.players) {
+    if (!p.alive || p.impact <= 0 || p.state === 'receive' || p.state === 'recoil') continue;
+    const bench = G.mode === 'solo' && p !== G.players[G.active];
+    p.restT += dt * (bench ? CFG.impactRest / CFG.impactRestBench : 1);
+    if (p.restT >= CFG.impactRest) { p.impact--; p.restT = 0; }
+  }
   resolveCollisions();
   G.recentHits = G.recentHits.filter(h => G.now - h.time < 0.6);
   if (!G.ended && G.boss.dead) endGame(true);
@@ -1460,9 +1740,9 @@ const $ = id => document.getElementById(id);
 function start(mode) {
   audio();
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
-  G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0;
-  resetCine(); G.tagCd = 0; G.autoTag = 0; G.recentHits = [];
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null };
+  G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
+  resetCine();
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
@@ -1479,10 +1759,10 @@ function start(mode) {
   $('name0').textContent = mode === 'duo' ? '1P' : '캐릭터 A';
   $('name1').textContent = mode === 'duo' ? '2P' : '캐릭터 B';
   $('hint').innerHTML = {
-    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받은 직후 태그하면 틈으로 들어가요',
-    duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피',
+    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받기 → <kbd>Q</kbd> 합 → <kbd>Q</kbd> 맺기 · 공격 범위 안에서 <kbd>Q</kbd> = 교대 받기',
+    duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피 · 파트너가 위험할 때 받기 = 끼어들기',
+    practice: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 조작 바꾸기 — 받기를 누른 채 바꾸면 받기 자세 유지 · 다른 캐릭터가 위험할 때 받기 = 끼어들기',
     demo: '자동 관람 중 — 조작하지 않아도 돼요. 오른쪽 아래에서 연출을 기존/새 연출로 바꿔 비교할 수 있어요. <kbd>Esc</kbd> 나가기',
-    practice: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 조작 바꾸기 — 받기를 누른 채 바꾸면 그 캐릭터는 받기 자세를 유지해요',
   }[mode];
   renderer.domElement.focus?.();
 }
@@ -1498,7 +1778,11 @@ function showResult() {
     <dt>걸린 시간</dt><dd>${Math.floor(sec / 60)}분 ${sec % 60}초</dd>
     <dt>합</dt><dd>${s.hap}번 (완벽한 합 ${s.perfect}번)</dd>
     <dt>받기</dt><dd>${s.receive}번 (정확한 받기 ${s.perfectReceive}번)</dd>
+    <dt>맺기</dt><dd>${s.fin}번</dd>
+    <dt>합기</dt><dd>${s.unison}번</dd>
     <dt>놓친 틈</dt><dd>${s.missed}번</dd>
+    <dt>끼어들기 / 교대 받기</dt><dd>${s.save}번</dd>
+    <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
   resultEl.hidden = false; hudEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
   $('caption').hidden = $('demoBar').hidden = true; resetCine();
@@ -1557,6 +1841,31 @@ fX.add(CFG, 'impactFrames').name('흑백 임팩트 프레임');
 fX.add(CFG, 'speedLines').name('집중선');
 fX.add(CFG, 'letterbox').name('레터박스');
 fX.add(CFG, 'rumble').name('패드 진동');
+const fC = gui.addFolder('연계: 맺기와 기세');
+fC.add(CFG, 'finOn').name('맺기 켜기');
+fC.add(CFG, 'finWindow', 0.4, 2.5, 0.05).name('맺기 시간 (초)');
+fC.add(CFG, 'finMul', 1, 5, 0.5).name('맺기 배율');
+fC.add(CFG, 'finHalfAngle', 30, 180, 5).name('맺기 틈 범위 (±도)');
+fC.add(CFG, 'momOn').name('기세 켜기');
+fC.add(CFG, 'momHap', 0, 50, 1).name('기세: 합');
+fC.add(CFG, 'momPerfectHap', 0, 60, 1).name('기세: 완벽한 합');
+fC.add(CFG, 'momFin', 0, 50, 1).name('기세: 맺기');
+fC.add(CFG, 'momMiss', 0, 50, 1).name('기세 감소: 놓친 틈');
+fC.add(CFG, 'momHurt', 0, 50, 1).name('기세 감소: 피격');
+fC.add(CFG, 'unisonNeedsPerfect').name('합기는 완벽한 합만');
+fC.add(CFG, 'unisonMul', 3, 15, 1).name('합기 배율');
+fC.add({ fill: () => { G.mom = 99.9; addMom(1); } }, 'fill').name('기세 채우기 (테스트)');
+const fI = gui.addFolder('알파: 충격과 끼어들기');
+fI.add(CFG, 'impact').name('충격 켜기');
+fI.add(CFG, 'impactMax', 1, 5, 1).name('충격 한계 (칸)');
+fI.add(CFG, 'impactPerfect', 0, 3, 1).name('정확한 받기 충격');
+fI.add(CFG, 'impactGuard', 0, 3, 1).name('버티기 충격');
+fI.add(CFG, 'impactDmg', 0, 40, 1).name('충격 1칸 피해 (배율 전)');
+fI.add(CFG, 'impactRest', 2, 20, 0.5).name('자연 회복 (초/칸)');
+fI.add(CFG, 'impactRestBench', 0.5, 10, 0.5).name('대기 회복 (초/칸)');
+fI.add(CFG, 'cover').name('끼어들기 켜기');
+fI.add(CFG, 'coverRange', 2, 10, 0.5).name('끼어들기 거리');
+fI.add(CFG, 'coverHold', 0.1, 1, 0.05).name('끼어든 뒤 자세 유지 (초)');
 gui.add(CFG, 'infiniteHP').name('아군 피 무한');
 gui.add(CFG, 'style', Object.keys(STYLES)).name('아트 스타일').onChange(applyStyle);
 gui.add({ restart: () => G.mode && start(G.mode) }, 'restart').name('다시 시작');
@@ -1582,7 +1891,7 @@ const tmpV = V();
 function drawHud() {
   const B = G.boss;
   $('bossHp').style.width = `${(B.hp / B.maxHp) * 100}%`;
-  const label = p => ({ receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: isDuo() ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
+  const label = p => ({ cover: '끼어들기', receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: isDuo() ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
   G.players.forEach((p, i) => {
     $('hp' + i).style.width = `${clamp(p.hp, 0, 100)}%`;
     const benched = G.mode !== 'duo' && i !== G.active;
@@ -1590,11 +1899,23 @@ function drawHud() {
     if (G.mode === 'practice' && !benched) st = st ? `조작 중 · ${st}` : '조작 중';
     $('state' + i).textContent = st + (CFG.infiniteHP ? ' · 피 무한' : '');
     $('card' + i).classList.toggle('bench', benched);
+    const key = CFG.impact ? `${p.impact}/${CFG.impactMax}` : '';
+    const el = $('imp' + i);
+    if (el.dataset.k !== key) {
+      el.dataset.k = key;
+      const full = CFG.impact && p.impact >= CFG.impactMax;
+      el.classList.toggle('full', full);
+      el.innerHTML = CFG.impact ? '충격 ' + Array.from({ length: CFG.impactMax }, (_, j) => `<i class="${j < p.impact ? 'on' : ''}"></i>`).join('') + (full ? ' <b>한계</b>' : '') : '';
+    }
   });
   const s = G.stats;
   if (!s) return;
   const last = s.last == null ? '아직 없음' : s.last < 0 ? `받기 ${Math.abs(s.last).toFixed(2)}초 전` : `받기 후 ${s.last.toFixed(2)}초`;
-  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 놓친 틈 ${s.missed}<br>마지막 합: ${last}`;
+  $('mom').style.width = `${G.mom}%`;
+  $('momWrap').hidden = !CFG.momOn;
+  $('momWrap').classList.toggle('full', G.mom >= 100);
+  $('momLabel').textContent = G.mom >= 100 ? '기세 가득' : '기세';
+  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b> · 맺기 <b>${s.fin}</b> · 합기 <b>${s.unison}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 놓친 틈 ${s.missed}<br>구함 ${s.save} · 풀어 준 충격 ${s.released} · 무너짐 ${s.broken}<br>마지막 합: ${last}`;
 }
 const DIM = new THREE.Color(0x05060b), tmpC = new THREE.Color();
 function fxUpdate(dt, fdt = dt) {
@@ -1723,5 +2044,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, doHap };
+window.__game = { G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, doHap };
 </script>
