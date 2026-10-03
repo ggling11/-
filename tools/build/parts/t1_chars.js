@@ -94,7 +94,7 @@ const T1C = (() => {
       const g = [0, -1, 0], tang = norm(sub(g, mul(d, dot(g, d)) )), outv = norm([d[0], 0, d[2]]);
       const pts = [root];
       for (let i = 1; i <= 4; i++) {
-        const t = i / 4, dirv = norm(add(add(mul(tang, 1 - t), mul(g, t)), mul(outv, 0.18 + 0.12 * t)));
+        const t = i / 4, dirv = norm(add(add(mul(tang, 1 - t), mul(g, t)), mul(outv, (o.out ?? 0.18) + (o.out ?? 0.18) * 0.66 * t)));   /* 바깥 부풀림 (라운드 6: 세검은 판정 폭 안으로 줄임) */
         pts.push(add(pts[i - 1], add(mul(dirv, L / 4), mul(bend, t * 0.04 * k))));
       }
       const ws = pts.map((_, i) => chain ? [[chain[Math.min(chain.length - 1, Math.max(0, i - 1))], 1]] : [['head', 1]]);
@@ -123,7 +123,7 @@ const T1C = (() => {
 
   /* --------------------------------------------------------------------------- 세검 (청) */
   function rapier(R, D) {
-    const P = D.pal, S = humanSkel(D.model.rapier.H, D.model.rapier), k = S.k, K = Kit(S);
+    const P = D.pal, S = humanSkel(D.model.rapier.H, D.model.rapier), k = S.k, K = Kit(S, D.model.rapier);
     /* 화면 전용 체인: 뒷머리 · 옆머리 · 코트 자락 4장 · 파랑 끈 */
     const hB = addChain(S, 'hB', 'head', [[0, 2.12 * k, -0.11 * k], [0, 1.95 * k, -0.14 * k], [0, 1.78 * k, -0.15 * k]]);
     const hL = addChain(S, 'hL', 'head', [[0.1 * k, 2.08 * k, 0.03 * k], [0.12 * k, 1.92 * k, 0.03 * k]]);
@@ -152,13 +152,17 @@ const T1C = (() => {
     const coatW = (i, a) => {
       if (i <= 1) return [['chest', 1]]; if (i === 2) return [['spine', 1]]; if (i === 3) return [['body', 1]];
       const front = Math.sin(a) > 0, left = Math.cos(a) > 0, ch = front ? (left ? cFL : cFR) : (left ? cBL : cBR);
-      return [[ch[i >= 5 ? 1 : 0], 1]];
+      const side = Math.abs(Math.cos(a)), th = left ? 'thL' : 'thR', tw = (i >= 5 ? 0.55 : 0.3) * Math.min(1, side * 1.4);   /* 라운드 6: 아랫단은 허벅지도 따라감 (런지 · 달리기에서 다리가 코트 밖으로 읽히게) */
+      return [[ch[i >= 5 ? 1 : 0], 1 - tw], [th, tw]];
     };
-    coat(K, 'ink', [
-      { y: 1.9 * k, rx: 0.17 * k, rz: 0.1 * k, gap: 0.55 }, { y: 1.7 * k, rx: 0.165 * k, rz: 0.115 * k, gap: 0.48 }, { y: 1.42 * k, rx: 0.135 * k, rz: 0.1 * k, gap: 0.42 },
-      { y: 1.16 * k, rx: 0.17 * k, rz: 0.13 * k, gap: 0.5 }, { y: 0.86 * k, rx: 0.25 * k, rz: 0.2 * k, gap: 0.62 }, { y: 0.48 * k, rx: 0.36 * k, rz: 0.29 * k, gap: 0.74 },
-    ], coatW, { cols: 26, hem: (a, t) => { const s = [0.04, 0.22, 0.5, 0.78, 0.96]; let m = 0; for (const q of s) m = Math.max(m, 1 - Math.abs(t - q) / 0.11); return -m * 0.16 * k + (t < 0.04 || t > 0.96 ? 0.06 * k : 0); },
-      fold: (a, i) => (i >= 4 ? 0.05 * k * (Math.cos(a * 3) > 0.3 ? 1 : 0) : 0) });
+    /* 라운드 5: 겉 = 흰 (위에서 볼 때 검정 덩어리가 머리카락 하나로 읽히게) · 안감 = 검정 (앞 틈 · 아랫단 아래로 검정 띠가 보임) */
+    const coatRows = sc => [
+      { y: 1.9 * k, rx: 0.17 * k * sc, rz: 0.1 * k * sc, gap: 0.55 }, { y: 1.7 * k, rx: 0.165 * k * sc, rz: 0.115 * k * sc, gap: 0.48 }, { y: 1.42 * k, rx: 0.135 * k * sc, rz: 0.1 * k * sc, gap: 0.42 },
+      { y: 1.16 * k, rx: 0.17 * k * sc, rz: 0.13 * k * sc, gap: 0.5 }, { y: 0.86 * k, rx: 0.22 * k * sc, rz: 0.19 * k * sc, gap: 0.62 }, { y: 0.48 * k, rx: 0.29 * k * sc, rz: 0.26 * k * sc, gap: 0.74 }];   /* 라운드 6: 아랫단 폭 = 판정 지름 ±15% */
+    const coatHem = drop => (a, t) => { const s = [0.04, 0.22, 0.5, 0.78, 0.96]; let m = 0; for (const q of s) m = Math.max(m, 1 - Math.abs(t - q) / 0.11); return -m * 0.16 * k + (t < 0.04 || t > 0.96 ? 0.06 * k : 0) - drop; };
+    const coatFold = (a, i) => (i >= 4 ? 0.05 * k * (Math.cos(a * 3) > 0.3 ? 1 : 0) : 0);
+    coat(K, 'white', coatRows(1), coatW, { cols: 26, hem: coatHem(0), fold: coatFold });
+    coat(K, 'ink', coatRows(0.95).map(r => ({ ...r, gap: r.gap - 0.06 })), coatW, { cols: 26, hem: coatHem(0.07 * k), fold: coatFold });
     /* 팔: 흰 셔츠 소매 (가늘게) + 검정 장갑 */
     arm(K, 'white', 'ink', 'L', S); arm(K, 'white', 'ink', 'R', S);
     /* 머리 · 얼굴 · 파랑 눈가 선 */
@@ -167,14 +171,14 @@ const T1C = (() => {
     const hc = hf.c;
     const fan = [];   /* 뒤 · 옆 커튼: 촘촘히 겹친 넓은 다발 (틈 없이 한 덩어리) · 끝은 잔가닥 */
     for (let i = 0; i <= 10; i++) { const a = Math.PI * (0.05 + 0.9 * i / 10), d = [Math.cos(a) * 0.95, 0.3, -Math.sin(a)], side = Math.cos(a);
-      fan.push([d, (0.5 + 0.28 * Math.sin(a)) * k, 0.2 + 0.05 * Math.sin(a), [side * 1.2, 0, -0.6], side > 0.35 ? hL : side < -0.35 ? hR : hB, null, i % 2 === 0]); }
+      fan.push([d, (0.5 + 0.28 * Math.sin(a)) * k, 0.2 + 0.05 * Math.sin(a), [side * 0.3, 0, -0.6], side > 0.35 ? hL : side < -0.35 ? hR : hB, null, i % 2 === 0]); }
     hair(K, S, hc, 'ink', [
       ...fan,
-      [[0.75, 0.25, 0.45], 0.36 * k, 0.12, [0.8, 0, 0.4], hL, null, true], [[-0.75, 0.25, 0.45], 0.36 * k, 0.12, [-0.8, 0, 0.4], hR, null, true],
+      [[0.75, 0.25, 0.45], 0.36 * k, 0.12, [0.2, 0, 0.4], hL, null, true], [[-0.75, 0.25, 0.45], 0.36 * k, 0.12, [-0.2, 0, 0.4], hR, null, true],
       [[0.25, 0.65, 0.75], 0.17 * k, 0.09, [0.3, 0, 1], null], [[-0.2, 0.7, 0.72], 0.16 * k, 0.09, [-0.2, 0, 1], null], [[0.0, 0.78, 0.62], 0.15 * k, 0.08, [0, 0, 1], null],
       [[0.45, 0.55, 0.7], 0.15 * k, 0.08, [0.5, 0, 1], null], [[-0.42, 0.58, 0.7], 0.14 * k, 0.08, [-0.5, 0, 1], null], [[-0.12, 0.62, 0.8], 0.24 * k, 0.05, [-0.6, -0.2, 1], null],
       [[0.6, 0.45, 0.3], 0.44 * k, 0.06, [1.0, 0, 0.2], hL, 'blue'], [[0.7, 0.35, -0.1], 0.5 * k, 0.05, [1.3, 0, -0.2], hL, 'blue'],
-    ], { seed: D.model.rapier.seed });
+    ], { seed: D.model.rapier.seed, out: 0.04 });
     /* 흰 하이라이트 띠 (초승달 2줄, 선 없음) */
     for (const [y, w] of [[0.112, 0.07], [0.09, 0.05]]) K.strand('hi', [-1, -0.3, 0.3, 1].map(t => add(hc, [t * w * k, (y + 0.03 * (1 - t * t)) * k, (0.105 - 0.02 * t * t) * k])), [0.003, 0.012 * k, 0.012 * k, 0.003], [['head', 1]], { thick: 0.3, up: [0, 1, 0.4] });
     /* 세검: 가는 흰 칼날 + 금 고리 손잡이 + 파랑 감김 + 금 머리 / 왼허리 검정 칼집 (파랑 감김) */
@@ -185,14 +189,14 @@ const T1C = (() => {
     const ring = n => Array.from({ length: n }, (_, i) => { const a = Math.PI * 0.15 + i / (n - 1) * Math.PI * 1.2; return add(wp, [Math.cos(a) * 0.05 * k, -0.05 * k - Math.sin(a) * 0.03 * k, Math.sin(a) * 0.045 * k]); });
     K.tube('gold', ring(9).map(p => ({ p, r: 0.0055 * k, w: [['weapon', 1]] })), { seg: 5 });
     K.tube('gold', [{ p: add(wp, [-0.05 * k, -0.06 * k, 0]), r: 0.006 * k, w: [['weapon', 1]] }, { p: add(wp, [0.05 * k, -0.06 * k, 0]), r: 0.006 * k, w: [['weapon', 1]] }], { seg: 5 });
-    K.tube('ink', [{ p: [0.16 * k, 1.16 * k, 0.07 * k], r: 0.022 * k, w: [['body', 1]] }, { p: [0.3 * k, 0.86 * k, -0.12 * k], r: 0.02 * k, w: [['body', 1]] }, { p: [0.42 * k, 0.6 * k, -0.3 * k], r: 0.017 * k, w: [['body', 1]] }], { seg: 8 });
+    K.tube('ink', [{ p: [0.16 * k, 1.16 * k, 0.07 * k], r: 0.022 * k, w: [['body', 1]] }, { p: [0.22 * k, 0.86 * k, -0.16 * k], r: 0.02 * k, w: [['body', 1]] }, { p: [0.27 * k, 0.6 * k, -0.38 * k], r: 0.017 * k, w: [['body', 1]] }], { seg: 8 });   /* 칼집: 뒤로 눕힘 (폭 안으로) */
     K.tube('blue', [{ p: [0.18 * k, 1.12 * k, 0.05 * k], r: 0.025 * k, w: [['body', 1]] }, { p: [0.2 * k, 1.08 * k, 0.03 * k], r: 0.025 * k, w: [['body', 1]] }], { seg: 8 });
     return finish(R, D, K, 'rapier');
   }
 
   /* --------------------------------------------------------------------------- 대검 (적) */
   function great(R, D) {
-    const P = D.pal, S = humanSkel(D.model.great.H, D.model.great), k = S.k, K = Kit(S);
+    const P = D.pal, S = humanSkel(D.model.great.H, D.model.great), k = S.k, K = Kit(S, D.model.great);
     const pt = addChain(S, 'pt', 'head', [[0, 2.24 * k, -0.2 * k], [0, 2.0 * k, -0.3 * k], [0, 1.74 * k, -0.34 * k], [0, 1.46 * k, -0.34 * k]]);
     const cFL = addChain(S, 'cFL', 'body', [[0.17 * k, 1.05 * k, 0.12 * k], [0.24 * k, 0.6 * k, 0.15 * k]]);
     const cFR = addChain(S, 'cFR', 'body', [[-0.17 * k, 1.05 * k, 0.12 * k], [-0.24 * k, 0.6 * k, 0.15 * k]]);
@@ -210,18 +214,19 @@ const T1C = (() => {
     const cw = (i, a) => {
       if (i <= 1) return [['chest', 1]]; if (i === 2) return [['spine', 1]]; if (i === 3) return [['body', 1]];
       const front = Math.sin(a) > 0, left = Math.cos(a) > 0, ch = front ? (left ? cFL : cFR) : (left ? cBL : cBR);
-      return [[ch[i >= 5 ? 1 : 0], 1]];
+      const side = Math.abs(Math.cos(a)), th = left ? 'thL' : 'thR', tw = (i >= 5 ? 0.55 : 0.3) * Math.min(1, side * 1.4);   /* 라운드 6: 아랫단은 허벅지도 따라감 (런지 · 달리기에서 다리가 코트 밖으로 읽히게) */
+      return [[ch[i >= 5 ? 1 : 0], 1 - tw], [th, tw]];
     };
     coat(K, 'white', [
       { y: 1.92 * k, rx: 0.19 * k, rz: 0.11 * k, gap: 0.6 }, { y: 1.72 * k, rx: 0.18 * k, rz: 0.125 * k, gap: 0.55 }, { y: 1.42 * k, rx: 0.15 * k, rz: 0.11 * k, gap: 0.42 },
-      { y: 1.14 * k, rx: 0.18 * k, rz: 0.14 * k, gap: 0.5 }, { y: 0.7 * k, rx: 0.27 * k, rz: 0.22 * k, gap: 0.72 }, { y: 0.2 * k, rx: 0.36 * k, rz: 0.3 * k, gap: 0.9 },
+      { y: 1.14 * k, rx: 0.18 * k, rz: 0.14 * k, gap: 0.5 }, { y: 0.7 * k, rx: 0.23 * k, rz: 0.21 * k, gap: 0.72 }, { y: 0.2 * k, rx: 0.26 * k, rz: 0.26 * k, gap: 0.9 },   /* 라운드 6: 아랫단 폭 = 판정 지름 ±15% */
     ], cw, { cols: 28, hem: (a, t) => (Math.abs(Math.sin(a * 2)) > 0.92 ? 0.12 * k : 0) - (t * 7 % 1 < 0.5 ? 0.04 * k : 0), fold: (a, i) => (i >= 4 ? 0.03 * k * (Math.abs(Math.sin(a * 2.5)) > 0.7 ? 1 : 0) : 0) });
     /* 빨강 허리띠 + 늘어진 두 끝 */
     K.tube('red', [{ p: [0, 1.12 * k, 0], r: [0.185 * k, 0.145 * k], w: [['body', 1]] }, { p: [0, 1.2 * k, 0], r: [0.18 * k, 0.142 * k], w: [['body', 1]] }], { seg: 18 });
     K.strand('red', [[0.12 * k, 1.13 * k, 0.13 * k], S.pos[sa[0]], S.pos[sa[1]], [0.17 * k, 0.62 * k, 0.12 * k]], [0.05 * k, 0.045 * k, 0.04 * k, 0.003], [['body', 1], [sa[0], 1], [sa[1], 1], [sa[1], 1]], { thick: 0.3 });
     K.strand('red', [[0.09 * k, 1.13 * k, 0.14 * k], [0.1 * k, 0.94 * k, 0.15 * k], [0.09 * k, 0.7 * k, 0.15 * k]], [0.045 * k, 0.04 * k, 0.003], [['body', 1], [sa[0], 1], [sa[1], 1]], { thick: 0.3 });
     /* 흰 소매 (판형: 손목에서 넓어짐) + 검정 장갑 */
-    arm(K, 'white', 'ink', 'L', S, { thick: 1.3, cuff: 1.7 }); arm(K, 'white', 'ink', 'R', S, { thick: 1.3, cuff: 1.7 });
+    arm(K, 'white', 'ink', 'L', S, { thick: 1.25, cuff: 1.4 }); arm(K, 'white', 'ink', 'R', S, { thick: 1.25, cuff: 1.4 });
     const hf = headFace(K, S, 'skin', 'ink', 'red', { accent: true, accentBoth: true });
     const hc = hf.c;
     /* 넘긴 머리 + 높게 묶은 긴 꼬리머리 (끝 잔가닥 · 빨강 한 가닥) */
@@ -261,7 +266,7 @@ const T1C = (() => {
     B('thR', 'body', [-0.38, 0.95, -0.05]); B('knR', 'thR', [-0.44, 0.55, 0.3]); B('ftR', 'knR', [-0.42, 0.14, -0.05]);
     B('cape', 'chest', [0, 2.5, -0.2]);
     const tl = []; let tp = 'body'; [[0, 0.85, -0.55], [0, 0.5, -1.0], [0, 0.32, -1.5], [0.25, 0.4, -1.95], [0.55, 0.65, -2.25], [0.72, 1.0, -2.4]].forEach((q, i) => { B('tl' + i, tp, q); tp = 'tl' + i; tl.push('tl' + i); });
-    const K = Kit(S), r = rng(D.model.warden.seed);
+    const K = Kit(S, D.model.warden), r = rng(D.model.warden.seed);
     const fur = (amp) => () => (r() - 0.5) * amp;   /* 털뭉치 모양 그림자 경계: 정점마다 그림자 경향을 흔듦 */
     /* 몸통: 엉덩이 → 배 → 가슴 → 목 → 머리 (하나의 S곡선 관) */
     K.tube('white', [   /* 길쭉한 몸: 엉덩이 → 배 → 가슴 → 굵고 긴 목 (S는 자세로) */
@@ -341,7 +346,7 @@ const T1C = (() => {
       eye: R.mat(P.eye, P.eye, { flat: true, side: T.DoubleSide, line: L }),
     };
     mats.white.side = T.DoubleSide;   /* 판형 옷(코트 · 깃)은 양면 */
-    const M = K.build(T, mats, R); M.kind = kind; M.mats = mats;
+    const M = K.build(T, mats, R); M.kind = kind; M.mats = mats; M.k1 = K.skel.k || 1; M.footY = K.skel.pos.ftL ? K.skel.pos.ftL[1] : 0;   /* 키 배율 (칼 끝 · 자세 표) · 발목 높이 (다리 IK) */
     return M;
   }
   return { rapier, great, warden, humanSkel };

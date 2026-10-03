@@ -23,4 +23,4 @@ def open_page(b, page='index.html', w=1440, h=810, query='', logs=None, init=Non
     return pg
 # 장면 준비: 효과 타이머 0 (흑백 카드 · 글리치 · 배너) — 앞 장면 효과가 새지 않게
 RESET_FX = """(() => { const P = window.PIPE; P.Game.bannerT = 0; P.Game.noteT = 0; if (P.Style) { P.Style.glitchT = 0; P.Style.monoT = 0; }
-  if (P.T1 && P.T1.resetFx) P.T1.resetFx(); })()"""
+  if (P.t1 && P.t1.resetFx) P.t1.resetFx(); })()"""

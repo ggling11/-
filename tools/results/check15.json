@@ -499,13 +499,13 @@
    "id": "2C9",
    "what": "리그 교체: 1P 대검 · 2P 세검으로 바꿔 싸워도 평타 표·스킬·초상 색·충돌 대상이 캐릭터를 따라감 · 기본 설정으로 돌아옴",
    "ok": true,
-   "note": "리그 true · 평타/스킬 true · 초상 true · 60초 마무리 5 · 기본 복귀 true"
+   "note": "리그 true · 평타/스킬 true · 초상 true · 60초 마무리 4 · 기본 복귀 true"
   },
   {
    "id": "2C9b",
    "what": "바꾼 캐릭터로 기록 → 2회 재생 해시 같음 (1P 대검 · 2P 세검)",
    "ok": true,
-   "note": "817c99b6 · 817c99b6 · 817c99b6 · 마무리 5"
+   "note": "88a837c4 · 88a837c4 · 88a837c4 · 마무리 5"
   },
   {
    "id": "2C5b",
@@ -613,7 +613,7 @@
    "id": "2F9",
    "what": "합 봇 2인 3분: 공통 마무리가 실제로 나감 (12칸 중 준비된 스킬로 가능한 칸) · 에러 0",
    "ok": true,
-   "note": "{\"kneel:single\":3,\"stagger:single\":5,\"lift:area\":1,\"turn:area\":2,\"stagger:area\":1,\"lift:single\":2}"
+   "note": "{\"kneel:single\":7,\"stagger:area\":2,\"turn:area\":1,\"stagger:single\":1,\"kneel:area\":1,\"ex:ramLink\":1} · 전용 유물 있음"
   },
   {
    "id": "2N1",
@@ -685,7 +685,7 @@
    "id": "2N6",
    "what": "듀오 8쌍: 합 봇 90초씩 — 에러 0 · 마무리가 나옴 · 각 캐릭터 리그가 자기 무기",
    "ok": true,
-   "note": "rapier+great 6 · rapier+shield 7 · chain+great 7 · chain+shield 8 · twin+rapier 6 · twin+great 6 · twin+chain 6 · twin+shield 7"
+   "note": "rapier+great 7 · rapier+shield 5 · chain+great 7 · chain+shield 6 · twin+rapier 7 · twin+great 7 · twin+chain 7 · twin+shield 7"
   },
   {
    "id": "2E1",

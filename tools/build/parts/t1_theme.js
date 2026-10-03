@@ -103,7 +103,7 @@ const T1T = (() => {
     M.root.visible = visible; S.shadows[kind].visible = visible;
     if (!visible) return;
     M.root.position.copy(ch.root.position); M.root.rotation.set(0, ch.root.rotation.y, 0);
-    T1P.apply(M, ch, { poses: D.poses, hipK });
+    T1P.apply(M, ch, { poses: D.poses[kind], hipK });
     T1P.secondary(M, dt, ch.root.position, ch.root.rotation.y, S.t);
     M.root.updateMatrixWorld(true);
     const sh = S.shadows[kind]; sh.position.set(ch.pos.x, 0.012, ch.pos.z); const hgt = Math.max(0, ch.pos.y); sh.scale.setScalar(Math.max(0.35, 1 - hgt * 0.12));
@@ -217,8 +217,8 @@ const T1T = (() => {
   }
   function hud(ctx) {
     if (ART.headless) return true;
-    ctx.save();
-    try { T1H.game(ctx, S); } finally { ctx.restore(); }
+    ctx.save(); const hk = HUDK.on; HUDK.on = false;   /* 3단계 HUD의 fillRect 칸 맞춤(배율 곱)을 끄고 그림 → 끝나면 되돌림 */
+    try { T1H.game(ctx, S); } finally { HUDK.on = hk; ctx.restore(); }
     return true;
   }
   ART.themes[1] = { id: 1, name: ART.names[1], apply, dispose, frame, hud };

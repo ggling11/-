@@ -16,13 +16,13 @@ const T1M = (() => {
   /* 모델 전용 시드 난수 (Math.random 안 씀 — ★1) */
   function rng(seed) { let a = seed | 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
-  function Kit(skel) {
+  function Kit(skel, o0) {
     /* skel: { order: [이름...], parent: {이름: 부모}, pos: {이름: [x,y,z] 바인드 위치(모델 공간)} } */
-    const K = { skel, idx: {}, B: {}, part: 0 };
+    const K = { skel, idx: {}, B: {}, part: 0, det: (o0 && o0.det) || 1, sub: (o0 && o0.sub) || 1 };   /* det = 둘레 칸 배율 · sub = 고리 사이 나눔(매끈한 실루엣) */
     skel.order.forEach((n, i) => { K.idx[n] = i; });
     K.id = n => { let i = K.idx[n]; if (i === undefined) { i = skel.order.indexOf(n); if (i >= 0) K.idx[n] = i; else i = 0; } return i; };   /* 체인 뼈는 나중에 붙음 */
     const batch = m => (K.B[m] = K.B[m] || { p: [], n: [], si: [], sw: [], pa: [], bi: [], ix: [] });
-    const W = w => { const o = (w || [['root', 1]]).slice(0, 4).map(([n, x]) => [K.id(n), x]); const s = o.reduce((a, q) => a + q[1], 0) || 1; while (o.length < 4) o.push([0, 0]); return o.map(q => [q[0], q[1] / s]); };
+    const W = w => { const o = (w || [['root', 1]]).slice().sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n, x]) => [K.id(n), x]); const s = o.reduce((a, q) => a + q[1], 0) || 1; while (o.length < 4) o.push([0, 0]); return o.map(q => [q[0], q[1] / s]); };
     K.vert = (m, p, n, w, part, bias) => {
       const b = batch(m), i = b.p.length / 3, ww = W(w);
       b.p.push(...p); b.n.push(...n); for (const [j, x] of ww) { b.si.push(j); b.sw.push(x); } b.pa.push(part ?? K.part); b.bi.push(bias ?? 0); return i;
@@ -30,8 +30,27 @@ const T1M = (() => {
     K.tri = (m, a, b2, c) => { batch(m).ix.push(a, b2, c); };
     K.newPart = () => (K.part = (K.part + 1) % 200);
     /* 관: 고리 [{p, r: [rx, rz] | r, w, b(그림자 경향)}] — 단면 타원, up = 단면의 z축 기준(앞) */
+    /* 가중치 섞기: [[뼈, 값]...] 두 개를 t로 */
+    const mixW = (a, b, t) => { if (a === b) return a; const m = new Map(); for (const [n, x] of a || [['root', 1]]) m.set(n, (m.get(n) || 0) + x * (1 - t)); for (const [n, x] of b || [['root', 1]]) m.set(n, (m.get(n) || 0) + x * t); return [...m.entries()].filter(q => q[1] > 1e-4); };
+    /* 고리 나눔: 위치 = 캣멀-롬(매끈한 곡선) · 반지름 · 가중치 · 그림자 경향 = 선형 */
+    const subRings = (rings, n) => {
+      if (n <= 1 || rings.length < 2) return rings;
+      const out = [], N = rings.length, P = i => rings[Math.max(0, Math.min(N - 1, i))].p;
+      for (let i = 0; i + 1 < N; i++) {
+        const A = rings[i], B = rings[i + 1];
+        for (let j = 0; j < n; j++) {
+          const t = j / n; if (j === 0) { out.push(A); continue; }
+          const p0 = P(i - 1), p1 = A.p, p2 = B.p, p3 = P(i + 2), t2 = t * t, t3 = t2 * t;
+          const p = [0, 1, 2].map(k => 0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3));
+          const ra = Array.isArray(A.r) ? A.r : [A.r, A.r], rb = Array.isArray(B.r) ? B.r : [B.r, B.r];
+          out.push({ p, r: [ra[0] + (rb[0] - ra[0]) * t, ra[1] + (rb[1] - ra[1]) * t], w: mixW(A.w, B.w, t), b: (A.b || 0) + ((B.b || 0) - (A.b || 0)) * t });
+        }
+      }
+      out.push(rings[N - 1]); return out;
+    };
     K.tube = (m, rings, o = {}) => {
-      const seg = o.seg || 12, part = o.part ?? K.newPart(), up0 = o.up || [0, 0, 1];
+      rings = subRings(rings, o.sub ?? K.sub);
+      const seg = Math.max(3, Math.round((o.seg || 12) * (o.det ?? K.det))), part = o.part ?? K.newPart(), up0 = o.up || [0, 0, 1];
       const base = [];
       for (let i = 0; i < rings.length; i++) {
         const R = rings[i], a = rings[Math.max(0, i - 1)].p, c = rings[Math.min(rings.length - 1, i + 1)].p;
@@ -64,7 +83,7 @@ const T1M = (() => {
     };
     /* 타원체: c · r[3] · w · normC(법선 옮겨 쓰기 중심, 없으면 자기 모양) · shape(v)→v 변형 · biasFn(점, 법선) */
     K.ell = (m, c, r, w, o = {}) => {
-      const sr = o.rings || 10, sg = o.seg || 16, part = o.part ?? K.newPart(), rows = [];
+      const sr = Math.round((o.rings || 10) * (o.det ?? K.det)), sg = Math.round((o.seg || 16) * (o.det ?? K.det)), part = o.part ?? K.newPart(), rows = [];
       for (let i = 0; i <= sr; i++) {
         const th = Math.PI * i / sr, row = [];
         for (let k = 0; k < sg; k++) {

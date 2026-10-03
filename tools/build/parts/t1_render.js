@@ -33,7 +33,8 @@ const T1R = (() => {
       vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
       float d = dot(n, uL) + vBias;
       vec3 c = (uFlat > 0.5 || d > uCut) ? uLit : uShade;
-      if (uFlash > 0.5) c = vec3(1.0) - c;                      /* 피격 순간 흑백 반전 (화면만) */
+      if (uFlash > 0.5) { float sat = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));   /* 피격 순간 (라운드 5): 2톤 반전 — 흰 → 먹 · 먹 → 흰 · 강조색 그대로 */
+        c = sat > 0.3 ? c : (dot(c, vec3(0.299, 0.587, 0.114)) > 0.5 ? vec3(0.078, 0.067, 0.071) : vec3(0.992, 0.984, 0.984)); }
       pc_fragColor = vec4(c, uAlpha);
       float id = mod(uId + vPart, 255.0) + 1.0;                  /* 0 = 배경 */
       gInfo = vec4(id / 255.0, uLine, 1.0, 1.0);
@@ -97,7 +98,10 @@ const T1R = (() => {
       }
       vec3 col = id0 < 0.5 ? uBg : c0.rgb;
       col = mix(col, uInk, ink);
-      if (uImpact > 0.5) col = vec3(1.0) - col;                  /* 임팩트 프레임: 1프레임 흑백 반전 */
+      if (uImpact > 0.5) {                                       /* 임팩트 프레임 (라운드 5): 2톤 반전 — 밝은 면 → 먹 · 어두운 면 → 흰 · 강조색은 빨강 그대로 (팔레트 밖 색 없음) */
+        float lum = dot(col, vec3(0.299, 0.587, 0.114)), sat = max(col.r, max(col.g, col.b)) - min(col.r, min(col.g, col.b));
+        col = sat > 0.3 ? vec3(0.784, 0.063, 0.18) : (lum > 0.5 ? uInk : vec3(0.992, 0.984, 0.984));
+      }
       outColor = vec4(col, 1.0);
     }`;
   /* 텍스처 바닥: 텍스처 색 그대로 (선 = 부품 ID 경계만) */

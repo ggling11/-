@@ -1,0 +1,45 @@
+{
+ "models": {
+  "info": {
+   "calls": 31,
+   "tris": 39481,
+   "models": {
+    "rapier": {
+     "tris": 11809,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 9166,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 16648,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 938
+ },
+ "models2": {
+  "info": {
+   "calls": 31,
+   "tris": 39481,
+   "models": {
+    "rapier": {
+     "tris": 11809,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 9166,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 16648,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 556
+ },
+ "logs": []
+}

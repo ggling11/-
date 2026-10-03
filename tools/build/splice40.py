@@ -56,7 +56,7 @@ function artHideRig(on) {
 }
 function artApply(id) { const T = ART.themes[id]; artHideRig(id !== 0); if (T && T.apply) T.apply(); }
 function artDispose(id) { const T = ART.themes[id]; if (T && T.dispose) T.dispose(); }
-function artFrame(dt) { const T = ART.themes[ART.cur]; if (!ART.cur || !T || !T.frame) return false; return T.frame(dt) !== false; }   /* true = 테마가 렌더를 대신함 */
+function artFrame(dt) { const T = ART.themes[ART.cur]; if (!ART.cur || !T || !T.frame) return false; artHideRig(true); return T.frame(dt) !== false; }   /* true = 테마가 렌더를 대신함 · 새로 만든 리그(다시 시작 · 캐릭터 바꿈)도 매 프레임 레이어로 숨김 */
 function artHud(ctx) { const T = ART.themes[ART.cur]; if (!ART.cur || !T || !T.hud) return false; return T.hud(ctx) !== false; }   /* true = 테마가 HUD를 대신함 */
 function artSet(n, o = {}) {
   n = Number(n) || 0; if (!ART.themes[n]) n = 0;
@@ -132,8 +132,8 @@ rep("    if (toSel && (Game.state === 'won' || Game.state === 'lost') && Game.en
     "    if (toSel && !SLICE.on && (Game.state === 'won' || Game.state === 'lost') && Game.endT > (Game.state === 'won' ? 2.2 : 1.6)) { Select.open(); Input.endFrame(); return; }")
 
 # ---------------------------------------------------------------- 시작: 테마 고르기 (브라우저만)
-rep("if (STYLE.on) Title3.open(); else Select.open();   // 3단계: title screen first (2단계: character select)",
-    "if (STYLE.on) Title3.open(); else Select.open();   // 3단계: title screen first (2단계: character select)\nartBoot();                                        /* 4단계: 주소 ?art=N > 기억 > ART.boot (Node = 테마 0) */")
+rep("document.getElementById('boot').remove();\naddEventListener('pointerdown',",
+    "artBoot();                                        /* 4단계: 주소 ?art=N > 기억 > ART.boot (Node = 테마 0) · 테마 등록(PIPE 앞)이 다 끝난 뒤 */\ndocument.getElementById('boot').remove();\naddEventListener('pointerdown',")
 
 # 4단계 테마 1 (애니 셀)
 exec(open(os.path.join(HERE, 'splice41.py'), encoding='utf8').read())

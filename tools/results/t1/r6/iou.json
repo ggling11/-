@@ -1,0 +1,68 @@
+[
+ {
+  "spec": "rapier:idle:0",
+  "iou": 0.447,
+  "t1px": 1594,
+  "s3px": 1893
+ },
+ {
+  "spec": "great:idle:0",
+  "iou": 0.347,
+  "t1px": 1806,
+  "s3px": 1966
+ },
+ {
+  "spec": "warden:idle:0",
+  "iou": 0.373,
+  "t1px": 1863,
+  "s3px": 2840
+ },
+ {
+  "spec": "rapier:combo1:4",
+  "iou": 0.212,
+  "t1px": 2247,
+  "s3px": 2430
+ },
+ {
+  "spec": "rapier:parry:3",
+  "iou": 0.247,
+  "t1px": 1564,
+  "s3px": 2104
+ },
+ {
+  "spec": "rapier:dash:2",
+  "iou": 0.177,
+  "t1px": 2017,
+  "s3px": 2123
+ },
+ {
+  "spec": "rapier:hit:1",
+  "iou": 0.394,
+  "t1px": 1581,
+  "s3px": 1755
+ },
+ {
+  "spec": "great:gs1:5",
+  "iou": 0.313,
+  "t1px": 1965,
+  "s3px": 2073
+ },
+ {
+  "spec": "great:parry:3",
+  "iou": 0.316,
+  "t1px": 1884,
+  "s3px": 1898
+ },
+ {
+  "spec": "great:dash:2",
+  "iou": 0.188,
+  "t1px": 1863,
+  "s3px": 2031
+ },
+ {
+  "spec": "great:hit:1",
+  "iou": 0.39,
+  "t1px": 1654,
+  "s3px": 1737
+ }
+]

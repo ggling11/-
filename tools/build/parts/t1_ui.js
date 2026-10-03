@@ -11,11 +11,12 @@ T1H.game = (ctx, S) => {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   H.frame(ctx, W, Hh);
   const L = H.left(), Rr = H.right(), t = S.t;
-  const ui = H.ui || (H.ui = { state: null, wipe: 0, panelT: 0, lastHp: [100, 100], hpFlash: [0, 0], rally: 0, rallyT: 0, bossHp: 1, bossFlash: 0, techS: '', techT: 0 });
+  const ui = H.ui || (H.ui = { state: null, wipe: 0, panelT: 0, lastHp: [null, null], hpFlash: [0, 0], rally: null, rallyT: 9, bossHp: null, bossFlash: 0, techS: '', techT: 0 });
   /* 화면 전환 와이프: 상태가 바뀌면 사선 빗금 띠가 쓸고 지나감 */
   const st = Game.state;
-  if (st !== ui.state) { if (ui.state !== null) ui.wipe = U.wipeT; ui.state = st; if (st === 'play') ui.panelT = 0; }
-  ui.wipe = Math.max(0, ui.wipe - S.realDt); ui.panelT += S.realDt;
+  /* UI 시간 = 게임 시계(clock.t · 업데이트가 진행) → 같은 게임 상태면 같은 그림 (캡처 · 재현) */
+  if (st !== ui.state) { if (ui.state !== null) ui.wipeAt = clock.t; ui.state = st; }
+  ui.wipe = ui.wipeAt === undefined ? 0 : Math.max(0, U.wipeT - (clock.t - ui.wipeAt)); ui.panelT = st === 'play' ? Game.t : 99;
   const proj = (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(S.R.camera); return [((v.x + 1) / 2) * W / H.u - H.ox / H.u, ((1 - v.y) / 2) * 1080, v.z]; };
   const charCol = f => (f.char === 'great' ? P.red : P.blue);
   const KO = { 'THE AZURE WARDEN': '애저 워든', 'THE SCARLET COLOSSUS': '스칼렛 콜로서스', 'THE WEEPING BELL': '위핑 벨', 'THE TWIN DOKKAEBI': '쌍둥이 도깨비' };
@@ -42,7 +43,7 @@ T1H.game = (ctx, S) => {
     H.text(ctx, ko, x0, y0 + 56, 58, P.ink, { ko: true, big: true, stroke: 10, sc: '#fefefe' });
     H.text(ctx, nm.replace('THE ', ''), x0 + 4, y0 + 88, 24, P.ink, { stroke: 6, sc: '#fefefe' });
     const bx = x0, by = y0 + 104, bw = 620, bh = 20, f = Math.max(0, AI.hp / AI.maxHp), c = Math.max(f, AI.chip / AI.maxHp);
-    if (f < ui.bossHp - 0.002) ui.bossFlash = 0.08; ui.bossHp = f; ui.bossFlash = Math.max(0, ui.bossFlash - S.realDt);
+    if (ui.bossHp !== null && f < ui.bossHp - 0.002) ui.bossFlash = 0.08; ui.bossHp = f; ui.bossFlash = Math.max(0, ui.bossFlash - S.realDt);
     const inv = ui.bossFlash > 0;
     H.poly(ctx, [[bx + 8, by], [bx + bw + 8, by], [bx + bw, by + bh], [bx, by + bh]], inv ? P.ink : '#fefefe', P.ink, 4);
     ctx.save(); ctx.beginPath(); ctx.moveTo(bx + 8, by); ctx.lineTo(bx + bw + 8, by); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx, by + bh); ctx.closePath(); ctx.clip();
@@ -53,7 +54,7 @@ T1H.game = (ctx, S) => {
     for (let i = 0; i < 3; i++) { const x = bx + bw + 24 + i * 26; H.poly(ctx, [[x + 5, by], [x + 19, by], [x + 14, by + bh], [x, by + bh]], i < AI.phase ? P.ink : '#fefefe', P.ink, 3); }
     if (AI.brk > 0 || AI.state === 'groggy') { const g = AI.state === 'groggy' ? 1 : AI.brk / FIGHT.BREAK_MAX; ctx.fillStyle = P.ink; ctx.fillRect(bx, by + bh + 7, bw * g, 9); H.hatch(ctx, bx, by + bh + 7, bw * g, 9, '#fefefe', 12, 4);
       if (AI.state === 'groggy') H.text(ctx, 'BREAK', bx + bw * g + 12, by + bh + 18, 20, P.red); }
-    if (AI.phaseNoteT > 0) H.stamp(ctx, bx + bw + 150, by + 10, 46, AI.phase >= 3 ? 'III' : 'II', 44, Math.min(1, (1.2 - AI.phaseNoteT) / 0.12));
+    if (AI.phaseNoteT > 0) H.stamp(ctx, bx + bw + 150, by + 10, 46, AI.phase >= 3 ? 'III' : 'II', 44, Math.max(0, Math.min(1, (2.5 - AI.phaseNoteT) / 0.12))   /* phaseNoteT는 2.5에서 줄어듦 */);
   }
   function topRight(ctx) {
     const s = Math.floor(Game.t), tm = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`, x = Rr - 40;
@@ -62,7 +63,7 @@ T1H.game = (ctx, S) => {
     H.text(ctx, 'ESC  MENU', x, 102, 18, '#6a494e', { al: 'right' });
   }
   function rally(ctx) {
-    const r = Duo.rally || 0; if (r !== ui.rally) { if (r > ui.rally) ui.rallyT = 0; ui.rally = r; } ui.rallyT += S.realDt;
+    const r = Duo.rally || 0; if (r !== ui.rally) { if (ui.rally !== null && r > ui.rally) ui.rallyT = 0; ui.rally = r; } ui.rallyT += S.realDt;
     if (r <= 0) return;
     const x = Rr - 120, y = 190, full = r >= FEEL.RALLY_MAX, k = Math.min(1, ui.rallyT / U.stampT);
     H.stamp(ctx, x, y, 56, String(r), 64, k);
@@ -82,7 +83,7 @@ T1H.game = (ctx, S) => {
   }
   function panel(ctx, f, x, y, right, solo) {
     const i = f.idx, col = charCol(f), w = 440, h = 120;
-    if (f.hp < ui.lastHp[i] - 0.5) ui.hpFlash[i] = 0.12; ui.lastHp[i] = f.hp; ui.hpFlash[i] = Math.max(0, ui.hpFlash[i] - S.realDt);
+    if (ui.lastHp[i] !== null && f.hp < ui.lastHp[i] - 0.5) ui.hpFlash[i] = 0.12; ui.lastHp[i] = f.hp; ui.hpFlash[i] = Math.max(0, ui.hpFlash[i] - S.realDt);
     const inv = ui.hpFlash[i] > 0, down = f.state === 'down';
     H.poly(ctx, [[x + 18, y], [x + w + 18, y], [x + w, y + h], [x, y + h]], '#fefefe', P.ink, 4);
     H.hatch(ctx, x + 10, y + 4, w, 18, '#cfc6c8', 12, 5); ctx.fillStyle = col; ctx.fillRect(right ? x + 30 : x + w - 120, y + 4, 90, 8);
@@ -195,11 +196,17 @@ T1H.game = (ctx, S) => {
     const cx = Math.max(L + m, Math.min(Rr - m, x)), cy = Math.max(m, Math.min(1080 - m, y)), a = Math.atan2(y - cy, x - cx);
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, -14); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = P.ink; ctx.stroke(); ctx.restore();
   }
+  function koName(s) {   /* 영문 기술명 → 한글 부제 (앞말 + 이름) */
+    const K = D.ui.ko || {}, KP = D.ui.koPre || {}; s = String(s).trim(); if (K[s]) return K[s];
+    const i = s.indexOf(' '), pre = i > 0 ? s.slice(0, i) : '', rest = i > 0 ? s.slice(i + 1).trim() : '';
+    if (KP[pre] && K[rest]) return KP[pre] + ' ' + K[rest];
+    return null;
+  }
   function techName(ctx) {
     const T = Game.techName; if (!T || T.t <= 0) return;
     if (T.s !== ui.techS || T.t > ui.techT + 0.01) { ui.techS = T.s; } ui.techT = T.t;
     const f = fighters.find(o => T.col && (charHex(o) === T.col)), col = T.col && T.col.toLowerCase() === '#c78dff' ? P.purple : f ? charCol(f) : P.ink;
-    H.techName(ctx, { s: T.s, ko: (D.ui.ko || {})[T.s] || null, col, t: T.t });
+    H.techName(ctx, { s: T.s, ko: koName(T.s), col, t: T.t });
   }
   function banners(ctx) {
     if (Game.bannerT > 0) H.text(ctx, Game.bannerText, 960, 420, 46, P.ink, { al: 'center', stroke: 10, sc: '#fefefe' });
