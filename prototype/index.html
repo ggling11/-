@@ -1,4 +1,4 @@
-<title>합 프로토타입</title>
+<title>합 · 두 손의 거인</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
@@ -31,6 +31,8 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .boss { grid-column: 2; display: grid; gap: 6px; text-align: center; background: rgba(10, 13, 22, 0.55); border-radius: 4px; padding: 6px 10px 8px; }
 .boss-name { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.04em; text-shadow: 0 2px 0 rgba(0,0,0,0.5); }
 .bar { height: 10px; background: rgba(0,0,0,0.45); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.bar { position: relative; }
+.bar .mk { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(244, 239, 230, 0.75); }
 .bar > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #b06cff, #ff5a8a); transition: width 0.12s; }
 .stats { grid-column: 3; justify-self: end; text-align: right; font-size: 12px; line-height: 1.6; color: var(--ink-dim); font-variant-numeric: tabular-nums; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 4px; }
 .stats b { color: var(--gold); font-weight: 600; }
@@ -61,6 +63,14 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .ft.hint { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink-dim); }
 .ft.warn { font-size: 20px; color: var(--danger); }
 .ft.small { font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--ink-dim); }
+.ft.atkname { font-family: var(--font-body); font-weight: 600; font-size: 15px; color: var(--ink); background: rgba(10, 13, 22, 0.62); padding: 2px 10px; border-radius: 3px; text-shadow: none; }
+.ft.mutual { font-size: 54px; color: #fff; text-shadow: 0 0 18px rgba(255,255,255,0.9), 0 0 36px var(--danger), 0 4px 0 rgba(0,0,0,0.6); }
+.ft.twin { font-size: 88px; color: #fff; text-shadow: 0 0 28px var(--gold), 0 0 64px rgba(255,255,255,0.8), 0 6px 0 rgba(0,0,0,0.6); }
+
+/* 막 전환 배너 */
+#banner { position: fixed; left: 50%; top: 20%; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); text-align: center; pointer-events: none; opacity: 0; }
+#banner h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(36px, 7vw, 58px); letter-spacing: 0.04em; text-shadow: 0 4px 0 rgba(0,0,0,0.55); }
+#banner p { margin: 6px 0 0; font-size: 15px; color: var(--ink); text-shadow: 0 2px 0 rgba(0,0,0,0.7); }
 
 #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 45%, rgba(255,240,190,0.9), rgba(255,210,63,0.25) 45%, transparent 75%); mix-blend-mode: screen; }
 
@@ -78,6 +88,13 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .mode:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .mode .big { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.03em; }
 .mode .desc { font-size: 13px; color: var(--ink-dim); }
+.bosspick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bosspick .lbl { font-size: 13px; color: var(--ink-dim); margin-right: 4px; }
+.bosspick kbd { font-family: var(--font-body); font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; margin-left: 4px; }
+.pick { all: unset; cursor: pointer; display: grid; gap: 2px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 4px; font-size: 14px; font-weight: 600; }
+.pick small { font-weight: 400; font-size: 12px; color: var(--ink-dim); }
+.pick[aria-pressed="true"] { border-color: var(--gold); background: rgba(255, 210, 63, 0.12); }
+.pick:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .mode kbd { font-family: var(--font-body); font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; margin-right: 6px; color: var(--ink-dim); }
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -112,13 +129,14 @@ td:first-child { color: var(--ink-dim); }
 
 <div id="view"></div>
 <div id="flash"></div>
+<div id="banner"><h3 id="bannerTitle"></h3><p id="bannerSub"></p></div>
 <div id="texts"></div>
 
 <div id="hud" hidden>
   <div class="top">
     <div class="boss">
-      <div class="boss-name">시험용 보스 · 밤의 문지기</div>
-      <div class="bar"><i id="bossHp"></i></div>
+      <div class="boss-name" id="bossName">오르덴 · 두 손의 거인</div>
+      <div class="bar" id="bossBar"><i id="bossHp"></i></div>
     </div>
     <div class="stats" id="stats"></div>
   </div>
@@ -147,7 +165,13 @@ td:first-child { color: var(--ink-dim); }
     </div>
     <p class="rule">한 명이 보스 공격을 <strong>받아내면</strong>, 보스의 틈은 <strong>파트너 쪽</strong>으로 열려요.
       그 틈을 치면 <strong>합</strong>. 받기와 거의 동시에 치면 <strong>완벽한 합</strong>이에요.
-      혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
+      혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.
+      오르덴 3막의 <strong>양손 공격은 둘 다 받아야</strong> 열려요(맞받기). 그 틈을 둘이 같이 치면 <strong>쌍합</strong>.</p>
+    <div class="bosspick" role="group" aria-label="보스 선택">
+      <span class="lbl">보스 <kbd>B</kbd></span>
+      <button class="pick" type="button" data-boss="orden" aria-pressed="true">오르덴 · 두 손의 거인<small>3막 · 사이, 연타, 맞받기</small></button>
+      <button class="pick" type="button" data-boss="gatekeeper" aria-pressed="false">밤의 문지기<small>기존 시험용 보스</small></button>
+    </div>
     <div class="modes">
       <button class="mode" id="soloBtn" type="button">
         <span class="big">혼자 하기</span>
@@ -178,6 +202,9 @@ td:first-child { color: var(--ink-dim); }
       <span><i style="background: var(--danger)"></i>주황 표시: 받아낼 수 있는 공격</span>
       <span><i style="background: var(--unblock)"></i>보라 표시: 받을 수 없음, 피하기</span>
       <span><i style="background: #fff"></i>받기 링이 흰색일 때 맞으면 정확한 받기</span>
+      <span><i style="background: transparent; border: 2px solid #fff"></i>원 안쪽에 흰 테가 생기면 더는 안 따라와요, 곧 떨어져요</span>
+      <span><i style="background: transparent; border: 2px solid var(--gold)"></i>금색 테: 연타의 마지막 한 방, 받으면 큰 틈</span>
+      <span><i style="background: var(--gold); border-radius: 1px; height: 4px; width: 16px"></i>금색 줄로 이어진 두 원: 둘 다 받아야 열림</span>
     </div>
     <p class="note">키보드나 게임패드가 필요해요. 패드는 연결한 뒤 버튼을 한 번 눌러 주세요. 게임 중 <kbd>`</kbd> 키로 판정 시간과 배율, 아트 스타일을 바꿀 수 있어요. <kbd>Esc</kbd>는 이 화면으로 돌아와요.</p>
   </div>
@@ -354,7 +381,7 @@ function popText(pos, str, cls, life = 0.9) {
   el.className = 'ft ' + cls;
   el.textContent = str;
   textsEl.appendChild(el);
-  texts.push({ el, pos: pos.clone(), t: 0, life, pop: /perfect|hap/.test(cls) });
+  texts.push({ el, pos: pos.clone(), t: 0, life, pop: /perfect|hap|twin|mutual/.test(cls) });
 }
 const partMats = new Map();
 function burst(pos, color, n, speed) {
@@ -429,6 +456,16 @@ const SFX = {
   miss() { tone(330, 0.15, { type: 'triangle', vol: 0.07 }); tone(247, 0.22, { type: 'triangle', vol: 0.07, delay: 0.12 }); },
   windup(kind) { tone(kind === 'shock' ? 160 : 110, 0.3, { vol: 0.07, to: kind === 'shock' ? 330 : 220 }); },
   dodge() { noise(0.1, { vol: 0.06, freq: 2500 }); },
+  lock() { tone(1760, 0.05, { type: 'triangle', vol: 0.05 }); },
+  roar() { noise(1.1, { vol: 0.3, freq: 220, type: 'lowpass' }); tone(55, 1.1, { type: 'sawtooth', vol: 0.1, to: 38 }); },
+  mutual() {
+    tone(392, 0.7, { type: 'triangle', vol: 0.14 }); tone(587.33, 0.7, { type: 'triangle', vol: 0.12 });
+    noise(0.08, { vol: 0.28, freq: 5200 }); tone(80, 0.45, { vol: 0.42, to: 38 });
+  },
+  twinHap() {
+    [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 1.4, { type: 'triangle', vol: 0.11, delay: i * 0.015 }));
+    tone(2093, 0.9, { vol: 0.06, delay: 0.08 }); tone(58, 1.0, { vol: 0.55, to: 26 }); noise(0.4, { vol: 0.32, freq: 420 });
+  },
 };
 
 // ───────────────────────── 입력 ─────────────────────────
@@ -452,6 +489,7 @@ addEventListener('keydown', e => {
   if (!titleEl.hidden && (e.code === 'Digit1' || e.code === 'Numpad1')) start('solo');
   if (!titleEl.hidden && (e.code === 'Digit2' || e.code === 'Numpad2')) start('duo');
   if (!titleEl.hidden && (e.code === 'Digit3' || e.code === 'Numpad3')) start('practice');
+  if (!titleEl.hidden && e.code === 'KeyB') setBoss(G.bossKind === 'orden' ? 'gatekeeper' : 'orden');
 });
 addEventListener('keyup', e => keysDown.delete(e.code));
 addEventListener('blur', () => keysDown.clear());
@@ -571,7 +609,7 @@ class Player {
         break;
       case 'receive':
         if (c.dodge && this.dodgeCd <= 0) { this.startDodge(dodgeDir()); break; }
-        if (!c.rcvHeld) { this.state = 'free'; this.rcvCd = CFG.receiveCooldown; break; }
+        if (!c.rcvHeld) { this.state = 'free'; this.rcvCd = G.boss.state === 'windup' && G.boss.atk?.strikes?.length > 1 ? 0 : CFG.receiveCooldown; break; }
         this.pos.addScaledVector(c.move, SPEED * 0.25 * dt);
         if (!B.dead) this.faceDir(dirTo(this.pos, B.pos), dt * 10);
         break;
@@ -646,15 +684,43 @@ class Player {
 }
 
 // ───────────────────────── 보스 ─────────────────────────
-function circleTele(center, radius, color) {
+// 원형 예고. rim을 주면 테두리 색이 다르다(금색 = 받으면 큰 틈). lock()은 "이제 안 따라온다, 곧 떨어진다" 표시.
+function circleTele(center, radius, color, rim = color) {
   const g = new THREE.Group(); g.position.set(center.x, 0.03, center.z);
-  const flatMesh = (geo, op, y = 0) => { const m = new THREE.Mesh(geo, basicT(color, op)); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); return m; };
+  const flatMesh = (geo, op, y = 0, c = color) => { const m = new THREE.Mesh(geo, basicT(c, op)); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); return m; };
   flatMesh(new THREE.CircleGeometry(radius, 64), 0.12);
   const fill = flatMesh(new THREE.CircleGeometry(radius, 64), 0.32, 0.005);
-  flatMesh(new THREE.RingGeometry(radius - 0.1, radius, 64), 0.95, 0.01);
+  flatMesh(new THREE.RingGeometry(radius - (rim === color ? 0.1 : 0.22), radius, 64), 0.95, 0.01, rim);
   fill.scale.setScalar(0.001);
   scene.add(g);
-  return { set(p) { fill.scale.setScalar(Math.max(0.001, p)); }, dispose() { disposeTree(g); } };
+  return {
+    set(p) { fill.scale.setScalar(Math.max(0.001, p)); },
+    move(p) { g.position.set(p.x, 0.03, p.z); },
+    lock() { flatMesh(new THREE.RingGeometry(radius - 0.42, radius - 0.28, 64), 0.95, 0.012, 0xffffff); },
+    dispose() { disposeTree(g); },
+  };
+}
+// 부채꼴 예고 (쓸어내기). dir 쪽으로 ±halfDeg
+function sectorTele(center, dir, radius, halfDeg, color) {
+  const half = (halfDeg * Math.PI) / 180;
+  const g = new THREE.Group(); g.position.set(center.x, 0.03, center.z);
+  const flat = (geo, op, y = 0) => { const m = new THREE.Mesh(geo, basicT(color, op, true)); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); return m; };
+  flat(new THREE.CircleGeometry(radius, 48, -half, half * 2), 0.12);
+  const fill = flat(new THREE.CircleGeometry(radius, 48, -half, half * 2), 0.32, 0.005);
+  flat(new THREE.RingGeometry(radius - 0.12, radius, 48, 1, -half, half * 2), 0.95, 0.01);
+  fill.scale.setScalar(0.001);
+  const aim = d => { g.rotation.y = Math.atan2(-d.z, d.x); };
+  aim(dir); scene.add(g);
+  return { set(p) { fill.scale.setScalar(Math.max(0.001, p)); }, move(p) { g.position.set(p.x, 0.03, p.z); }, aim, lock() {}, dispose() { disposeTree(g); } };
+}
+// 두 원을 잇는 바닥 줄: "둘 다 받아야 열린다"
+function linkTele(color) {
+  const geo = new THREE.PlaneGeometry(1, 0.24); geo.rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(geo, basicT(color, 0.9, true)); m.position.y = 0.05; scene.add(m);
+  return {
+    update(a, b) { m.position.set((a.x + b.x) / 2, 0.05, (a.z + b.z) / 2); m.scale.x = Math.max(0.01, Math.hypot(b.x - a.x, b.z - a.z)); m.rotation.y = Math.atan2(-(b.z - a.z), b.x - a.x); },
+    dispose() { disposeTree(m); },
+  };
 }
 function laneTele(origin, dir, length, width, color) {
   const g = new THREE.Group(); g.position.set(origin.x, 0.03, origin.z); g.rotation.y = Math.atan2(dir.x, dir.z);
@@ -677,9 +743,21 @@ function shockTele(boss) {
 
 class Boss {
   constructor() {
-    this.R = 1.6;
     this.root = new THREE.Group(); this.tilt = new THREE.Group(); this.spin = new THREE.Group();
     this.root.add(this.tilt); this.tilt.add(this.spin);
+    this.build();
+    this.weak = new THREE.Group();
+    this.weak.add(new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff3c4 })));
+    this.weak.add(new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 12), new THREE.MeshBasicMaterial({ color: COLOR.gold, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })));
+    this.root.add(this.weak);
+    this.arcHolder = new THREE.Group(); this.arcHolder.position.y = 0.05; this.root.add(this.arcHolder);
+    this.arc = null;
+    scene.add(this.root);
+    this.reset();
+  }
+  // 시험용 보스: 밤의 문지기
+  build() {
+    this.name = '시험용 보스 · 밤의 문지기'; this.R = 1.6; this.weakY = 2.1; this.camScale = 1;
     const body = outlined(new THREE.CapsuleGeometry(1.25, 1.5, 8, 24), toon(COLOR.boss));
     body.group.position.y = 2.05; this.spin.add(body.group);
     this.bodyMat = body.mesh.material;
@@ -701,21 +779,13 @@ class Boss {
       fist.group.position.set(0, -1.1, 0.25); arm.add(fist.group);
       this.spin.add(arm); this.arms.push(arm);
     }
-    this.weak = new THREE.Group();
-    this.weak.add(new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff3c4 })));
-    this.weak.add(new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 12), new THREE.MeshBasicMaterial({ color: COLOR.gold, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })));
-    this.root.add(this.weak);
-    this.arcHolder = new THREE.Group(); this.arcHolder.position.y = 0.05; this.root.add(this.arcHolder);
-    this.arc = null;
-    scene.add(this.root);
-    this.reset();
   }
+  setVisible(v) { this.root.visible = v; }
   reset() {
     this.tele?.dispose();
     if (this.shockMesh) disposeTree(this.shockMesh);
-    Object.assign(this, { hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null });
+    Object.assign(this, { hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null, gapMode: 'normal', mutualHits: [] });
     this.root.position.set(0, 0, -4);
-    this.root.visible = true;
     this.hideOpen();
   }
   get pos() { return this.root.position; }
@@ -744,9 +814,9 @@ class Boss {
   }
   showOpen() {
     this.weak.visible = true;
-    this.weak.position.copy(this.openDir).multiplyScalar(this.R * 0.95).setY(2.1);
+    this.weak.position.copy(this.openDir).multiplyScalar(this.R * 0.95).setY(this.weakY);
     if (this.arc) disposeTree(this.arc);
-    const half = (CFG.openHalfAngle * Math.PI) / 180;
+    const half = this.gapMode === 'mutual' ? Math.PI : (CFG.openHalfAngle * Math.PI) / 180;
     this.arc = new THREE.Mesh(new THREE.RingGeometry(this.R + 0.35, this.R + 2.0 + CFG.gapReachBonus, 48, 1, -half, half * 2), basicT(COLOR.gold, 0.45));
     this.arc.rotation.x = -Math.PI / 2;
     this.arcHolder.add(this.arc);
@@ -758,6 +828,8 @@ class Boss {
   }
   closeGap() {
     this.hideOpen();
+    // 맞받기 틈은 한 명이라도 쳤으면 놓친 게 아니다
+    if (this.gapMode === 'mutual' && this.mutualHits.length) { this.state = 'stagger'; this.t = 0.4; return; }
     popText(above(this, 4.2), '틈을 놓쳤다', 'hint');
     SFX.miss(); G.stats.missed++;
     this.state = 'recover'; this.t = 0.35;
@@ -908,6 +980,427 @@ class Boss {
   }
 }
 
+// ───────────────────────── 보스 B: 오르덴, 두 손의 거인 ─────────────────────────
+// 읽기 규칙: 주먹이 떠 있는 곳 = 떨어질 곳. 원은 대상을 따라오다가 안쪽에 흰 테가 생기면 멈추고 곧 떨어진다.
+// 주황 = 받을 수 있음, 보라 = 피해야 함, 금색 테 = 받으면 큰 틈, 금색 줄로 이어진 두 원 = 둘 다 받아야 열림.
+const ORD = {
+  hp: 1500,
+  reach: 6.5,           // 주먹이 닿는 거리 (보스 중심에서)
+  lockLead: 0.4,        // 떨어지기 이만큼 전에 따라오기를 멈춘다
+  trackSpeed: 6.5,      // 원이 대상을 따라오는 속도 (플레이어 이동 6.2)
+  rest: 0.9,            // 공격 사이 쉬는 시간
+  slamWindup: 1.0, slamRadius: 2.2, slamDmg: 25,
+  leapWindup: 1.35, leapRadius: 3.8,
+  sweepWindup: 1.15, sweepRadius: 8, sweepHalf: 70, sweepDmg: 20,
+  comboAt: [0.9, 1.55, 2.45], comboRadius: 2.0, comboFinalRadius: 2.8, comboFinalDmg: 30,
+  comboBonus: 0.3,      // 앞선 연타를 받아낸 수 × 이 비율만큼 마지막 틈이 길어짐
+  twinWindup: 1.5, twinRadius: 2.1, twinDmg: 30,
+  twinSoloOffset: 0.45, // 혼자 하기: 두 번째 손이 이만큼 늦게 떨어진다 (받고 → 태그 → 받고)
+  gapMutual: 3.5,       // 맞받기 틈 길이 (정확한 받기 1명당 +0.5)
+  recoilMutual: 0.3,    // 맞받기 반동 (보통 받기보다 짧다: 둘 다 쳐야 하니까)
+  twinSync: 0.35,       // 맞받기 틈에서 두 사람이 이 시간 안에 같이 치면 쌍합
+  twinMul: 4,
+  staggerTwin: 1.8,
+  phase2: 0.6, phase3: 0.3,
+  names: true,
+  force: '자동',
+};
+const ORD_ATK = {
+  slam: '한 손 내려찍기', midSlam: '사이 뛰어들기', sweep: '쓸어내기 · 피해', combo: '삼연 내려찍기 · 마지막을 받아라',
+  twin: '양손 맞내려찍기 · 둘 다 받아라', twinSolo: '양손 엇박 · 받고, 태그, 받고', charge: '돌진', shock: '포효 · 피해',
+};
+const ORD_FORCE = { '자동': null, '한 손 내려찍기': 'slam', '사이 뛰어들기': 'midSlam', '쓸어내기': 'sweep', '삼연 내려찍기': 'combo', '양손 맞내려찍기': 'twin', '돌진': 'charge' };
+const UP = V(0, 1, 0);
+
+function moveToward(v, goal, step) {
+  const dx = goal.x - v.x, dz = goal.z - v.z, l = Math.hypot(dx, dz);
+  if (l <= step || l < 1e-5) { v.x = goal.x; v.z = goal.z; } else { v.x += (dx / l) * step; v.z += (dz / l) * step; }
+}
+function placeSeg(g, a, b) {
+  const d = b.clone().sub(a), len = d.length() || 1;
+  g.position.copy(a).addScaledVector(d, 0.5);
+  g.quaternion.setFromUnitVectors(UP, d.divideScalar(len));
+  g.scale.set(1, len, 1);
+}
+// 두 마디 팔: 어깨 S에서 목표 T로. 팔꿈치는 pole 쪽으로 굽는다.
+function solveArm(S, T, L1, L2, pole, outE, outF) {
+  const d0 = S.distanceTo(T), d = clamp(d0, 0.3, (L1 + L2) * 0.999);
+  const u = T.clone().sub(S).normalize();
+  const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+  const v = pole.clone().addScaledVector(u, -pole.dot(u));
+  if (v.lengthSq() < 1e-6) v.set(0, 1, 0);
+  v.normalize();
+  outE.copy(S).addScaledVector(u, a).addScaledVector(v, h);
+  outF.copy(S).addScaledVector(u, d);
+}
+
+class Orden extends Boss {
+  build() {
+    this.name = '오르덴 · 두 손의 거인'; this.R = 2.4; this.weakY = 3.6; this.camScale = 1.2;
+    const stone = toon(0x5a4a7e), dark = toon(0x352a52), bone = toon(0xe9dcc0);
+    this.bodyMat = stone;
+    const add = (geo, mat, x, y, z) => { const o = outlined(geo, mat); o.group.position.set(x, y, z); this.spin.add(o.group); return o.group; };
+    for (const s of [-1, 1]) add(new THREE.CylinderGeometry(0.72, 0.92, 2.0, 10), dark, 1.05 * s, 1.0, 0);
+    add(new THREE.CapsuleGeometry(1.55, 1.7, 8, 20), stone, 0, 3.5, 0).scale.set(1.3, 1, 1.05);
+    for (const s of [-1, 1]) add(new THREE.SphereGeometry(1.0, 16, 12), bone, 2.25 * s, 4.85, 0);
+    add(new THREE.SphereGeometry(0.85, 16, 12), dark, 0, 5.95, 0.4);
+    add(new THREE.BoxGeometry(1.25, 0.95, 0.4), bone, 0, 5.95, 1.1);
+    for (const s of [-1, 1]) add(new THREE.ConeGeometry(0.28, 1.7, 10), bone, 0.8 * s, 6.75, 0.35).rotation.z = -0.95 * s;
+    for (let i = 0; i < 3; i++) add(new THREE.ConeGeometry(0.32, 1.1, 8), bone, 0, 2.8 + i * 0.85, -1.75).rotation.x = -0.9;
+    this.eyeMat = new THREE.MeshBasicMaterial({ color: COLOR.gold });
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), this.eyeMat);
+      eye.position.set(0.3 * s, 6.0, 1.33); this.spin.add(eye);
+    }
+    this.coreMat = new THREE.MeshBasicMaterial({ color: 0x3a2d55 });
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), this.coreMat);
+    core.position.set(0, 3.9, 2.0); this.spin.add(core);
+    // 팔과 주먹은 장면에 직접 붙여서 월드 좌표로 움직인다
+    this.handRoot = new THREE.Group(); scene.add(this.handRoot);
+    this.hands = [-1, 1].map(side => {
+      const up = outlined(new THREE.CylinderGeometry(0.55, 0.62, 1, 10), stone);
+      const fore = outlined(new THREE.CylinderGeometry(0.66, 0.5, 1, 10), dark);
+      const fist = outlined(new THREE.DodecahedronGeometry(1.05, 0), dark);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.14, 8, 20), new THREE.MeshBasicMaterial({ color: COLOR.gold }));
+      band.rotation.x = Math.PI / 2; band.position.y = -0.62; fist.group.add(band);
+      this.handRoot.add(up.group, fore.group, fist.group);
+      return { side, up: up.group, fore: fore.group, fist: fist.group, pos: V(), elbow: V(), reachPt: V(), plant: null, swing: null };
+    });
+  }
+  setVisible(v) { this.root.visible = v; this.handRoot.visible = v; }
+  reset() {
+    this.clearStrikes();
+    super.reset();
+    Object.assign(this, { hp: ORD.hp, maxHp: ORD.hp, phase: 1, pendingPhase: 0, sinceTwin: 0, sinceCombo: 0, lastKind: null });
+    this.root.position.set(0, 0, -4.5);
+    for (const h of this.hands) { h.plant = h.swing = null; this.restPos(h.side, h.pos); }
+  }
+  clearStrikes() {
+    const A = this.atk;
+    if (A?.strikes) { A.strikes.forEach(s => { s.tele?.dispose(); s.tele = null; }); A.link?.dispose(); A.link = null; }
+  }
+  // 보스 기준 좌표 → 월드
+  local(x, y, z, out = V()) {
+    const c = Math.cos(this.yaw), s = Math.sin(this.yaw);
+    return out.set(this.pos.x + x * c + z * s, this.root.position.y + y, this.pos.z - x * s + z * c);
+  }
+  restPos(side, out = V()) { return this.local(3.0 * side, 1.4 + Math.sin(G.time * 1.6 + side) * 0.12, 1.8, out); }
+  handToward(p) {
+    const lx = (p.x - this.pos.x) * Math.cos(this.yaw) - (p.z - this.pos.z) * Math.sin(this.yaw);
+    return lx >= 0 ? 1 : -1;
+  }
+  clampReach(p) {
+    const out = p.clone().setY(0), d = distXZ(this.pos, p);
+    if (d > ORD.reach) out.copy(this.pos).addScaledVector(dirTo(this.pos, p), ORD.reach).setY(0);
+    return out;
+  }
+  damage(n) {
+    super.damage(n);
+    if (this.dead) { this.clearStrikes(); this.hands.forEach(h => (h.plant = null)); return; }
+    const r = this.hp / this.maxHp, want = r <= ORD.phase3 ? 3 : r <= ORD.phase2 ? 2 : 1;
+    if (want > this.phase && want > this.pendingPhase) this.pendingPhase = want;
+  }
+  announce(name, life) {
+    if (ORD.names && name) popText(above(this, 8.2), name, 'atkname', clamp(life, 0.9, 1.8));
+  }
+  // 막 전환: 크게 포효하고 충격파. 다음 막의 대표 패턴을 바로 한 번 보여 준다.
+  startPhase(n) {
+    this.clearStrikes();
+    this.phase = n; this.pendingPhase = 0;
+    this.state = 'roar'; this.t = 1.3; this.atk = { kind: 'roar' };
+    if (n === 2) { this.sinceCombo = 9; showBanner('2막 · 연타', '주먹이 몰아친다. 마지막 금색 한 방을 받아라.'); }
+    if (n === 3) {
+      this.sinceTwin = 9;
+      showBanner('3막 · 양손', G.mode === 'solo' ? '양손이 엇박으로 떨어진다. 받고, 태그, 받고.' : '양손이 둘을 동시에 노린다. 둘 다 받아야 열린다.');
+    }
+    SFX.roar(); G.shake = Math.max(G.shake, 0.6);
+  }
+  update(dt) {
+    if (!this.dead && this.state === 'chase' && this.pendingPhase) return this.startPhase(this.pendingPhase);
+    if (!this.dead && this.state === 'roar') {
+      this.hitFlash -= dt; this.t -= dt;
+      if (this.t <= 0) this.begin('shock');
+      return;
+    }
+    if (!this.dead && this.state === 'windup' && this.atk?.strikes) { this.hitFlash -= dt; this.validateTarget(); return this.stepStrikes(dt); }
+    super.update(dt);
+  }
+  choose(d) {
+    const alive = activePlayers(), both = isDuo() && alive.length === 2;
+    const forced = ORD_FORCE[ORD.force];
+    if (forced) return this.begin((forced === 'midSlam' || (forced === 'twin' && isDuo())) && !both ? 'slam' : forced);
+    const twinOk = this.phase >= 3 && (both || G.mode === 'solo');
+    if (twinOk && this.sinceTwin >= 3) return this.begin('twin');
+    if (this.phase >= 2 && this.sinceCombo >= 3) return this.begin('combo');
+    const pd = both ? distXZ(alive[0].pos, alive[1].pos) : 0, leapOk = both && pd > 2.5 && pd < 10;
+    if (d > ORD.reach) {
+      if (leapOk && Math.random() < 0.5) return this.begin('midSlam');
+      if (d > ORD.reach + 3 && Math.random() < 0.5) return this.begin('charge');
+      this.cd = 0.2; return;
+    }
+    const pool = [['slam', 4]];
+    if (leapOk) pool.push(['midSlam', 3]);
+    if (this.lastKind !== 'sweep' && d < ORD.sweepRadius - 1) pool.push(['sweep', 2]);
+    if (this.phase >= 2) pool.push(['combo', 3]);
+    if (twinOk) pool.push(['twin', 3]);
+    let r = Math.random() * pool.reduce((a, [, w]) => a + w, 0);
+    for (const [k, w] of pool) { r -= w; if (r <= 0) return this.begin(k); }
+    this.begin('slam');
+  }
+  strike(o) { return { teleAt: 0, color: COLOR.recv, rim: undefined, done: false, locked: false, recv: [], center: null, tele: null, ...o }; }
+  begin(kind) {
+    this.clearStrikes();
+    this.lastKind = kind; this.sinceTwin++; this.sinceCombo++;
+    this.cd = ORD.rest;
+    this.hands.forEach(h => (h.plant = null));
+    if (kind === 'charge' || kind === 'shock') { super.begin(kind); this.announce(ORD_ATK[kind], this.atk.windup); return; }
+    const tgt = this.target;
+    const track = p => () => (p && p.alive ? p.pos : null);
+    const activeTrack = () => { const p = G.players[G.active]; return p.alive ? p.pos : null; };
+    const A = { kind, strikes: [], dmg: ORD.slamDmg, receivable: true, name: ORD_ATK[kind] };
+    if (kind === 'slam') {
+      A.strikes.push(this.strike({ side: this.handToward(tgt.pos), at: ORD.slamWindup, radius: ORD.slamRadius, track: track(tgt) }));
+    } else if (kind === 'midSlam') {
+      // 두 사람 사이로 뛰어든다. 받은 사람 반대편(= 파트너 쪽)이 열린다.
+      const [a, b] = activePlayers();
+      A.from = this.pos.clone();
+      A.strikes.push(this.strike({ side: 0, at: ORD.leapWindup, radius: ORD.leapRadius, leap: true, track: () => {
+        const ps = [a, b].filter(p => p?.alive); if (!ps.length) return null;
+        const m = V(); ps.forEach(p => m.add(p.pos)); m.divideScalar(ps.length).setY(0);
+        const l = Math.hypot(m.x, m.z); if (l > ARENA_R - 3) m.multiplyScalar((ARENA_R - 3) / l);
+        return m;
+      } }));
+    } else if (kind === 'sweep') {
+      A.receivable = false; A.dmg = ORD.sweepDmg;
+      A.strikes.push(this.strike({ side: 1, at: ORD.sweepWindup, sweep: true, radius: ORD.sweepRadius, track: track(tgt) }));
+    } else if (kind === 'combo') {
+      // 같은 사람을 세 번. 중간 받기는 반동 없이 버티고, 마지막 금색 한 방을 받아야 틈이 열린다.
+      this.sinceCombo = 0;
+      const at = ORD.comboAt, n = at.length;
+      at.forEach((t, i) => {
+        const last = i === n - 1;
+        A.strikes.push(this.strike({ side: last ? 0 : i % 2 ? 1 : -1, at: t, teleAt: i ? at[i - 1] - 0.15 : 0, idx: i,
+          radius: last ? ORD.comboFinalRadius : ORD.comboRadius, rim: last ? COLOR.gold : undefined, final: last, dmg: last ? ORD.comboFinalDmg : ORD.slamDmg, track: track(tgt) }));
+      });
+    } else if (kind === 'twin') {
+      // 양손 동시. 듀오는 한 손씩 각자를, 혼자는 엇박으로 조작 중인 캐릭터를 노린다.
+      this.sinceTwin = 0; A.twin = true; A.dmg = ORD.twinDmg;
+      const alive = activePlayers();
+      if (G.mode === 'solo' || alive.length < 2) {
+        A.name = ORD_ATK.twinSolo;
+        A.strikes.push(this.strike({ side: -1, at: ORD.twinWindup, radius: ORD.twinRadius, rim: COLOR.gold, track: activeTrack }));
+        A.strikes.push(this.strike({ side: 1, at: ORD.twinWindup + ORD.twinSoloOffset, radius: ORD.twinRadius, rim: COLOR.gold, track: activeTrack }));
+      } else {
+        const lx = p => (p.pos.x - this.pos.x) * Math.cos(this.yaw) - (p.pos.z - this.pos.z) * Math.sin(this.yaw);
+        [...alive].sort((p, q) => lx(p) - lx(q)).forEach((p, i) =>
+          A.strikes.push(this.strike({ side: i ? 1 : -1, at: ORD.twinWindup, radius: ORD.twinRadius, rim: COLOR.gold, track: track(p) })));
+        A.link = linkTele(COLOR.gold);
+      }
+    }
+    A.windup = Math.max(...A.strikes.map(s => s.at));
+    this.atk = A; this.state = 'windup'; this.t = 0; this.hitSet = new Set();
+    this.announce(A.name, A.windup);
+    SFX.windup(kind === 'sweep' ? 'shock' : 'slam');
+  }
+  armStrike(s) {
+    const tp = s.track?.() || this.pos.clone().addScaledVector(this.forward(), 4);
+    if (s.sweep) {
+      s.center = this.pos.clone().setY(0); s.dir = dirTo(this.pos, tp);
+      s.tele = sectorTele(s.center, s.dir, s.radius, ORD.sweepHalf, COLOR.unblock);
+    } else {
+      s.center = s.leap ? tp.clone().setY(0) : this.clampReach(tp);
+      s.tele = circleTele(s.center, s.radius, s.color, s.rim);
+    }
+  }
+  stepStrikes(dt) {
+    const A = this.atk; this.t += dt;
+    const landing = [];
+    for (const s of A.strikes) {
+      if (s.done) continue;
+      if (!s.tele) { if (this.t < s.teleAt) continue; this.armStrike(s); }
+      if (this.t < s.at - ORD.lockLead) {
+        const tp = s.track?.();
+        if (tp) {
+          if (s.sweep) s.dir.lerp(dirTo(this.pos, tp), 1 - Math.exp(-dt * 5)).normalize();
+          else moveToward(s.center, s.leap ? tp : this.clampReach(tp), ORD.trackSpeed * dt);
+        }
+      } else if (!s.locked) { s.locked = true; s.tele.lock(); SFX.lock(); }
+      if (s.sweep) s.tele.aim(s.dir); else s.tele.move(s.center);
+      s.tele.set(clamp((this.t - s.teleAt) / (s.at - s.teleAt), 0, 1));
+      if (this.t >= s.at) landing.push(s);
+    }
+    // 몸: 다음에 떨어질 곳을 보고, 주먹이 안 닿으면 다가간다. 사이 뛰어들기는 그 자리로 뛴다.
+    const next = A.strikes.find(s => !s.done && s.tele);
+    if (next?.leap) {
+      const k = clamp((this.t / next.at - 0.35) / 0.65, 0, 1);
+      this.pos.x = lerp(A.from.x, next.center.x, k); this.pos.z = lerp(A.from.z, next.center.z, k);
+      this.root.position.y = 14 * k * (1 - k);
+      if (k < 1) this.faceDir(dirTo(A.from, next.center), dt * 8);
+    } else if (next?.sweep) this.faceDir(next.dir, dt * 6);
+    else if (next) {
+      this.faceDir(dirTo(this.pos, next.center), dt * 5);
+      const d = distXZ(this.pos, next.center);
+      if (d > ORD.reach - 1) this.pos.addScaledVector(dirTo(this.pos, next.center), Math.min(d - (ORD.reach - 1), 3.5 * dt));
+    }
+    if (A.link && A.strikes[0].center && A.strikes[1].center) A.link.update(A.strikes[0].center, A.strikes[1].center);
+    if (landing.length) this.land(landing);
+    if (this.state === 'windup' && A.strikes.every(s => s.done)) this.resolve();
+  }
+  plantHands(s) {
+    const sides = s.side === 0 ? [-1, 1] : [s.side];
+    const fwd = s.leap ? this.forward() : dirTo(this.pos, s.center), lat = V(fwd.z, 0, -fwd.x);
+    for (const side of sides) {
+      const h = this.hands[side < 0 ? 0 : 1];
+      const p = s.leap ? this.pos.clone().addScaledVector(fwd, 2.2).addScaledVector(lat, -2.2 * side)
+        : s.center.clone().addScaledVector(lat, s.side === 0 ? -0.9 * side : 0);
+      p.y = 0.95;
+      h.plant = { pos: p, until: G.now + 0.55, t: G.now };
+      h.pos.copy(p);
+    }
+  }
+  land(list) {
+    const A = this.atk;
+    for (const s of list) { s.done = true; s.tele?.dispose(); s.tele = null; }
+    if (A.link && A.strikes.every(s => s.done)) { A.link.dispose(); A.link = null; }
+    G.shake = Math.max(G.shake, list.some(s => s.leap || s.final || A.twin) ? 0.6 : 0.4); SFX.slam();
+    for (const s of list) {
+      if (s.sweep) { this.hands[1].swing = { start: G.now, dir: s.dir.clone() }; continue; }
+      if (s.leap) { this.pos.x = s.center.x; this.pos.z = s.center.z; this.root.position.y = 0; }
+      fxRing(s.center, 0xffffff, 0.5, s.radius + 0.6, 0.35, 0.5);
+      burst(s.center.clone().setY(0.4), 0xe9dcc0, 8, 5);
+      this.plantHands(s);
+    }
+    // 한 사람은 한 번만 맞는다. 여러 원에 걸쳐 있으면 같은 결과가 모든 원에 들어간다.
+    const half = (ORD.sweepHalf * Math.PI) / 180;
+    for (const p of activePlayers()) {
+      const hitBy = list.filter(s => s.sweep
+        ? distXZ(p.pos, this.pos) <= s.radius + PLAYER_R && dirTo(this.pos, p.pos).dot(s.dir) >= Math.cos(half)
+        : distXZ(p.pos, s.center) <= s.radius + PLAYER_R * 0.6);
+      if (!hitBy.length) continue;
+      const s0 = hitBy[0];
+      const r = bossHitsPlayer(p, { ...A, dmg: s0.dmg ?? A.dmg }, s0.sweep ? this.pos : s0.center);
+      if (r === 'perfect' || r === 'guard') hitBy.forEach(s => s.recv.push({ p, r }));
+    }
+    // 양손 엇박(혼자): 먼저 받은 손의 반동이 두 번째 손보다 길다 → 같은 캐릭터로는 둘 다 못 받는다. 태그로 넘겨야 한다.
+    if (A.twin && !A.strikes.every(s => s.done)) {
+      for (const s of list) for (const { p } of s.recv) {
+        p.state = 'recoil'; p.t = Math.max(CFG.recoil, ORD.twinSoloOffset + 0.15); p.kb = dirTo(this.pos, p.pos).multiplyScalar(4);
+        SFX.guard(); popText(above(p, 3.0), G.mode === 'solo' ? '한 손! 태그' : '한 손!', 'rcv', 0.7);
+      }
+    }
+    // 연타 중간 받기: 반동 없이 자세를 유지한다. 파트너가 끼어들어 대신 받아도 된다.
+    if (A.kind === 'combo') {
+      for (const s of list) {
+        if (s.final) continue;
+        for (const { p, r } of s.recv) {
+          G.stats.receive++; if (r === 'perfect') G.stats.perfectReceive++;
+          (r === 'perfect' ? SFX.perfectRcv : SFX.guard)();
+          popText(above(p, 3.0), `받기 ${s.idx + 1}/${A.strikes.length}`, r === 'perfect' ? 'rcv perfect-rcv' : 'rcv', 0.6);
+          burst(p.pos.clone().lerp(s.center, 0.3).setY(1.2), r === 'perfect' ? 0xffffff : p.color, 8, 5);
+          p.pos.addScaledVector(dirTo(this.pos, p.pos), 0.35);
+        }
+      }
+    }
+  }
+  resolve() {
+    const A = this.atk;
+    const recover = t => { this.state = 'recover'; this.t = t; };
+    if (A.kind === 'combo') {
+      const fin = A.strikes[A.strikes.length - 1];
+      if (!fin.recv.length) return recover(0.8);
+      const chain = A.strikes.filter(s => !s.final && s.recv.length).length;
+      openGap(fin.recv, { scale: 1 + ORD.comboBonus * chain });
+      popText(above(this, 6.6), chain === A.strikes.length - 1 ? '전부 받아냈다 · 큰 틈' : `연타 받기 ${chain + 1}/${A.strikes.length}`, 'sub', 1.1);
+      return;
+    }
+    if (A.twin) {
+      const seen = new Set(), all = [];
+      for (const s of A.strikes) for (const x of s.recv) if (!seen.has(x.p)) { seen.add(x.p); all.push(x); }
+      if (A.strikes.every(s => s.recv.length)) return openMutualGap(all);
+      if (all.length) {
+        popText(above(this, 6.4), '한 손이 남았다 · 둘 다 받아야 열린다', 'hint', 1.5);
+        SFX.miss(); G.stats.halfTwin++;
+        for (const { p } of all) if (p.state === 'receive') { p.state = 'recoil'; p.t = CFG.recoil; p.kb = dirTo(this.pos, p.pos).multiplyScalar(5); }
+      }
+      return recover(1.0);
+    }
+    if (A.kind === 'sweep') return recover(0.7);
+    const recv = A.strikes[0].recv;
+    if (recv.length) return openGap(recv);
+    recover(0.7);
+  }
+  handGoal(h, out) {
+    const A = this.atk, st = this.state, side = h.side;
+    if (h.swing) {
+      const k = (G.now - h.swing.start) / 0.3;
+      if (k >= 1) h.swing = null;
+      else {
+        const half = (ORD.sweepHalf * Math.PI) / 180 + 0.2, a0 = Math.atan2(h.swing.dir.x, h.swing.dir.z);
+        const a = a0 + lerp(half, -half, k);
+        return { snap: true, p: out.set(this.pos.x + Math.sin(a) * 5, 1.1, this.pos.z + Math.cos(a) * 5) };
+      }
+    }
+    if (h.plant && (G.now < h.plant.until || (st === 'gap' && h.plant.t >= this.gapStart - 0.05))) return { p: out.copy(h.plant.pos) };
+    if (st === 'windup' && A?.strikes) {
+      const s = A.strikes.find(s => !s.done && s.tele && (s.side === side || s.side === 0));
+      if (s?.leap) return { p: this.local(1.3 * side, 7.8, 0.6, out) };
+      if (s?.sweep) {
+        const a = Math.atan2(s.dir.x, s.dir.z) + ((ORD.sweepHalf * Math.PI) / 180 + 0.5);
+        return { p: out.set(this.pos.x + Math.sin(a) * 4.2, 2.6, this.pos.z + Math.cos(a) * 4.2) };
+      }
+      if (s) {
+        const k = clamp((this.t - s.teleAt) / (s.at - s.teleAt), 0, 1);
+        out.copy(s.center);
+        if (s.side === 0) { const f = dirTo(this.pos, s.center); out.x += f.z * -0.9 * side; out.z += -f.x * -0.9 * side; }
+        out.y = 2.9 + 0.9 * k * k;   // 쿼터뷰에서 높이 띄우면 몸에 겹쳐 보여서, 원 바로 위에 낮게 띄운다
+        return { p: out };
+      }
+    }
+    if (st === 'roar' || (st === 'windup' && A?.kind === 'shock')) return { p: this.local(3.5 * side, 6.6, 0.2, out) };
+    if ((st === 'windup' || st === 'active') && A?.kind === 'charge') return { p: this.local(1.7 * side, 1.6, 2.9, out) };
+    if (st === 'stagger') return { p: this.local(3.0 * side, 0.9, 1.2, out) };
+    return { p: this.restPos(side, out) };
+  }
+  draw(dt) {
+    this.spin.rotation.y = this.yaw;
+    const k = 1 - Math.exp(-dt * 10), A = this.atk, st = this.state;
+    const mutual = st === 'gap' && this.gapMode === 'mutual';
+    let lean = null, ang = 0;
+    if (mutual) { lean = this.forward(); ang = 0.45; }
+    else if (st === 'gap') { lean = this.openDir.clone().negate(); ang = 0.28; }
+    else if (st === 'stagger') { lean = this.openDir.clone().negate(); ang = 0.3 + Math.sin(G.time * 22) * 0.07; }
+    else if (st === 'roar') { lean = this.forward().negate(); ang = 0.3; }
+    else if (st === 'windup' && A?.strikes) { lean = this.forward(); ang = 0.1 + 0.15 * clamp(this.t / A.windup, 0, 1); }
+    else if (st === 'active' && A?.kind === 'charge') { lean = this.forward(); ang = 0.4; }
+    setLean(this.tilt, lean, ang, k);
+    if (!this.dead) this.tilt.position.y = lerp(this.tilt.position.y, Math.sin(G.time * 1.6) * 0.08 - (mutual ? 0.7 : 0), k);
+    const e = this.bodyMat.emissive;
+    if (this.hitFlash > 0) e.setRGB(0.7, 0.7, 0.7);
+    else if (st === 'gap') e.setRGB(0.14, 0.1, 0.0);
+    else if (st === 'windup' && A?.kind === 'shock') { const v = 0.3 + 0.3 * Math.sin(G.time * 30); e.setRGB(0.9 * v, 0.2 * v, 1.8 * v); }
+    else if (this.phase >= 3) { const v = 0.1 + 0.07 * Math.sin(G.time * 4); e.setRGB(v * 1.6, v * 0.3, 0.03); }
+    else e.setRGB(0, 0, 0);
+    const calm = st === 'gap' || st === 'stagger';
+    this.eyeMat.color.set(calm ? 0x6b5a2a : this.phase >= 3 ? 0xff3b2f : this.phase === 2 ? 0xff9a3c : COLOR.gold);
+    this.coreMat.color.set(calm ? 0xffd23f : this.phase >= 3 ? 0xff5a36 : this.phase === 2 ? 0xb06cff : 0x3a2d55);
+    if (this.weak.visible) this.weak.scale.setScalar((1.4 + Math.sin(G.time * 14) * 0.18) * 1.5);
+    // 팔: 어깨 → 팔꿈치 → 주먹
+    const goal = V(), S = V();
+    for (const h of this.hands) {
+      const g = this.handGoal(h, goal);
+      if (g.snap) h.pos.copy(g.p); else h.pos.lerp(g.p, 1 - Math.exp(-dt * 9));
+      this.local(2.25 * h.side, 4.85, 0, S);
+      const c = Math.cos(this.yaw), s = Math.sin(this.yaw);
+      const pole = V(0.6 * h.side * c - s, 0.5, -0.6 * h.side * s - c);   // 팔꿈치는 바깥 뒤로
+      solveArm(S, h.pos, 3.0, 3.5, pole, h.elbow, h.reachPt);
+      placeSeg(h.up, S, h.elbow);
+      placeSeg(h.fore, h.elbow, h.reachPt);
+      h.fist.position.copy(h.reachPt);
+      h.fist.quaternion.setFromUnitVectors(UP, h.reachPt.clone().sub(h.elbow).normalize());
+    }
+  }
+}
+
 // ───────────────────────── 전투 규칙 ─────────────────────────
 const G = {
   mode: null, running: false, ended: false, endT: 0, now: 0, time: 0,
@@ -916,7 +1409,10 @@ const G = {
   recentHits: [], stats: null,
 };
 G.players = [new Player(0, COLOR.p1), new Player(1, COLOR.p2)];
-G.boss = new Boss();
+G.bosses = { orden: new Orden(), gatekeeper: new Boss() };
+G.bossKind = 'orden';
+G.boss = G.bosses.orden;
+G.bosses.gatekeeper.setVisible(false);
 
 const isDuo = () => G.mode === 'duo' || G.mode === 'practice';
 const above = (o, h = 2.6) => V(o.pos.x, (o.root?.position.y || 0) + h, o.pos.z);
@@ -926,6 +1422,7 @@ function activePlayers() {
 }
 function inOpenSide(p) {
   const B = G.boss;
+  if (B.gapMode === 'mutual') return true;
   return dirTo(B.pos, p.pos).dot(B.openDir) >= Math.cos((CFG.openHalfAngle * Math.PI) / 180);
 }
 
@@ -959,16 +1456,17 @@ function downPlayer(p) {
   } else if (!G.players.some(q => q.alive)) endGame(false);
 }
 
-function openGap(list) {
+function openGap(list, { scale = 1 } = {}) {
   const B = G.boss, receivers = list.map(x => x.p), perfect = list.some(x => x.r === 'perfect');
   B.tele?.dispose(); B.tele = null;
-  Object.assign(B, { state: 'gap', gapT: perfect ? CFG.gapPerfect : CFG.gapGuard, gapStart: G.now, gapReceivers: receivers, hapDone: false });
+  Object.assign(B, { state: 'gap', gapMode: 'normal', gapT: (perfect ? CFG.gapPerfect : CFG.gapGuard) * scale, gapStart: G.now, gapReceivers: receivers, hapDone: false });
   const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
   B.openDir = distXZ(avg, B.pos) > 0.05 ? dirTo(avg, B.pos) : B.forward().negate();
   B.showOpen();
   for (const p of receivers) { p.state = 'recoil'; p.t = CFG.recoil; p.kb = dirTo(B.pos, p.pos).multiplyScalar(5); }
   G.stats.receive++; if (perfect) G.stats.perfectReceive++;
   const r0 = receivers[0], contact = r0.pos.clone().lerp(B.pos, 0.45).setY(1.2);
+  if (scale > 1) popText(above(r0, 3.6), `틈 ×${scale.toFixed(1)}`, 'sub', 1.0);
   if (perfect) {
     SFX.perfectRcv(); popText(above(r0, 3.0), '정확한 받기!', 'rcv perfect-rcv');
     burst(contact, 0xffffff, 18, 7); G.hitstop = Math.max(G.hitstop, 0.06);
@@ -987,29 +1485,70 @@ function openGap(list) {
   }
 }
 
-function doHap(p, grade, dtr) {
-  const B = G.boss, perfect = grade === 'perfect';
-  const weakPos = B.pos.clone().addScaledVector(B.openDir, B.R * 0.95).setY(2.1);
+// 맞받기: 양손 동시 공격을 둘 다 받아냈다. 평소 규칙이 뒤집혀서 받은 사람도 칠 수 있고, 틈은 사방으로 열린다.
+function openMutualGap(list) {
+  const B = G.boss, receivers = list.map(x => x.p), perfectN = list.filter(x => x.r === 'perfect').length;
+  Object.assign(B, { state: 'gap', gapMode: 'mutual', gapT: ORD.gapMutual + 0.5 * perfectN, gapStart: G.now, gapReceivers: receivers, hapDone: false, mutualHits: [] });
+  B.openDir = B.forward().negate();
+  B.showOpen();
+  for (const p of receivers) { p.state = 'recoil'; p.t = ORD.recoilMutual; p.kb = dirTo(B.pos, p.pos).multiplyScalar(3); p.hapGlow = 0.5; }
+  G.stats.receive += receivers.length; G.stats.perfectReceive += perfectN; G.stats.mutual++;
+  SFX.mutual();
+  G.hitstop = Math.max(G.hitstop, 0.1); G.shake = Math.max(G.shake, 0.6); G.flash = Math.max(G.flash, 0.4);
+  popText(above(B, 6.6), '맞받기!', 'mutual', 1.2);
+  popText(above(B, 5.8), G.mode === 'solo' ? '치고 바로 태그 → 쌍합' : '같이 치면 쌍합', 'sub', 1.4);
+  const chest = q => q.pos.clone().setY(1.1);
+  if (receivers.length > 1) beam(chest(receivers[0]), chest(receivers[1]), 0xffffff, 0.5);
+  burst(B.pos.clone().setY(2), 0xffffff, 24, 8);
+}
+function mutualHit(p, base) {
+  const B = G.boss, first = B.mutualHits[0];
+  if (!first) {
+    B.damage(base * CFG.hapMul);
+    B.mutualHits.push({ p, time: G.now });
+    G.stats.hap++; G.stats.last = G.now - B.gapStart;
+    G.hitstop = Math.max(G.hitstop, CFG.hitstopHap); G.shake = Math.max(G.shake, 0.35); G.punch = 0.4;
+    SFX.hap(); p.hapGlow = 0.7;
+    popText(above(B, 6.0), '합!', 'hap', 0.9);
+    popText(above(B, 5.2), '하나 더 · 지금!', 'sub', ORD.twinSync + 0.4);
+    burst(B.pos.clone().add(B.weak.position), COLOR.gold, 16, 8);
+    fxRing(B.pos, 0xffffff, B.R + 3, B.R, ORD.twinSync, 0.8);   // 쌍합 남은 시간: 안으로 조여드는 고리
+    return;
+  }
+  if (first.p === p) { B.damage(base); SFX.hit(); popText(above(B, 5.0), '파트너와 같이!', 'hint', 0.6); return; }
+  const dtr = G.now - first.time, twin = dtr <= ORD.twinSync;
+  // 쌍합이면 첫 타도 쌍합 배율로 소급
+  B.damage(twin ? base * ORD.twinMul + base * (ORD.twinMul - CFG.hapMul) : base * CFG.hapMul);
+  B.mutualHits.push({ p, time: G.now });
+  G.stats.hap--;   // doHap에서 다시 센다 (첫 타와 합쳐 한 번의 합으로)
+  doHap(p, twin ? 'twin' : 'hap', dtr, first.p);
+}
+
+function doHap(p, grade, dtr, partner = null) {
+  const B = G.boss, twin = grade === 'twin', perfect = grade === 'perfect' || twin;
+  const weakPos = B.pos.clone().add(B.weak.position);
   B.hapDone = true; B.hideOpen();
-  if (!B.dead) { B.state = 'stagger'; B.t = perfect ? CFG.staggerPerfect : CFG.staggerHap; }
+  if (!B.dead) { B.state = 'stagger'; B.t = twin ? ORD.staggerTwin : perfect ? CFG.staggerPerfect : CFG.staggerHap; }
   if (isDuo()) { B.target = p; G.players.forEach(q => (q.aggro = 0)); }
-  G.stats.hap++; if (perfect) G.stats.perfect++;
+  G.stats.hap++; if (grade === 'perfect') G.stats.perfect++; if (twin) G.stats.twin++;
   G.stats.last = dtr;
   // 연출
-  G.hitstop = Math.max(G.hitstop, perfect ? CFG.hitstopPerfect : CFG.hitstopHap);
-  if (perfect) G.slowmo = 0.3;
-  G.shake = Math.max(G.shake, perfect ? 0.7 : 0.4);
+  G.hitstop = Math.max(G.hitstop, twin ? CFG.hitstopPerfect * 1.5 : perfect ? CFG.hitstopPerfect : CFG.hitstopHap);
+  if (perfect) G.slowmo = twin ? 0.55 : 0.3;
+  G.shake = Math.max(G.shake, twin ? 0.9 : perfect ? 0.7 : 0.4);
   G.punch = perfect ? 1 : 0.55;
-  G.flash = perfect ? 0.9 : 0.45;
-  (perfect ? SFX.perfectHap : SFX.hap)();
-  const mul = perfect ? CFG.perfectHapMul : CFG.hapMul;
-  popText(above(B, 4.6), perfect ? '완벽한 합!' : '합!', perfect ? 'perfect' : 'hap', perfect ? 1.3 : 1.0);
-  popText(above(B, 3.8), `×${mul} · ${CFG.attackDamage * mul}`, 'sub', perfect ? 1.3 : 1.0);
-  burst(weakPos, COLOR.gold, perfect ? 36 : 20, perfect ? 11 : 8);
-  fxRing(B.pos, COLOR.gold, B.R, perfect ? 9 : 6, perfect ? 0.6 : 0.45);
+  G.flash = twin ? 1 : perfect ? 0.9 : 0.45;
+  (twin ? SFX.twinHap : perfect ? SFX.perfectHap : SFX.hap)();
+  const mul = twin ? ORD.twinMul : perfect ? CFG.perfectHapMul : CFG.hapMul;
+  const h = B.weakY + 2.5;
+  popText(above(B, h), twin ? '쌍합!' : grade === 'perfect' ? '완벽한 합!' : '합!', twin ? 'twin' : grade === 'perfect' ? 'perfect' : 'hap', perfect ? 1.4 : 1.0);
+  popText(above(B, h - 0.8), twin ? `둘 다 ×${mul} · ${CFG.attackDamage * mul * 2}` : `×${mul} · ${CFG.attackDamage * mul}`, 'sub', perfect ? 1.3 : 1.0);
+  burst(weakPos, COLOR.gold, twin ? 60 : perfect ? 36 : 20, twin ? 14 : perfect ? 11 : 8);
+  fxRing(B.pos, COLOR.gold, B.R, twin ? 13 : perfect ? 9 : 6, twin ? 0.8 : perfect ? 0.6 : 0.45);
+  if (twin) fxRing(B.pos, 0xffffff, B.R, 9, 0.5, 0.9);
   const chest = q => q.pos.clone().setY(1.1);
-  const partners = B.gapReceivers.filter(q => q !== p);
-  if (G.mode === 'solo') partners.push(G.players[1 - G.active]);
+  const partners = partner ? [partner] : B.gapReceivers.filter(q => q !== p);
+  if (G.mode === 'solo' && !partners.includes(G.players[1 - G.active])) partners.push(G.players[1 - G.active]);
   for (const r of partners) { beam(chest(r), weakPos, COLOR.gold, perfect ? 0.6 : 0.4); r.hapGlow = 0.7; }
   beam(weakPos, chest(p), COLOR.gold, perfect ? 0.6 : 0.4);
   p.hapGlow = 0.7;
@@ -1019,10 +1558,11 @@ function playerHitsBoss(p) {
   const B = G.boss;
   if (B.dead) return;
   const d = distXZ(p.pos, B.pos), to = dirTo(p.pos, B.pos);
-  const gapOpen = B.state === 'gap' && !B.hapDone && !B.gapReceivers.includes(p);
+  const gapOpen = B.state === 'gap' && !B.hapDone && (B.gapMode === 'mutual' || !B.gapReceivers.includes(p));
   const reach = CFG.reach + (gapOpen ? CFG.gapReachBonus : 0), minDot = gapOpen ? -0.3 : 0.2;
   if (d > B.R + PLAYER_R + reach || p.forward().dot(to) < minDot) { SFX.swing(); return; }
   const base = CFG.attackDamage;
+  if (gapOpen && B.gapMode === 'mutual') return mutualHit(p, base);
   if (gapOpen) {
     if (inOpenSide(p)) {
       const dtr = G.now - B.gapStart, grade = dtr <= CFG.perfectHap ? 'perfect' : 'hap';
@@ -1047,7 +1587,7 @@ function playerHitsBoss(p) {
   }
 }
 
-function tryTag(auto) {
+function tryTag(auto, rcvHeld = false) {
   const out = G.players[G.active], inn = G.players[1 - G.active], B = G.boss;
   if (!inn.alive || (!auto && G.tagCd > 0)) return;
   G.tagCd = CFG.tagCooldown;
@@ -1059,6 +1599,8 @@ function tryTag(auto) {
     inn.startAttack(true);
   } else {
     inn.pos.copy(out.pos); inn.yaw = out.yaw; inn.state = 'free';
+    // 받기를 누른 채 태그하면 들어오는 캐릭터가 받기 자세로 들어온다 (양손 엇박: 받고 → 태그 → 받고)
+    if (rcvHeld && !auto) { inn.state = 'receive'; inn.receiveStart = G.now; }
   }
   inn.root.visible = true; inn.tilt.quaternion.identity();
   if (out.alive) out.state = 'free';
@@ -1107,7 +1649,7 @@ function step(dt) {
   G.tagCd -= dt;
   if (G.mode === 'solo') {
     const c = getCtrl(0);
-    if (c.tag) tryTag(false);
+    if (c.tag) tryTag(false, c.rcvHeld);
     if (G.autoTag > 0) { G.autoTag -= dt; if (G.autoTag <= 0) tryTag(true); }
     G.players[G.active].update(dt, c);
   } else if (G.mode === 'practice') {
@@ -1137,22 +1679,40 @@ function start(mode) {
   audio();
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.slowmo = G.shake = G.punch = G.flash = 0; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = [];
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, mutual: 0, twin: 0, halfTwin: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
+  setBoss(G.bossKind);
   G.boss.reset(); G.boss.target = G.players[0];
+  G.bannerT = 0;
+  if (G.boss instanceof Orden) showBanner('1막 · 오르덴', '두 손의 거인. 주먹이 떠 있는 곳에 떨어진다.');
   camTarget.set(0, 0, 1);
   titleEl.hidden = resultEl.hidden = true; hudEl.hidden = false; tuneBtn.hidden = false;
   G.players.forEach(p => (p.latchRcv = false));
   $('name0').textContent = mode === 'duo' ? '1P' : '캐릭터 A';
   $('name1').textContent = mode === 'duo' ? '2P' : '캐릭터 B';
   $('hint').innerHTML = {
-    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받은 직후 태그하면 틈으로 들어가요',
+    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받은 직후 태그하면 틈으로, <kbd>G</kbd> 누른 채 태그하면 받기 자세로 들어가요',
     duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피',
     practice: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 조작 바꾸기 — 받기를 누른 채 바꾸면 그 캐릭터는 받기 자세를 유지해요',
   }[mode];
   renderer.domElement.focus?.();
+}
+function setBoss(kind) {
+  G.bossKind = kind; G.boss = G.bosses[kind];
+  for (const b of Object.values(G.bosses)) b.setVisible(b === G.boss);
+  document.querySelectorAll('.pick').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.boss === kind)));
+  $('bossName').textContent = G.boss.name;
+  $('bossBar').querySelectorAll('.mk').forEach(m => m.remove());
+  if (kind === 'orden') for (const f of [ORD.phase2, ORD.phase3]) {
+    const m = document.createElement('span'); m.className = 'mk'; m.style.left = `${f * 100}%`; $('bossBar').appendChild(m);
+  }
+}
+const bannerEl = $('banner');
+function showBanner(title, sub) {
+  $('bannerTitle').textContent = title; $('bannerSub').textContent = sub;
+  G.bannerT = 2.8;
 }
 function endGame(win) {
   if (G.ended) return;
@@ -1167,6 +1727,7 @@ function showResult() {
     <dt>합</dt><dd>${s.hap}번 (완벽한 합 ${s.perfect}번)</dd>
     <dt>받기</dt><dd>${s.receive}번 (정확한 받기 ${s.perfectReceive}번)</dd>
     <dt>놓친 틈</dt><dd>${s.missed}번</dd>
+    ${G.boss instanceof Orden ? `<dt>맞받기</dt><dd>${s.mutual}번 (쌍합 ${s.twin}번, 한 손만 받음 ${s.halfTwin}번)</dd>` : ''}
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
   resultEl.hidden = false; hudEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
   $('againBtn').focus();
@@ -1181,6 +1742,7 @@ $('duoBtn').addEventListener('click', () => start('duo'));
 $('practiceBtn').addEventListener('click', () => start('practice'));
 $('againBtn').addEventListener('click', () => start(G.mode));
 $('menuBtn').addEventListener('click', showTitle);
+document.querySelectorAll('.pick').forEach(b => b.addEventListener('click', () => setBoss(b.dataset.boss)));
 
 // 조정 패널
 const gui = new GUI({ container: guiEl, title: '손맛 조정' });
@@ -1202,7 +1764,31 @@ const fA = gui.addFolder('공격과 보스');
 fA.add(CFG, 'attackWindup', 0.05, 0.5, 0.01).name('공격 예비 동작 (초)');
 fA.add(CFG, 'tagWindup', 0, 0.3, 0.01).name('태그 진입 공격 (초)');
 fA.add(CFG, 'bossTempo', 0.5, 2, 0.05).name('보스 공격 빈도');
-fA.add(CFG, 'bossHP', 100, 2000, 50).name('보스 체력 (다시 시작 시)');
+fA.add(CFG, 'bossHP', 100, 2000, 50).name('문지기 체력 (다시 시작 시)');
+const fO = gui.addFolder('오르덴');
+fO.add(ORD, 'force', Object.keys(ORD_FORCE)).name('패턴 고정');
+fO.add({ go1: () => jumpPhase(1) }, 'go1').name('1막으로');
+fO.add({ go2: () => jumpPhase(2) }, 'go2').name('2막으로 (연타)');
+fO.add({ go3: () => jumpPhase(3) }, 'go3').name('3막으로 (양손)');
+fO.add(ORD, 'names').name('패턴 이름 표시');
+fO.add(ORD, 'lockLead', 0.1, 1, 0.05).name('멈춘 뒤 떨어지기까지 (초)');
+fO.add(ORD, 'slamWindup', 0.5, 2, 0.05).name('한 손 내려찍기 예비 (초)');
+fO.add(ORD, 'comboBonus', 0, 1, 0.05).name('연타 받기당 틈 보너스');
+fO.add(ORD, 'twinWindup', 0.8, 2.5, 0.05).name('양손 예비 (초)');
+fO.add(ORD, 'twinSoloOffset', 0.2, 1, 0.05).name('혼자: 두 번째 손 늦게 (초)');
+fO.add(ORD, 'gapMutual', 1, 6, 0.1).name('맞받기 틈 길이 (초)');
+fO.add(ORD, 'twinSync', 0.1, 1, 0.05).name('쌍합: 같이 치기 허용 (초)');
+fO.add(ORD, 'twinMul', 2, 8, 0.5).name('쌍합 배율');
+fO.add(ORD, 'rest', 0, 2, 0.05).name('공격 사이 쉬는 시간');
+fO.add(ORD, 'hp', 300, 4000, 100).name('오르덴 체력 (다시 시작 시)');
+function jumpPhase(n) {
+  const b = G.boss;
+  if (!G.running || !(b instanceof Orden) || b.dead) return;
+  b.clearStrikes(); b.hideOpen(); b.hands.forEach(h => (h.plant = null));
+  b.hp = b.maxHp * (n === 1 ? 1 : n === 2 ? ORD.phase2 - 0.01 : ORD.phase3 - 0.01);
+  if (n === 1) { b.phase = 1; b.pendingPhase = 0; b.state = 'chase'; b.cd = 0.5; showBanner('1막 · 오르덴', '두 손의 거인. 주먹이 떠 있는 곳에 떨어진다.'); }
+  else b.startPhase(n);
+}
 gui.add(CFG, 'infiniteHP').name('아군 피 무한');
 gui.add(CFG, 'style', Object.keys(STYLES)).name('아트 스타일').onChange(applyStyle);
 gui.add({ restart: () => G.mode && start(G.mode) }, 'restart').name('다시 시작');
@@ -1240,7 +1826,8 @@ function drawHud() {
   const s = G.stats;
   if (!s) return;
   const last = s.last == null ? '아직 없음' : s.last < 0 ? `받기 ${Math.abs(s.last).toFixed(2)}초 전` : `받기 후 ${s.last.toFixed(2)}초`;
-  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 놓친 틈 ${s.missed}<br>마지막 합: ${last}`;
+  const ord = G.boss instanceof Orden ? `<br>${G.boss.phase}막 · 맞받기 ${s.mutual} · 쌍합 <b>${s.twin}</b>` : '';
+  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 놓친 틈 ${s.missed}<br>마지막 합: ${last}${ord}`;
 }
 function fxUpdate(dt) {
   for (let i = texts.length - 1; i >= 0; i--) {
@@ -1265,6 +1852,8 @@ function fxUpdate(dt) {
     f.obj.material.opacity = f.opacity * (1 - k);
     if (k >= 1) { disposeTree(f.obj); fxObjs.splice(i, 1); }
   }
+  G.bannerT = Math.max(0, (G.bannerT || 0) - dt);
+  bannerEl.style.opacity = String(G.running ? clamp(Math.min(G.bannerT / 0.5, (2.8 - G.bannerT) / 0.25), 0, 1) : 0);
   G.flash = Math.max(0, G.flash - dt * 3.2);
   flashEl.style.opacity = String(G.flash);
   G.shake = Math.max(0, G.shake - dt * 2.4);
@@ -1277,7 +1866,7 @@ function drawCamera(dt) {
   else focus.copy(G.boss.pos).multiplyScalar(0.5);
   focus.y = 0;
   camTarget.lerp(focus, 1 - Math.exp(-dt * 4));
-  const f = 1 - G.punch * 0.12;
+  const f = (1 - G.punch * 0.12) * (G.boss.camScale || 1);
   camera.position.copy(camTarget).addScaledVector(CAM_OFFSET, f);
   const sh = G.shake * G.shake * (REDUCED ? 0.25 : 1) * 0.6;
   if (sh > 0) camera.position.add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh));
@@ -1315,5 +1904,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle };
+window.__game = { G, CFG, ORD, start, setBoss, jumpPhase, openGap, openMutualGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle };
 </script>
