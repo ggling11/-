@@ -12,6 +12,10 @@ const T1T = (() => {
   const V = () => new THREE.Vector3();
   /* 숨은 리그 → 보이는 모델 */
   const charOf = f => (f && f.char === 'great' ? 'great' : 'rapier');
+  /* ★1 난수 격리: three.js는 메쉬 · 재질을 만들 때 uuid에 Math.random을 씀 → 테마 코드(만들기 · 프레임 · 이펙트 손잡이)는
+   *   그동안만 Math.random을 테마 자체 시드 난수로 바꿔 둠 → 게임 · 봇 쪽 Math.random 순서가 테마와 무관하게 같음 */
+  const tRand = T1M.rng(97531);
+  const iso = fn => function () { const mr = Math.random; Math.random = tRand; try { return fn.apply(this, arguments); } finally { Math.random = mr; } };
   function build() {
     T1R_THREE = THREE;
     S.R = T1R.create(THREE, renderer, D);
@@ -47,11 +51,11 @@ const T1T = (() => {
   function hook() {
     if (S.hooked) return; S.hooked = true;
     S.origBurst = Particles.burst;
-    Particles.burst = function (kind, p, dir, n, power) { const r = S.origBurst.apply(this, arguments); try { if (ART.cur === 1) onBurst(kind, p, dir, n, power); } catch (e) { /* 화면만 */ } return r; };
+    Particles.burst = function (kind, p, dir, n, power) { const r = S.origBurst.apply(this, arguments); try { if (ART.cur === 1) isoBurst(kind, p, dir, n, power); } catch (e) { /* 화면만 */ } return r; };
     S.smearHooks = [];
     for (const g of new Set([...Rigs.list, ...Rigs.bodies, boss])) if (g && g.smear && !g.smear.__t1) {
       const sm = g.smear, orig = sm.start; sm.__t1 = orig;
-      sm.start = function (spec) { const r = orig.apply(this, arguments); try { if (ART.cur === 1) onSmear(g, spec); } catch (e) { /* 화면만 */ } return r; };
+      sm.start = function (spec) { const r = orig.apply(this, arguments); try { if (ART.cur === 1) isoSmear(g, spec); } catch (e) { /* 화면만 */ } return r; };
       S.smearHooks.push(sm);
     }
   }
@@ -76,6 +80,7 @@ const T1T = (() => {
     const k = g === boss ? 'warden' : (fighters.find(f => f.ch === g) ? charOf(fighters.find(f => f.ch === g)) : null); if (!k || !S.trails[k]) return;
     const T = S.trails[k]; T.on = Math.max(0.12, (spec && spec.frames ? spec.frames : 3) / 12 + 0.06); T.hist.length = 0;
   }
+  const isoBurst = iso(onBurst), isoSmear = iso(onSmear);
   /* 칼 끝 · 손잡이 (모델의 weapon 뼈 기준) */
   const _a = V(), _b = V();
   function bladeEnds(M, k) {
@@ -109,6 +114,16 @@ const T1T = (() => {
     const sh = S.shadows[kind]; sh.position.set(ch.pos.x, 0.012, ch.pos.z); const hgt = Math.max(0, ch.pos.y); sh.scale.setScalar(Math.max(0.35, 1 - hgt * 0.12));
     const fl = ch.flashT > 0 ? 1 : 0; for (const k in M.mats) M.mats[k].uniforms.uFlash.value = fl;
     if (kind === 'warden') eyeTele(M, dt);
+  }
+  /* 타이틀 히어로 (라운드 8): 워든을 고정 자리 · 대기 자세로 (게임 상태와 무관 · 화면만) */
+  const titleCh = { clip: null, f: 0 };
+  function titleHero(dt) {
+    const M = S.models.warden; M.root.visible = true; S.shadows.warden.visible = true;
+    titleCh.clip = boss.clips.idle; titleCh.f = (S.t * 12) % boss.clips.idle.frames;
+    M.root.position.set(0, 0, 0); M.root.rotation.set(0, CamRig.yaw - 0.35, 0);
+    T1P.apply(M, titleCh, { poses: D.poses.warden }); T1P.secondary(M, dt, M.root.position, M.root.rotation.y, S.t); M.root.updateMatrixWorld(true);
+    S.shadows.warden.position.set(0, 0.012, 0); S.shadows.warden.scale.setScalar(1);
+    for (const k in M.mats) M.mats[k].uniforms.uFlash.value = 0;
   }
   /* 보스 예고 순간 붉은 눈이 빛남: 예고 장판이 새로 생기면 두 눈에 빨간 별 + 눈 색이 잠깐 밝은 빨강 (화면만) */
   function eyeTele(M, dt) {
@@ -146,7 +161,10 @@ const T1T = (() => {
     /* 확대(마무리 첫 적중) · 흔들림 · 반동: 게임 카메라 값을 이 카메라 크기로 */
     let zoom = 1, zf = null;
     if (CamRig.zp && CamRig.zw > 0) { zoom = 1 + 0.55 * Math.pow(CamRig.zw, 0.6); zf = CamRig.zp.f; }   /* 라운드 7: 마무리 첫 적중 확대를 더 짧고 날카롭게 (빨리 들어가 버팀) */
-    const T = zf ? new THREE.Vector3().copy(tgt).lerp(zf, 0.6 * CamRig.zw) : tgt, d = S.camK * S.camW / zoom;
+    let T = zf ? new THREE.Vector3().copy(tgt).lerp(zf, 0.6 * CamRig.zw) : tgt, d = S.camK * S.camW / zoom;
+    if (Game.state === 'title') {   /* 라운드 8 타이틀: 워든을 화면 오른쪽 1/3에 크게 (제목 글자는 왼쪽 여백에) */
+      T = new THREE.Vector3(-Math.cos(yaw) * 2.7, 2.2, Math.sin(yaw) * 2.7); d = S.camK * 0.98;
+    }
     const vh = 2 * d * Math.tan(C.fov * Math.PI / 360), px = vh / 270 * (UI.shake ?? 1) * C.shakeMul;
     const R3 = CamRig.R, U3 = CamRig.U;
     cam.position.set(T.x + Math.sin(yaw) * Math.cos(p) * d, T.y + Math.sin(p) * d, T.z + Math.cos(yaw) * Math.cos(p) * d);
@@ -203,18 +221,20 @@ const T1T = (() => {
     S.t += dt; S.realDt = dt; S.fxThisFrame = 0;
     const R = S.R, gdt = (Game.hitstop > 0 || (typeof PIPE !== 'undefined' && PIPE.paused)) ? 0 : dt;
     if (!ART.headless) R.resize(Pipe.lowW || 1920, Pipe.lowH || 1080);
+    { const lv = Math.max(0, Math.min(D.quality.dirs.length - 1, (typeof Perf3 !== 'undefined' && Perf3.level) || 0)); R.qDirs = D.quality.dirs[lv]; R.qBoil = D.quality.boil[lv]; }   /* 자동 품질 단계 → 테마 고유 값 */
     /* 숨은 리그 따라가기 */
     const used = new Set();
     for (const f of fighters) {
       const k = charOf(f); if (used.has(k)) continue;
-      const vis = f.ch.root.visible && f.active !== false && !f.bench && Game.mode === 'fight';
+      const vis = f.ch.root.visible && f.active !== false && !f.bench && Game.mode === 'fight' && Game.state !== 'title';   /* 타이틀 = 워든만 */
       if (!vis) continue; used.add(k);
       follow(S.models[k], f.ch, k, true, dt, f.ch.root.scale.y);
       dashFx(f, k);
     }
     for (const k of ['rapier', 'great']) if (!used.has(k)) follow(S.models[k], null, k, false, dt);
     const bv = boss.root.visible && Game.state !== 'title';
-    follow(S.models.warden, boss, 'warden', bv || Game.state === 'title', dt, boss.root.scale.y);
+    if (S.arena.userData.props) S.arena.userData.props.root.visible = Game.state !== 'title';   /* 타이틀: 소품 숨김 (제목 여백) */
+    if (Game.state === 'title') titleHero(dt); else follow(S.models.warden, boss, 'warden', bv, dt, boss.root.scale.y);
     for (const k of ['rapier', 'great', 'warden']) updTrail(k, S.models[k], dt);
     mirrors();
     S.FX.update(dt);
@@ -233,7 +253,7 @@ const T1T = (() => {
     try { T1H.game(ctx, S); } finally { HUDK.on = hk; ctx.restore(); }
     return true;
   }
-  ART.themes[1] = { id: 1, name: ART.names[1], apply, dispose, frame, hud };
+  ART.themes[1] = { id: 1, name: ART.names[1], apply: iso(apply), dispose: iso(dispose), frame: iso(frame), hud };
   S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; S.eyeT = 0; S.teleN = (AI.tele && AI.tele.length) || 0; };
   return S;
 })();

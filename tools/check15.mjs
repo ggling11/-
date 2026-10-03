@@ -31,6 +31,9 @@ globalThis.requestAnimationFrame = noop;
 const ce = console.error.bind(console); console.error = (...a) => { errors.push(a.map(String).join(' ')); ce(...a); };
 await import(pathToFileURL(prepModule()).href);
 const P = globalThis.PIPE, { Game, AI, Duo, fighters, boss, FEEL } = P;
+// 4단계: --art N = 모든 점검을 그 테마를 켠 채(헤드리스 · 매 step 뒤 artFrame) 돌림 · --4t1 = 테마 1 점검 블록(4T1)도 돌림
+const ARGV = process.argv.slice(2), ART_N = ARGV.includes('--art') ? +ARGV[ARGV.indexOf('--art') + 1] : 0, RUN_4T1 = ARGV.includes('--4t1');
+if (ART_N && P.artSet) { P.ART.headless = true; P.artSet(ART_N, { noSave: true }); const s0 = P.step.bind(P); P.step = (dt = 1 / 60, r = true) => { s0(dt, r); if (P.ART.cur) P.artFrame(dt); }; }
 const FIN_NAME = (k, sl) => P.FIN[k][sl - 1];
 const Shuttle = P.Shuttle;
 const THINK = P.Companion.think;   // (press() and scripted checks swap it out — bot-driven checks put it back)
@@ -1267,6 +1270,62 @@ if (P.Qte3) {
     const want = 3.36 * P.MOTION.dashDist;
     return { ok: maxY >= 3.05 * 2 - 0.01 && Math.abs(dash - want) < 0.08 && slow === 0 && r.cut, note: `최고 높이 ${maxY.toFixed(2)} · 대시 ${dash.toFixed(2)}/${want.toFixed(2)} · 컷인 표시 ${r.cut} 슬로 ${slow}` };
   });
+}
+
+// ---------------------------------------------------------------- 4T1: 4단계 테마 1 '애니 셀' (node check15.mjs --4t1)
+if (RUN_4T1) {
+  const { t1Gates } = await import(pathToFileURL(path.join(HERE, 't1', 'gates_core.mjs')).href);
+  const keep0 = P.ART.cur, H0 = P.ART.headless;
+  const withTheme = (n, fn) => { P.ART.headless = true; P.artSet(n, { noSave: true }); try { return fn(); } finally { P.artSet(keep0, { noSave: true }); P.ART.headless = H0; } };
+  const mul32 = a => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const fight = (seed, secs, art, mode = 'duo') => { const MR = Math.random, rr = mul32(seed * 7919); Math.random = function () { return rr(); };   /* 봇 난수를 싸움마다 같은 시드로 (sim.mjs와 같은 방식) */
+    try { P.setup({ mode, bots: mode === 'duo' ? ['coop', 'coop'] : ['tag'], seed, boss: 1, chars: ['rapier', 'great'] });
+      let maxTexts = 0; for (let i = 0; i < secs * 60; i++) { P.step(1 / 60, false); if (art) P.artFrame(1 / 60); maxTexts = Math.max(maxTexts, P.t1Texts().total); } return { hash: P.stateHash().hash, maxTexts }; } finally { if (Math.random !== MR) Math.random = MR; } };
+  check('4T1a', '공통 훅 · 테마 등록: artApply · artDispose · artFrame · artHud 함수, ART.themes[1] = { id, name, apply, dispose, frame, hud } · ART.boot 1 · SLICE { boss 1, chars 세검·대검 } · Node 기본 테마 0', () => {
+    const T = P.ART.themes[1], f = ['artApply', 'artDispose', 'artFrame', 'artHud'].every(k => typeof P[k] === 'function');
+    const t = T && T.id === 1 && T.name === P.ART.names[1] && ['apply', 'dispose', 'frame', 'hud'].every(k => typeof T[k] === 'function');
+    return { ok: f && t && P.ART.boot === 1 && P.SLICE.boss === 1 && P.SLICE.chars.join() === 'rapier,great' && P.SLICE.on === false && keep0 === ART_N, note: `훅 ${f} · 테마1 ${t} (${T && T.name}) · boot ${P.ART.boot} · SLICE ${JSON.stringify(P.SLICE)} · 시작 테마 ${keep0}` };
+  });
+  check('4T1b', '판정용 숨은 리그: 테마 1이면 레이어 31로만 숨김(.visible 그대로) · 테마 0으로 돌리면 레이어 원래대로', () => {
+    P.setup({ mode: 'duo', bots: [null, null], seed: 3, boss: 1, chars: ['rapier', 'great'] });
+    const roots = P.artRigRoots(), before = roots.map(r => { const m = []; r.traverse(o => m.push(o.layers.mask >>> 0)); return m.join(); });
+    const vis0 = []; for (const r of roots) r.traverse(o => vis0.push(o.visible));
+    let hid = 0, same = true; withTheme(1, () => { P.artFrame(1 / 60); let i = 0; for (const r of roots) { let all = true; r.traverse(o => { if ((o.layers.mask >>> 0) !== 2 ** 31) all = false; if (o.visible !== vis0[i++]) same = false; }); if (all) hid++; } });
+    const vis = same ? roots.length : -1;
+    const after = roots.map(r => { const m = []; r.traverse(o => m.push(o.layers.mask >>> 0)); return m.join(); });
+    return { ok: roots.length >= 3 && hid === roots.length && vis === roots.length && after.join('|') === before.join('|'), note: `리그 ${roots.length} · 레이어31 ${hid} · visible ${vis} · 되돌림 ${after.join('|') === before.join('|')}` };
+  });
+  check('4T1c', '판정 불변: 테마 0에서 기록한 싸움(2인 봇 · 태그 봇) 입력을 테마 1(매 프레임 artFrame)로 다시 돌려도 상태 해시가 같음 · 테마 코드는 Math.random을 안 씀(★1)', () => {
+    let calls = 0; const af = P.artFrame;
+    const replayArt = (rec, art) => { P.setup(rec.o); P.Rec.start('play', rec.frames); for (let i = 0; i < rec.n; i++) { P.step(1 / 60, false); if (art) P.artFrame(1 / 60); } P.Rec.stop(); return P.stateHash().hash; };
+    P.artFrame = dt => { const R1 = Math.random; let n = 0; Math.random = function () { n++; return R1.apply(this, arguments); }; try { return af(dt); } finally { Math.random = R1; calls += n; } };   /* 테마 프레임이 바깥 Math.random을 몇 번 부르나 */
+    const out = [];
+    try {
+      for (const o of [{ mode: 'duo', bots: ['coop', 'coop'], seed: 611, boss: 1, chars: ['rapier', 'great'] }, { mode: 'tag', bots: ['tag'], seed: 612, boss: 1, chars: ['rapier', 'great'] }]) {
+        const rec = P.record(o, 60 * 40), r0 = replayArt(rec, false), r1 = withTheme(1, () => replayArt(rec, true));
+        out.push({ m: o.mode, end: rec.end.hash || rec.end, r0, r1 });
+      }
+    } finally { P.artFrame = af; }
+    return { ok: out.every(x => x.r0 === x.end && x.r1 === x.end) && calls === 0, note: out.map(x => `${x.m} 기록 ${x.end} · 테마0 ${x.r0} · 테마1 ${x.r1}`).join(' / ') + ` · 테마 안 Math.random ${calls}번` };
+  });
+  const G = withTheme(1, () => t1Gates(P));
+  check('4T1d', 'M2 모션: 세검 · 대검 1순위 공격마다 예비(칼끝이 타격 반대로 몸 키 0.25 이상) + 오버슈트', () => ({ ok: G.M2.every(r => r.ok), note: G.M2.map(r => `${r.clip} ${r.anticipation}/${r.overshoot}`).join(' · ') }));
+  check('4T1e', 'L1 판정 맞춤: 타격 프레임 보이는 칼끝 ↔ 판정 부채꼴 · 워든 내려찍기/쏘기 발톱 ↔ SLAM_AT/SHOT_AT 거리 ≤ 판정 반경 25%', () => ({ ok: G.L1.every(r => r.ok), note: G.L1.map(r => `${r.kind}.${r.clip} ${r.dist}/${r.lim}`).join(' · ') }));
+  check('4T1f', 'M1 모델: 삼각형 캐릭터 8천~1.5만 · 보스 1.5만~3만 · 대기 실루엣 폭 · 키 = 판정 크기 ±15%', () => ({
+    ok: G.M1.every(r => (r.kind === 'warden' ? r.tris >= 15000 && r.tris <= 30000 : r.tris >= 8000 && r.tris <= 15000) && Math.abs(r.wRatio - 1) <= 0.15 && Math.abs(r.hRatio - 1) <= 0.15),
+    note: G.M1.map(r => `${r.kind} ${r.tris}삼각 폭${r.wRatio} 키${r.hRatio}`).join(' · ') }));
+  check('4T1g', 'X3 · 1·2순위 새 자세: 테마 1 장면에 3단계 메쉬 0개 · 워든 싸움에서 쓰인 세검 · 대검 · 워든 동작이 전부 T1.poses (임시 3단계 자세 0)', () => withTheme(1, () => {
+    P.t1Pose.stats = {}; fight(613, 60, true); fight(614, 40, true, 'tag');
+    const used = Object.keys(P.t1Pose.stats).filter(k => !/^warden:b[A-Z]/.test(k)), old = used.filter(k => P.t1Pose.stats[k] !== 'new');
+    const game = new Set(); P.t1Scene().traverse(o => game.add(o)); let shared = 0, meshes = 0; P.t1.R.scene.traverse(o => { if (game.has(o)) shared++; if (o.isMesh) meshes++; });
+    return { ok: old.length === 0 && used.length >= 20 && shared === 0 && meshes > 10, note: `쓰인 동작 ${used.length} · 3단계 자세 ${old.length}${old.length ? ' ' + old.join(' ') : ''} · 테마 장면 메쉬 ${meshes} · 3단계와 겹침 ${shared}` };
+  }));
+  check('4T1h', '테마 전환 누수: 0 ↔ 1 왕복 3번 뒤 재질 · 모델 · 손잡이(입자/궤적 원래 함수) 그대로', () => {
+    const burst0 = P.Particles.burst; let n = [];
+    for (let i = 0; i < 3; i++) withTheme(1, () => { P.artFrame(1 / 60); n.push([P.t1.R.mats.length, P.t1.models.warden.tris, P.t1.R.scene.children.length].join('/')); });
+    return { ok: n.every(x => x === n[0]) && P.Particles.burst === burst0 && !P.t1.built, note: `${n.join(' · ')} · 입자 함수 되돌림 ${P.Particles.burst === burst0} · 끈 뒤 built ${P.t1.built}` };
+  });
+  check('4T1i', 'U1: 테마 1 싸움 내내 화면 글자(기술명 · 배너 · 알림 + 팝업) 동시 3개 이하', () => withTheme(1, () => { const a = fight(615, 50, true), b = fight(616, 30, true, 'tag'); return { ok: a.maxTexts <= 3 && b.maxTexts <= 3, note: `최대 ${a.maxTexts} · 태그 ${b.maxTexts}` }; }));
 }
 
 // ---------------------------------------------------------------- 결과

@@ -25,7 +25,7 @@ const T1 = {
   /* 카메라: 원근 · 내려다봄 41° · 화각 26 · 서 있는 키 = 화면 20% */
   cam: { fov: 26, pitch: 41, standFrac: 0.2, standH: 2.38, near: 1, far: 120, follow: 7.0, widenMax: 1.45, shakeMul: 1.0 },   /* 라운드 5: 47° · 15% → 41° · 20% (작고 위에서 검정 덩어리로 읽힘) */
   /* 자동 품질 (3단계 Perf3 배관 재사용 · 이 테마 고유: 외곽선 고리 수 · 끓임 끔) */
-  quality: { maxH: 1080 },
+  quality: { maxH: 1080, dirs: [16, 12, 8, 8], boil: [true, true, false, false] },   /* 3단계 Perf3.level(0~)별: 외곽선 방향 수 · 획 끓임 (해상도 배율은 3단계 배관이 정함) */
   /* 모델 (E): 비율 · 크기 — 판정 크기 ±15% 안 (숨은 리그 키: 세검 2.43 · 대검 2.57 · 워든 3.91) */
   model: {
     rapier: { H: 2.38, heads: 7.6, shoulder: 0.165, seed: 11, det: 1.5, sub: 2 },   /* det · sub = 둘레 칸 배율 · 고리 나눔 (M1 삼각형 8천~1.5만) */

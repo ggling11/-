@@ -1,0 +1,1191 @@
+{
+ "T1": {
+  "diffs": [
+   0.0,
+   0.0
+  ],
+  "ok": true
+ },
+ "SL1": {
+  "steps": [
+   [
+    "title",
+    {
+     "state": "title",
+     "sel": false,
+     "boss": 0,
+     "name": "THE SCARLET COLOSSUS",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 0
+    }
+   ],
+   [
+    "afterKey",
+    {
+     "state": "play",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 0
+    }
+   ],
+   [
+    "afterKill",
+    {
+     "state": "won",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 0
+    }
+   ],
+   [
+    "early",
+    {
+     "state": "won",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 0
+    }
+   ],
+   [
+    "afterAnyKey",
+    {
+     "state": "play",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 0
+    }
+   ],
+   [
+    "menu",
+    {
+     "out": [
+      "AI PARTNER",
+      "2P PLAYER",
+      "ALONE (TAG SOLO)"
+     ],
+     "rows": [
+      "RESUME",
+      "CONTROLS",
+      "PLAYERS",
+      "GAMEPAD",
+      "RENDER SCALE",
+      "ART THEME",
+      "EFFECTS",
+      "SHAKE",
+      "2P KEYS ON HUD",
+      "SOUND",
+      "RESTART"
+     ]
+    }
+   ]
+  ],
+  "errors": [],
+  "ok": true
+ },
+ "SL1A": {
+  "steps": [
+   [
+    "title",
+    {
+     "state": "title",
+     "sel": false,
+     "boss": 0,
+     "name": "THE SCARLET COLOSSUS",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 1
+    }
+   ],
+   [
+    "afterKey",
+    {
+     "state": "play",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 1
+    }
+   ],
+   [
+    "afterKill",
+    {
+     "state": "won",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 1
+    }
+   ],
+   [
+    "early",
+    {
+     "state": "won",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 1
+    }
+   ],
+   [
+    "afterAnyKey",
+    {
+     "state": "play",
+     "sel": false,
+     "boss": 1,
+     "name": "THE AZURE WARDEN",
+     "chars": [
+      "rapier",
+      "great"
+     ],
+     "lo": [
+      "thrust+spin",
+      "launch+smash"
+     ],
+     "relic": false,
+     "tag": true,
+     "art": 1
+    }
+   ],
+   [
+    "menu",
+    {
+     "out": [
+      "AI PARTNER",
+      "2P PLAYER",
+      "ALONE (TAG SOLO)"
+     ],
+     "rows": [
+      "RESUME",
+      "CONTROLS",
+      "PLAYERS",
+      "GAMEPAD",
+      "RENDER SCALE",
+      "ART THEME",
+      "EFFECTS",
+      "SHAKE",
+      "2P KEYS ON HUD",
+      "SOUND",
+      "RESTART"
+     ]
+    }
+   ]
+  ],
+  "errors": [],
+  "ok": true
+ },
+ "T2": {
+  "r": {
+   "boot": 1,
+   "t1a": {
+    "calls": 38,
+    "tex": 9,
+    "geo": 39,
+    "prog": 18
+   },
+   "t0a": {
+    "calls": 489,
+    "tex": 17,
+    "geo": 208,
+    "prog": 16
+   },
+   "t0b": {
+    "calls": 489,
+    "tex": 29,
+    "geo": 208,
+    "prog": 16
+   },
+   "t1b": {
+    "calls": 32,
+    "tex": 38,
+    "geo": 240,
+    "prog": 24
+   },
+   "afterF9": 0,
+   "afterF9b": 1,
+   "menu1": 0,
+   "menu2": 1
+  },
+  "errors": [],
+  "ok": false
+ },
+ "R4_strings": [
+  [
+   "!",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "0",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "0 / 0",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:00",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:01",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:01",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:02",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:03",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:04",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:05",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:06",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:07",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:08",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:09",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:10",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:11",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:12",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:13",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:14",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:15",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:16",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:17",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:18",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:19",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:20",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:21",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:22",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:23",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:24",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:25",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:29",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:30",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:32",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:40",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:41",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:42",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:43",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:47",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:48",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:53",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:54",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:55",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:57",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:58",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "00:59",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:05",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:12",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:13",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:15",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:24",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:25",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:26",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:29",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "01:30",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "1",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "1",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "1",
+   "64px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "1 ANIME CEL",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "100%",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "2",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "2",
+   "64px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "2P AI PARTNER",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "2P KEYS ON HUD",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "3",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "3",
+   "64px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "4",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "4",
+   "64px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "5",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "6",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "7",
+   "20px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "7",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "8",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "A DASH · B PARRY · X ATTACK",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AERIAL FLASH THRUST",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AERIAL FLASH THRUST",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AERIAL REVERSE SPIN",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AGGRO",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AI PARTNER",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ALONE (TAG SOLO)",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ARENA",
+   "196px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ART 1 · SHAKE · SOUND",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ART THEME",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ATTACK  J",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AUTO 100%",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AZURE WARDEN",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "AZURE WARDEN",
+   "30px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "BACK",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "BOSS 2",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "BREAK",
+   "20px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "CONTROLS",
+   "28px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "COVER",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "COVER!",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "COVERS",
+   "30px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "CRIMSON",
+   "196px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "D",
+   "14px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "D SPC",
+   "14px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DASH  SPC",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DEFEAT",
+   "230px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DIVING FLASH THRUST",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DIVING FLASH THRUST",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DIVING REVERSE SPIN",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DOWN",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "DUO",
+   "60px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "EFFECTS",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ESC",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ESC  MENU",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ESC / ENTER  BACK",
+   "20px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "FINISHERS",
+   "30px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "FLANKING GROUND SMASH",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "FLANKING GROUND SMASH",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "FLANKING RISING CLEAVE",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "FLASH THRUST",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "GAMEPAD",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "GREATSWORD",
+   "19px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "GREATSWORD AI",
+   "16px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "GROUND SMASH",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "HOLD B",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "I",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "I",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "II",
+   "44px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "K",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "KNEEL!",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "L",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "L",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "L COVER",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "L TAG",
+   "20px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "LIFTED!",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "LOSE",
+   "56px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "MARK PASSED",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "MENU  ESC",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "MOVE  WASD",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "NAME ONLY",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "NO PAD - PRESS A BUTTON ON IT",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "NO PAD - PRESS A BUTTON ON IT",
+   "20px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "NO PAD - PRESS A BUTTON ON IT",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "O",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "OFF",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "ON",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "P",
+   "14px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "P H",
+   "14px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PARRY",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PARRY  K",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PAUSED",
+   "118px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PERFECT CHAIN",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PERFECT RALLY",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PERFECT RALLY",
+   "30px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PLAYERS",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PRESS ANY KEY",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "PRESS ANY KEY — RESTART",
+   "34px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "QTE PERFECT",
+   "30px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY",
+   "26px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY  DMG X1.3  SPEED X1.15",
+   "46px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY 1",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY 2",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY 3",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY 4",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY 5",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RALLY BROKEN",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RAPIER",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RAPIER AI",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RENDER SCALE",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RESTART",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RESUME",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "REVERSE SPIN",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "REVIVE  F (HOLD)",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RISING CLEAVE",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RT/LB SKILL U · LT SKILL I · RB TAG",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RUSHING GROUND SMASH",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RUSHING RISING CLEAVE",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "RUSHING RISING CLEAVE",
+   "78px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SETTINGS",
+   "118px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SETTINGS",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SETTINGS",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SETTINGS",
+   "28px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SHAKE",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SHIELD CLASH",
+   "44px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SKILL  U / I",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SOUND",
+   "24px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "SPLIT UP",
+   "46px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "STAGGER!",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "START MENU · BACK END SCREEN",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "T",
+   "15px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "TAG  L",
+   "32px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "THE AZURE WARDEN",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "THE WARD HARDENS",
+   "46px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "TIME",
+   "30px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "TURNED!",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "U",
+   "40px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "U",
+   "54px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "UP · DOWN  SELECT     LEFT · RIGHT  CHANGE     ESC  BACK",
+   "18px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "VICTORY",
+   "230px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "WEAK",
+   "22px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "WIN",
+   "74px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "Y",
+   "15px \"T1 Archivo\", \"Arial Black\", sans-serif"
+  ],
+  [
+   "게임이 멈춰 있어요",
+   "bold 22px \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "공중 섬광 찌르기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "낙하 섬광 찌르기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "내려찍기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "돌진 올려치기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "설정",
+   "900 40px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "섬광 찌르기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "쓰러졌다",
+   "900 40px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "아무 키 = 다시",
+   "bold 24px \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "아무 키나 누르세요",
+   "bold 26px \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "애저 워든",
+   "900 40px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "애저 워든",
+   "900 58px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "애저 워든",
+   "900 92px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "애저 워든 격파",
+   "900 40px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "역회전 베기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "올려치기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "완벽한 연쇄",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "일시 정지",
+   "900 40px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "측면 내려찍기",
+   "900 30px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ],
+  [
+   "크림슨 아레나 · 듀오 보스러시",
+   "900 34px \"T1 Noto KR Black\", \"T1 Noto KR\", sans-serif"
+  ]
+ ],
+ "R4_keys": {
+  "k1": {
+   "parry": "H",
+   "dodge": "SPC",
+   "s1": "T",
+   "s2": "Y",
+   "tag": "L",
+   "interact": "B",
+   "attack": "G"
+  },
+  "k2": {
+   "parry": "K",
+   "dodge": "/",
+   "s1": "O",
+   "s2": "I",
+   "tag": "9",
+   "interact": ".",
+   "attack": "L"
+  }
+ },
+ "E1_errors": [],
+ "R4": {
+  "fonts": {
+   "T1 Archivo": 101,
+   "T1 Noto KR": 529,
+   "T1 Noto KR Black": 529
+  },
+  "strings": 214,
+  "missing": {},
+  "ok": true
+ }
+}

@@ -71,60 +71,58 @@ T1H.game = (ctx, S) => {
     if (Duo.buffT > 0) { ctx.fillStyle = P.ink; ctx.fillRect(x - 60, y + 104, 120 * Duo.buffT / FEEL.RALLY_BUFF_T, 6); }
   }
   function playersPanel(ctx) {
-    const duo = !Game.tagMode, cx = 960, y = 912 + slide(220);
-    const list = duo ? [[fighters[0], false], [fighters[1], true]] : [[fighters.find(o => o.onField) || fighters[0], false]];
-    if (!duo) { panel(ctx, list[0][0], cx - 230, y, false, true); const b = fighters.find(o => o !== list[0][0]); if (b) bench(ctx, b, cx + 250, y + 18); return; }
-    panel(ctx, fighters[0], cx - 470, y, false, false); panel(ctx, fighters[1], cx + 30, y, true, false);
+    const duo = !Game.tagMode, cx = 960, y = 924 + slide(220);
+    if (!duo) { const on = fighters.find(o => o.onField) || fighters[0]; panel(ctx, on, cx - 235, y, false, true); const b = fighters.find(o => o !== on); if (b) bench(ctx, b, cx + 262, y + 12); return; }
+    panel(ctx, fighters[0], cx - 490, y, false, false); panel(ctx, fighters[1], cx + 20, y, true, false);
   }
   function bench(ctx, f, x, y) {
     H.portrait(ctx, f.char === 'great' ? 'great' : 'rapier', x, y, 0.42, true);
     ctx.fillStyle = P.ink; ctx.fillRect(x + 2, y + 104, 84, 10); ctx.fillStyle = charCol(f); ctx.fillRect(x + 4, y + 106, 80 * f.hp / FIGHT.PLAYER_HP, 6);
     if (Game.tagMode) { const K = keyNames(fighters[0]); H.text(ctx, `${K.tag} TAG`, x + 100, y + 60, 20, P.ink); }
   }
+  /* 패널 (라운드 8): [초상 | 이름 · 체력 · 파형 | 스킬 2칸 + 패리/대시] — 오른쪽 패널은 좌우 뒤집음 (초상이 바깥) */
   function panel(ctx, f, x, y, right, solo) {
-    const i = f.idx, col = charCol(f), w = 440, h = 120;
+    const i = f.idx, col = charCol(f), w = 470, h = 124;
     if (ui.lastHp[i] !== null && f.hp < ui.lastHp[i] - 0.5) ui.hpFlash[i] = 0.12; ui.lastHp[i] = f.hp; ui.hpFlash[i] = Math.max(0, ui.hpFlash[i] - S.realDt);
     const inv = ui.hpFlash[i] > 0, down = f.state === 'down';
-    H.poly(ctx, [[x + 18, y], [x + w + 18, y], [x + w, y + h], [x, y + h]], '#fefefe', P.ink, 4);
-    H.hatch(ctx, x + 10, y + 4, w, 18, '#cfc6c8', 12, 5); ctx.fillStyle = col; ctx.fillRect(right ? x + 30 : x + w - 120, y + 4, 90, 8);
-    const px = right ? x + w - 96 : x + 14;
-    H.portrait(ctx, f.char === 'great' ? 'great' : 'rapier', px, y - 34, 0.6, right);
-    const tx = right ? x + 26 : x + 150, nm = CHARS[f.char].label + (Game.botFor(f) ? ' AI' : '');
-    ctx.font = `400 26px 'T1 Archivo'`; const nw = Math.max(150, ctx.measureText(nm).width + 26);
-    H.poly(ctx, [[tx + 8, y + 26], [tx + nw + 8, y + 26], [tx + nw, y + 58], [tx, y + 58]], P.ink);
-    H.text(ctx, nm, tx + 14, y + 52, 26, '#fefefe');
-    if (down) H.text(ctx, 'DOWN', tx + nw + 16, y + 52, 26, P.red);
+    H.poly(ctx, [[x + 16, y], [x + w + 16, y], [x + w, y + h], [x, y + h]], '#fefefe', P.ink, 4);
+    H.hatch(ctx, x + 8, y + 5, w, 13, '#d6cfcf', 12, 5);
+    const px = right ? x + w - 130 : x + 14, ix = x + 150, iw = 182, sx0 = right ? x + 18 : x + 340;
+    H.portrait(ctx, f.char === 'great' ? 'great' : 'rapier', px, y - 30, 0.6, right);
+    if (down) { ctx.save(); ctx.globalAlpha = 0.55; ctx.fillStyle = '#fefefe'; ctx.fillRect(px - 4, y - 30, 128, 148); ctx.restore(); H.stamp(ctx, px + 62, y + 40, 40, 'DOWN', 22, 1); }
+    /* 이름 탭: 검정 사선 판 · 칸에 맞춰 글자 크기 줄임 */
+    const nm = CHARS[f.char].label + (Game.botFor(f) ? ' AI' : '');
+    let fs = 22; ctx.font = `400 ${fs}px 'T1 Archivo'`; while (ctx.measureText(nm).width > iw - 26 && fs > 13) { fs--; ctx.font = `400 ${fs}px 'T1 Archivo'`; }
+    H.poly(ctx, [[ix + 8, y + 24], [ix + iw + 8, y + 24], [ix + iw, y + 54], [ix, y + 54]], P.ink);
+    H.text(ctx, nm, ix + 14, y + 46, fs, '#fefefe'); ctx.fillStyle = col; ctx.fillRect(ix + iw - 34, y + 24, 26, 6);
     /* 체력 (피격 때 짧게 흑백 반전) */
-    const bx = tx, by = y + 68, bw = 250;
-    ctx.fillStyle = inv ? P.ink : '#fefefe'; ctx.fillRect(bx, by, bw, 16); ctx.lineWidth = 3; ctx.strokeStyle = P.ink; ctx.strokeRect(bx, by, bw, 16);
-    ctx.fillStyle = P.red; ctx.fillRect(bx + 3, by + 3, (bw - 6) * Math.max(0, f.chip) / FIGHT.PLAYER_HP, 10);
-    ctx.fillStyle = inv ? '#fefefe' : P.ink; ctx.fillRect(bx + 3, by + 3, (bw - 6) * Math.max(0, f.hp) / FIGHT.PLAYER_HP, 10);
-    /* 파형 동그라미 3개 (저장된 색 · 들어올 때 커짐) */
+    const by = y + 64, bw = iw;
+    ctx.fillStyle = inv ? P.ink : '#fefefe'; ctx.fillRect(ix, by, bw, 16); ctx.lineWidth = 3; ctx.strokeStyle = P.ink; ctx.strokeRect(ix, by, bw, 16);
+    ctx.fillStyle = P.red; ctx.fillRect(ix + 3, by + 3, (bw - 6) * Math.max(0, f.chip) / FIGHT.PLAYER_HP, 10);
+    ctx.fillStyle = inv ? '#fefefe' : P.ink; ctx.fillRect(ix + 3, by + 3, (bw - 6) * Math.max(0, f.hp) / FIGHT.PLAYER_HP, 10);
+    /* 파형 동그라미 (저장된 색 · 들어올 때 커짐) */
     const max = Slots.max(f);
     for (let k = 0; k < max; k++) {
-      const on = k < f.slots.length, wv = on ? f.slots[k] : null, cx = bx + 14 + k * 36, cy = y + 104, pop = f.slotFx && f.slotFx.some(e => e.k === 'in' && e.i === k && e.t < 0.2);
+      const on = k < f.slots.length, wv = on ? f.slots[k] : null, cx = ix + 14 + k * 34, cy = y + 104, pop = f.slotFx && f.slotFx.some(e => e.k === 'in' && e.i === k && e.t < 0.2);
       ctx.beginPath(); ctx.arc(cx, cy, pop ? 15 : 12, 0, Math.PI * 2); ctx.fillStyle = on ? (wv === 'red' ? P.red : wv === 'blue' ? P.blue : P.purple) : '#fefefe'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = P.ink; ctx.stroke();
       if (on) { ctx.beginPath(); ctx.moveTo(cx - 7, cy); ctx.quadraticCurveTo(cx - 3.5, cy - 6, cx, cy); ctx.quadraticCurveTo(cx + 3.5, cy + 6, cx + 7, cy); ctx.strokeStyle = '#fefefe'; ctx.lineWidth = 2.5; ctx.stroke(); }
     }
-    /* 스킬 칸 2개 (기호 · 쿨타임 빗금 · 1P 키만) + 패리 · 대시 작은 칸 */
+    /* 스킬 2칸 (기호 · 쿨타임 · 1P 키만) + 아래 패리 · 대시 작은 칸 */
     const showKey = (!right || UI.keys2P || solo) && !Game.botFor(f), K = keyNames(f), offer = finOffer(f);
     for (const sl of [1, 2]) {
-      const kind = f.skillKind(sl), cd = f.cd[sl - 1], sx = right ? x + 300 + (sl - 1) * 66 - 280 : x + 300 + (sl - 1) * 66, sy = y + 26, sz = 58;
-      if (right && false) continue;
-      ctx.save(); ctx.translate(sx + 24, sy); ctx.transform(1, 0, -0.17, 1, 0, 0);
+      const kind = f.skillKind(sl), cd = f.cd[sl - 1], sx = sx0 + (sl - 1) * 64, sy = y + 20, sz = 56;
+      ctx.save(); ctx.translate(sx + 10, sy); ctx.transform(1, 0, -0.17, 1, 0, 0);
       ctx.fillStyle = offer ? P.red : '#fefefe'; ctx.fillRect(0, 0, sz, sz); ctx.lineWidth = 4; ctx.strokeStyle = P.ink; ctx.strokeRect(0, 0, sz, sz);
       glyph(ctx, kind, sz / 2, sz / 2, offer ? '#fefefe' : P.ink);
-      if (cd > 0 && !offer) { const hh = sz * cd / FEEL.SKILLS[kind].cd; ctx.fillStyle = 'rgba(20,17,18,0.55)'; ctx.fillRect(0, sz - hh, sz, hh); H.text(ctx, String(Math.ceil(cd)), sz / 2, sz / 2 + 10, 26, '#fefefe', { al: 'center' }); }
-      if (showKey && !(cd > 0)) { ctx.fillStyle = P.ink; ctx.fillRect(sz - 18, -10, 28, 26); H.text(ctx, K[`s${sl}`].slice(0, 2), sz - 4, 10, 16, '#fefefe', { al: 'center' }); }
+      if (cd > 0 && !offer) { const hh = sz * Math.min(1, cd / FEEL.SKILLS[kind].cd); ctx.fillStyle = 'rgba(20,17,18,0.55)'; ctx.fillRect(0, sz - hh, sz, hh); H.text(ctx, String(Math.ceil(cd)), sz / 2, sz / 2 + 10, 26, '#fefefe', { al: 'center' }); }
+      if (showKey && !(cd > 0)) { ctx.fillStyle = P.ink; ctx.fillRect(sz - 18, -10, 28, 24); H.text(ctx, String(K[`s${sl}`]).slice(0, 2), sz - 4, 8, 15, '#fefefe', { al: 'center' }); }
       ctx.restore();
     }
-    if (offer) offer.names.forEach((n, k) => H.text(ctx, `${showKey ? K[`s${k + 1}`] + '  ' : ''}${finLabel(n)}`, right ? x + w : x + 20, y - 60 - k * 30, 24, Math.floor(clock.t * 8) % 2 ? P.red : P.ink, { al: right ? 'right' : 'left', stroke: 6, sc: '#fefefe' }));
-    if (showKey) {
-      const pOpen = f.state === 'parry' && f.t <= Waves.parryWindow(f), rdy = f.sinceRoll >= FEEL.DODGE_MIN_GAP, kx = right ? x + 20 : x + 300;
-      for (const [j, lab, on, key] of [[0, 'P', pOpen, K.parry], [1, 'D', rdy, K.dodge]]) {
-        const qx = kx + j * 60, qy = y + 92; ctx.fillStyle = on ? P.ink : '#fefefe'; ctx.fillRect(qx, qy, 50, 22); ctx.lineWidth = 2.5; ctx.strokeStyle = P.ink; ctx.strokeRect(qx, qy, 50, 22);
-        H.text(ctx, `${lab} ${String(key).slice(0, 3)}`, qx + 25, qy + 17, 14, on ? '#fefefe' : P.ink, { al: 'center' });
-      }
+    if (offer) offer.names.forEach((n, k) => H.text(ctx, `${showKey ? K[`s${k + 1}`] + '  ' : ''}${finLabel(n)}`, right ? x + w : x + 20, y - 48 - k * 30, 24, Math.floor(clock.t * 8) % 2 ? P.red : P.ink, { al: right ? 'right' : 'left', stroke: 6, sc: '#fefefe' }));
+    const pOpen = f.state === 'parry' && f.t <= Waves.parryWindow(f), rdy = f.sinceRoll >= FEEL.DODGE_MIN_GAP;
+    for (const [j, lab, on, key] of [[0, 'P', pOpen, K.parry], [1, 'D', rdy, K.dodge]]) {
+      const qx = sx0 + j * 64 + 2, qy = y + 88; ctx.fillStyle = on ? P.ink : '#fefefe'; ctx.fillRect(qx, qy, 54, 22); ctx.lineWidth = 2.5; ctx.strokeStyle = P.ink; ctx.strokeRect(qx, qy, 54, 22);
+      H.text(ctx, showKey ? `${lab} ${String(key).slice(0, 3)}` : lab, qx + 27, qy + 17, 14, on ? '#fefefe' : P.ink, { al: 'center' });
     }
   }
   function glyph(ctx, kind, cx, cy, col) {
@@ -166,7 +164,7 @@ T1H.game = (ctx, S) => {
         const [x, y] = proj(p.x, 1.2, p.z), k = f.reviveT / FEEL.REVIVE_T;
         ctx.fillStyle = P.ink; ctx.fillRect(x - 60, y - 40, 120, 14); ctx.fillStyle = '#fefefe'; ctx.fillRect(x - 57, y - 37, 114 * k, 8);
         const near = fighters.find(o => o !== f && o.alive && o.ch.pos.distanceTo(p) < FEEL.REVIVE_R + 0.6), rev = fighters.some(o => o.state === 'revive' && o.reviveOf === f);
-        H.text(ctx, rev ? 'REVIVING' : near && !near.bot ? `HOLD ${keyNames(near).interact}` : 'HELP!', x, y - 54, 24, rev ? P.ink : P.red, { al: 'center', stroke: 6, sc: '#fefefe' });
+        H.text(ctx, rev ? 'REVIVING' : near && !near.bot && (near.idx === 0 || UI.keys2P) ? `HOLD ${keyNames(near).interact}` : 'HELP!', x, y - 54, 24, rev ? P.ink : P.red, { al: 'center', stroke: 6, sc: '#fefefe' });
       }
       edge(ctx, ...proj(p.x, 1.0, p.z), charCol(f));
     }
@@ -183,7 +181,7 @@ T1H.game = (ctx, S) => {
       H.poly(ctx, [[x, y - 22], [x + 18, y], [x, y + 22], [x - 18, y]], bl ? P.red : P.ink, P.ink, 3); ctx.fillStyle = '#fefefe'; ctx.fillRect(x - 3, y - 3, 6, 6);
       if (e !== null && e <= 1.2) { if (Game.tagMode) H.text(ctx, `${keyNames(w).tag} COVER`, x, y - 32, 22, P.ink, { al: 'center', stroke: 6, sc: '#fefefe' });
         else for (const o of fighters) if (o !== w && o.alive) { const [qx, qy] = proj(o.ch.pos.x, o.ch.pos.y + 2.9, o.ch.pos.z);
-          H.text(ctx, 'COVER!', qx, qy - 20, 26, bl ? P.red : P.ink, { al: 'center', stroke: 6, sc: '#fefefe' }); if (!Game.botFor(o)) H.text(ctx, keyNames(o).parry, qx, qy + 6, 20, P.ink, { al: 'center', stroke: 5, sc: '#fefefe' }); } } } }
+          H.text(ctx, 'COVER!', qx, qy - 20, 26, bl ? P.red : P.ink, { al: 'center', stroke: 6, sc: '#fefefe' }); if (!Game.botFor(o) && (o.idx === 0 || UI.keys2P)) H.text(ctx, keyNames(o).parry, qx, qy + 6, 20, P.ink, { al: 'center', stroke: 5, sc: '#fefefe' });   /* U2: 싸우는 화면엔 1P 키만 */ } } } }
     /* 팝업: 글자 수 예산(uiTexts3) 안에서 새 것부터 · 작은 검정 상자 */
     for (let i = Game.popups.length - 1; i >= 0 && shown < room; i--) {
       const pp = Game.popups[i], [x, y0] = proj(pp.p.x, pp.p.y, pp.p.z), y = y0 - Math.min(30, pp.t * 70);
@@ -245,39 +243,59 @@ T1H.game = (ctx, S) => {
     H.poly(ctx, [[x - 900, 0], [x, 0], [x - 300, 1080], [x - 1200, 1080]], P.ink);
     ctx.save(); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 260, 0); ctx.lineTo(x - 40, 1080); ctx.lineTo(x - 300, 1080); ctx.closePath(); ctx.clip(); H.hatch(ctx, x - 300, 0, 600, 1080, P.ink, 22, 9); ctx.restore();
   }
+  /* 타이틀 (라운드 8): 왼쪽 = 큰 제목 + 빗금 띠(제목 폭만) · 오른쪽 = 워든 히어로 (3D) · 아래 = 아무 키 */
   function title(ctx) {
     const blink = Math.floor(clock.t / UI.title.blink) % 2 === 0;
-    H.poly(ctx, [[L, 380], [Rr, 380], [Rr, 680], [L, 680]], '#ebe5e4'); H.hatch(ctx, L, 380, Rr - L, 300, '#d6cfcf', 16, 6);
+    H.poly(ctx, [[L, 372], [1160, 372], [1110, 640], [L, 640]], '#ebe5e4'); H.hatch(ctx, L, 372, 1160 - L, 268, '#d6cfcf', 16, 6);
     const nm = UI.title.name.split(' ');
-    H.text(ctx, nm[0] || '', 70, 330, 240, P.ink); H.text(ctx, nm.slice(1).join(' '), 70, 600, 240, P.ink);
-    H.stamp(ctx, Rr - 190, 210, 96, UI.title.sub, 74, 1);
-    H.text(ctx, '크림슨 아레나 · 듀오 보스러시', 78, 664, 36, P.ink, { ko: true, big: true });
+    H.text(ctx, nm[0] || '', 70, 320, 196, P.ink); H.text(ctx, nm.slice(1).join(' '), 70, 560, 196, P.ink);
+    H.stamp(ctx, 1010, 500, 78, UI.title.sub, 60, 1);
+    H.text(ctx, '크림슨 아레나 · 듀오 보스러시', 78, 622, 34, P.ink, { ko: true, big: true });
     H.dots(ctx, L + 44, 120, 4, 22, 4, P.ink); ctx.beginPath(); ctx.arc(L + 44, 230, 13, 0, Math.PI * 2); ctx.fill(); H.dots(ctx, L + 44, 266, 5, 20, 3.5, P.ink);
-    if (blink) { H.poly(ctx, [[60, 868], [640, 868], [620, 948], [40, 948]], '#fefefe', P.ink, 5); H.text(ctx, 'PRESS ANY KEY', 84, 926, 54, P.ink); }
-    H.text(ctx, '아무 키나 누르세요', 80, 990, 26, P.ink, { ko: true });
+    H.text(ctx, 'THE AZURE WARDEN', Rr - 60, 1000, 22, P.ink, { al: 'right' }); H.text(ctx, '애저 워든', Rr - 60, 960, 40, P.ink, { al: 'right', ko: true, big: true });
+    if (blink) { H.poly(ctx, [[60, 838], [640, 838], [620, 918], [40, 918]], '#fefefe', P.ink, 5); H.text(ctx, 'PRESS ANY KEY', 84, 896, 54, P.ink); }
+    H.text(ctx, '아무 키나 누르세요', 80, 966, 26, P.ink, { ko: true });
     const pads = padStatusLines(); H.text(ctx, pads[0], 80, 1046, 20, '#6a494e');
     ctx.fillStyle = P.ink; ctx.fillRect(Rr - 290, 1018, 70, 36); H.text(ctx, 'ESC', Rr - 255, 1044, 22, '#fefefe', { al: 'center' }); H.text(ctx, 'SETTINGS', Rr - 206, 1045, 24, P.ink);
   }
+  /* Esc 메뉴 (라운드 8): 왼쪽 검정 판 · 큰 글씨 위계(RESUME · PLAYERS · RESTART) · 설정 묶음은 커서가 들어갈 때만 펼침
+   *   줄 목록 · 커서 이동 · 값 바꾸기는 3단계 Menu3 그대로 (그리기만 다름) */
   function menu(ctx) {
-    ctx.fillStyle = 'rgba(254,254,254,0.5)'; ctx.fillRect(L, 0, Rr - L, 1080);
-    const x0 = L;
-    H.poly(ctx, [[x0, 0], [x0 + 900, 0], [x0 + 760, 1080], [x0, 1080]], P.ink);
-    H.text(ctx, Game.state === 'title' ? 'SETTINGS' : 'PAUSED', x0 + 70, 190, 130, '#fefefe');
-    H.text(ctx, Game.state === 'title' ? '설정' : '일시 정지 · 게임이 멈춰 있어요', x0 + 76, 244, 28, '#fefefe', { ko: true, big: true });
+    ctx.fillStyle = 'rgba(254,254,254,0.55)'; ctx.fillRect(L, 0, Rr - L, 1080);
+    const x0 = L, pw = 820;
+    H.poly(ctx, [[x0, 0], [x0 + pw, 0], [x0 + pw - 150, 1080], [x0, 1080]], P.ink);
+    H.dots(ctx, x0 + pw - 120, 120, 6, 22, 4, '#fefefe');
+    H.text(ctx, Game.state === 'title' ? 'SETTINGS' : 'PAUSED', x0 + 70, 176, 118, '#fefefe');
+    H.text(ctx, Game.state === 'title' ? '설정' : '일시 정지', x0 + 76, 234, 40, P.red, { ko: true, big: true });
+    if (Game.state !== 'title') H.text(ctx, '게임이 멈춰 있어요', x0 + 76 + 190, 230, 22, '#cfc6c8', { ko: true });
     if (Menu3.page === 'keys' || Menu3.page === 'pad') { pageKeys(ctx, x0); return; }
-    const L2 = Menu3.items(), big = new Set(['RESUME', 'PLAYERS', 'RESTART', 'CHARACTER SELECT']);
-    let y = 330; let grp = false;
-    L2.forEach((it, i) => {
-      const isBig = big.has(it.k), sel = i === Menu3.cur;
-      if (!isBig && !grp) { grp = true; H.text(ctx, 'SETTINGS', x0 + 80, y - 4, 18, '#b0a3a5'); ctx.fillStyle = '#6a6264'; ctx.fillRect(x0 + 200, y - 12, 480, 3); y += 34; }
-      if (isBig && grp && it.k !== 'PLAYERS') { y += 16; }
-      const size = isBig ? 48 : 28, h = isBig ? 66 : 44;
-      if (sel) H.poly(ctx, [[x0 + 40, y - size * 0.85], [x0 + 744, y - size * 0.85], [x0 + 736, y + size * 0.3], [x0 + 32, y + size * 0.3]], P.red);
+    const rows = Menu3.items(), big = new Set(['RESUME', 'PLAYERS', 'RESTART', 'CHARACTER SELECT']), cur = Menu3.cur;
+    const isSet = it => !big.has(it.k) && it.k !== 'CONTROLS';
+    const setIdx = rows.map((it, i) => (isSet(it) ? i : -1)).filter(i => i >= 0), inSet = setIdx.includes(cur);
+    let y = 320, setDrawn = false;
+    rows.forEach((it, i) => {
+      const sel = i === cur;
+      if (isSet(it)) {
+        if (!inSet) {   /* 접힌 설정 묶음: 한 줄 + 요약 */
+          if (setDrawn) return; setDrawn = true;
+          H.text(ctx, 'SETTINGS', x0 + 80, y, 28, '#cfc6c8'); H.text(ctx, `${setIdx.length}`, x0 + 260, y, 20, '#8f8487');
+          H.text(ctx, `ART ${ART.cur} · ${UI.shake === 0 ? 'NO SHAKE' : 'SHAKE'} · ${Sfx.muted ? 'MUTE' : 'SOUND'}`, x0 + pw - 210, y, 18, '#8f8487', { al: 'right' });
+          y += 50; return;
+        }
+        if (!setDrawn) { setDrawn = true; H.text(ctx, 'SETTINGS', x0 + 80, y - 6, 18, '#8f8487'); ctx.fillStyle = '#5a5254'; ctx.fillRect(x0 + 200, y - 13, pw - 380, 3); y += 26; }
+        if (sel) H.poly(ctx, [[x0 + 60, y - 28], [x0 + pw - 190, y - 28], [x0 + pw - 196, y + 10], [x0 + 54, y + 10]], P.red);
+        H.text(ctx, it.k, x0 + 96, y, 24, '#fefefe');
+        const v = it.v ? it.v() : ''; if (v) H.text(ctx, String(v), x0 + pw - 210, y, 18, '#fefefe', { al: 'right' });
+        y += 40; return;
+      }
+      const isBig = big.has(it.k), size = isBig ? 54 : 28, hgt = isBig ? 76 : 48;
+      if (isBig && i > 0) y += 8;
+      if (sel) H.poly(ctx, [[x0 + 40, y - size * 0.82], [x0 + pw - 170, y - size * 0.82], [x0 + pw - 178, y + size * 0.26], [x0 + 32, y + size * 0.26]], P.red);
       H.text(ctx, it.k, x0 + 80, y, size, '#fefefe');
-      const v = it.v ? it.v() : ''; if (v) H.text(ctx, String(v), x0 + 700, y, isBig ? 24 : 20, '#fefefe', { al: 'right' });
-      y += h;
+      const v = it.v ? it.v() : ''; if (v) H.text(ctx, String(v), x0 + pw - 210, y, isBig ? 22 : 18, '#fefefe', { al: 'right' });
+      y += hgt;
     });
-    H.text(ctx, '↑↓ SELECT   ←→ CHANGE   ESC BACK', x0 + 70, 1046, 20, '#b0a3a5');
+    H.text(ctx, 'UP · DOWN  SELECT     LEFT · RIGHT  CHANGE     ESC  BACK', x0 + 70, 1046, 18, '#8f8487');
   }
   function pageKeys(ctx, x0) {
     const K = keyNames(fighters[0]), rows = Menu3.page === 'pad' ? padStatusLines().concat(['A DASH · B PARRY · X ATTACK', 'RT/LB SKILL U · LT SKILL I · RB TAG', 'START MENU · BACK END SCREEN']) :

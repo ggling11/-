@@ -1,0 +1,42 @@
+{
+ "p1": {
+  "note": "",
+  "calls": 37,
+  "tris": 39461,
+  "art": 1,
+  "ms": 2309,
+  "errors": []
+ },
+ "qte": {
+  "note": "qte true cells 5 done 2",
+  "calls": 31,
+  "tris": 39449,
+  "art": 1,
+  "ms": 1238,
+  "errors": []
+ },
+ "title": {
+  "note": "",
+  "calls": 12,
+  "tris": 16938,
+  "art": 1,
+  "ms": 1433,
+  "errors": []
+ },
+ "menu": {
+  "note": "menu true",
+  "calls": 33,
+  "tris": 39453,
+  "art": 1,
+  "ms": 1474,
+  "errors": []
+ },
+ "res": {
+  "note": "res won 3.20",
+  "calls": 33,
+  "tris": 39453,
+  "art": 1,
+  "ms": 1594,
+  "errors": []
+ }
+}

@@ -64,7 +64,7 @@ const T1R = (() => {
     precision highp float;
     uniform sampler2D tColor; uniform sampler2D tInfo; uniform sampler2D tDepth;
     uniform vec2 uSize; uniform float uPx; uniform float uJit; uniform float uSeed; uniform float uNear; uniform float uFar;
-    uniform float uDepthEdge; uniform vec3 uInk; uniform float uFarThin; uniform vec3 uBg; uniform float uImpact;
+    uniform float uDepthEdge; uniform vec3 uInk; uniform float uFarThin; uniform vec3 uBg; uniform float uImpact; uniform float uDirs;
     in vec2 vUv; out vec4 outColor;
     float lin(float z) { return uNear * uFar / (uFar - z * (uFar - uNear)); }
     float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -81,7 +81,8 @@ const T1R = (() => {
       float R = uPx * (1.0 + uJit * (n * 2.0 - 1.0)) * far;
       float ink = 0.0;
       for (int k = 0; k < 16; k++) {
-        float a = float(k) * 0.3926991;
+        if (float(k) >= uDirs) break;                            /* 자동 품질: 방향 수 16 → 12 → 8 */
+        float a = float(k) * 6.2831853 / uDirs;
         for (int rr = 1; rr <= 2; rr++) {
           float r = R * float(rr) * 0.5;
           vec2 o = vec2(cos(a), sin(a)) * r / uSize;
@@ -189,7 +190,7 @@ const T1R = (() => {
     R.comp = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: SH.compVert, fragmentShader: SH.compFrag, depthTest: false, depthWrite: false,
       uniforms: { tColor: { value: null }, tInfo: { value: null }, tDepth: { value: null }, uSize: { value: new THREE.Vector2() }, uPx: { value: 2 }, uJit: { value: 0.3 },
         uSeed: { value: 0 }, uNear: { value: 1 }, uFar: { value: 100 }, uDepthEdge: { value: 0.02 }, uInk: { value: hex(THREE, D.pal.ink) }, uFarThin: { value: 0.6 },
-        uBg: { value: hex(THREE, D.pal.sky) }, uImpact: { value: 0 } } });
+        uBg: { value: hex(THREE, D.pal.sky) }, uImpact: { value: 0 }, uDirs: { value: 16 } } });
     R.blit = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: SH.compVert, fragmentShader: SH.blitFrag, depthTest: false, depthWrite: false, uniforms: { tSrc: { value: null } } });
     /* 재질: kind = 팔레트 이름 쌍 [밝은 색, 그림자 색] · flat = 그림자 없음(검정 · 강조) · line = 선 굵기 배율(0 = 선 없음) */
     R.mat = (lit, shade, o = {}) => {
@@ -216,11 +217,13 @@ const T1R = (() => {
       m.userData.tele = true; R.mats.push(m); return m;
     };
     R.newId = () => { R.ids = (R.ids + 7) % 250; return R.ids; };   /* 부품 ID: 이웃끼리 다르게 */
+    /* 렌더 타깃 해제: MRT 색 2장 · 깊이 텍스처 · 출력 텍스처를 각각 dispose (타깃 dispose만으로는 텍스처가 남았음 — T2) */
+    const freeRT = () => { for (const t of R.rt.textures || [R.rt.texture]) t.dispose(); if (R.rt.depthTexture) R.rt.depthTexture.dispose(); R.rt.dispose(); R.final.texture.dispose(); R.final.dispose(); R.rt = R.final = null; };
     R.resize = (w, h) => {
       w = Math.max(2, Math.round(w)); h = Math.max(2, Math.round(h));
       if (w === R.w && h === R.h) return;
       R.w = w; R.h = h;
-      if (R.rt) { R.rt.dispose(); R.final.dispose(); }
+      if (R.rt) freeRT();
       const dt = new THREE.DepthTexture(w, h); dt.type = THREE.UnsignedIntType;
       R.rt = new THREE.WebGLRenderTarget(w, h, { count: 2, depthBuffer: true, depthTexture: dt, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
       R.final = new THREE.WebGLRenderTarget(w, h, { depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
@@ -229,7 +232,8 @@ const T1R = (() => {
     /* 한 프레임: dt = 실제 시간 (획 끓임 시계) · target = null이면 화면 */
     R.render = (dt, target = null, viewport = null) => {
       const r = renderer, U = R.comp.uniforms, Dr = D.render;
-      R.t += dt; const step = Math.floor(R.t * Dr.boilFps); if (step !== R.boil) R.boil = step;
+      R.t += dt; const step = R.qBoil === false ? 0 : Math.floor(R.t * Dr.boilFps); if (step !== R.boil) R.boil = step;   /* 자동 품질 낮으면 끓임 끔 */
+      U.uDirs.value = R.qDirs || 16;
       r.setRenderTarget(R.rt); r.setClearColor(0x000000, 0); r.clear(true, true, true);
       r.render(R.scene, R.camera);
       U.tColor.value = R.rt.textures[0]; U.tInfo.value = R.rt.textures[1]; U.tDepth.value = R.rt.depthTexture;
@@ -241,10 +245,13 @@ const T1R = (() => {
       r.render(R.qScene, R.qCam);
     };
     R.dispose = () => {
-      if (R.rt) { R.rt.depthTexture.dispose(); R.rt.dispose(); R.final.dispose(); R.rt = R.final = null; R.w = R.h = 0; }
+      if (R.rt) { freeRT(); R.w = R.h = 0; }
       for (const m of R.mats) { if (m.userData.tex) m.userData.tex.dispose(); m.dispose(); } R.mats.length = 0;
       R.comp.dispose(); R.blit.dispose(); R.quad.geometry.dispose();
-      R.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+      const skels = new Set(); R.scene.traverse(o => { if (o.isSkinnedMesh && o.skeleton) skels.add(o.skeleton); });   /* 뼈 텍스처(스켈레톤마다 1장)도 해제 — T2 누수 */
+      for (const sk of skels) sk.dispose();
+      R.scene.traverse(o => { if (o.geometry && !o.userData.shared) o.geometry.dispose(); const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+        for (const m of ms) { for (const k in m.uniforms || {}) { const v = m.uniforms[k].value; if (v && v.isTexture) v.dispose(); } m.dispose(); } });
     };
     return R;
   }
