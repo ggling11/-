@@ -72,13 +72,34 @@ await waitState(() => __game.G.boss.state !== 'gap');
 results.practiceHap = await ev(() => __game.G.stats.hap);
 await page.screenshot({ path: path.join(out, '2_practice_hap.png') });
 
-// 3) 모바일 폭에서 가로 스크롤이 없는지
+// 3) 합 연출 보기: 자동으로 합과 완벽한 합이 나오는지, 완벽한 합 정지 화면, 기존 연출로 바꿔도 도는지
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit4');
+await waitState(() => __game.G.mode === 'demo' && __game.G.running);
+await ev(() => { __game.CFG.freezePerfect = 2.5; }); // 헤드리스는 느려서 정지 화면을 찍으려면 길게
+await waitState(() => __game.G.stats.hap - __game.G.stats.perfect >= 1, 180000);
+results.demoHap = await ev(() => __game.G.stats.hap);
+await waitState(() => !!__game.G.release && __game.G.impact === 0, 180000);
+await page.screenshot({ path: path.join(out, '3_demo_perfect_freeze.png') });
+results.demoFreeze = await ev(() => ({ cine: document.body.classList.contains('cine'), stamp: document.getElementById('stamp').classList.contains('go') }));
+await ev(() => { __game.CFG.freezePerfect = 0.3; });
+await waitState(() => !__game.G.release && __game.G.slow, 60000);
+await page.screenshot({ path: path.join(out, '4_demo_release.png') });
+await waitState(() => __game.G.stats.perfect >= 2, 240000); // 'trust' (믿고 먼저) 순서까지
+results.demoPerfect = await ev(() => __game.G.stats.perfect);
+await page.click('#fxBtn');
+const before = await ev(() => __game.G.stats.hap);
+await page.waitForFunction(n => __game.G.stats.hap > n, before, { timeout: 180000 });
+results.demoOldFx = await ev(() => __game.CFG.fx);
+
+// 4) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
 results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > innerWidth);
-await page.screenshot({ path: path.join(out, '3_mobile_title.png') });
+await page.screenshot({ path: path.join(out, '5_mobile_title.png') });
 
 await browser.close();
-const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1 && !results.mobileOverflow && !errors.length;
+const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1 && results.demoHap >= 1 && results.demoFreeze?.cine && results.demoFreeze?.stamp && results.demoPerfect >= 2 && results.demoOldFx === '기존'
+  && !results.mobileOverflow && !errors.length;
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);
