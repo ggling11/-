@@ -113,6 +113,60 @@ const T1R = (() => {
       pc_fragColor = vec4(c, 1.0);
       gInfo = vec4((mod(uId, 255.0) + 1.0) / 255.0, uLine, 1.0, 1.0);
     }`;
+  /* 예고 장판 (게임 Decals의 모양 · 진행 값을 그대로 읽어 테마 1 방식으로): 검정 사선 빗금 + 굵은 테두리 + 안쪽 파장색 선
+     모양: 0 원 · 1 부채꼴 · 2 직사각형 · 3 내려찍기 금 · 4 바둑판 · 5 고리(반전 · 안전 구멍) — 바닥 ID를 써서 외곽선이 안 생김 */
+  SH.teleVert = `
+    varying vec2 vL; varying vec3 vW;
+    void main() { vL = position.xz; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
+  SH.teleFrag = `
+    layout(location = 1) out highp vec4 gInfo;
+    uniform int uShape; uniform float uR; uniform float uHalf; uniform float uLen; uniform float uWid; uniform float uProg; uniform float uFade;
+    uniform float uLock; uniform float uWave; uniform float uAlly; uniform float uR0; uniform float uR1; uniform float uInv; uniform vec3 uHole; uniform vec3 uHole2;
+    uniform float uCell; uniform float uPar; uniform float uActive; uniform float uSeed;
+    uniform vec3 uInk; uniform vec3 uRed; uniform vec3 uBlue; uniform vec3 uGray; uniform vec3 uSoft; uniform float uB; uniform float uK; uniform float uFloorId;
+    varying vec2 vL; varying vec3 vW;
+    float h1(float n) { return fract(sin(n) * 43758.5453); }
+    void main() {
+      if (uFade < 0.04) discard;
+      float edge, rr; bool inside; vec3 col;
+      float stripe = fract((vW.x + vW.z) * uK);
+      if (uShape == 3) {                                       /* 내려찍기 금: 검정 금 몇 줄 + 패인 자리 */
+        float r = length(vL), a = atan(vL.x, vL.y); if (r > uR) discard;
+        float m = 0.0;
+        for (int k = 0; k < 6; k++) { float fk = float(k); float ak = uSeed * 6.2832 + fk * 1.047 + (h1(fk * 9.1 + uSeed * 30.0) - 0.5) * 0.7;
+          float d = abs(mod(a - ak + 3.14159, 6.28318) - 3.14159) * r; float len = uR * (0.5 + 0.5 * h1(fk * 5.3 + uSeed));
+          if (r < len && d < 0.07 * (1.0 - r / len) + 0.012) m = 1.0; }
+        if (r < 0.32) m = 1.0;
+        if (m < 0.5 || uFade < 0.5) discard;
+        pc_fragColor = vec4(uInk, 1.0); gInfo = vec4((uFloorId + 1.0) / 255.0, 0.0, 0.0, 1.0); return;
+      }
+      if (uShape == 0) { rr = length(vL) / uR; inside = rr < 1.0; edge = uR * (1.0 - rr); }
+      else if (uShape == 1) { float r = length(vL), a = abs(atan(vL.x, vL.y)); rr = r / uR; inside = r < uR && a < uHalf; edge = min(uR - r, (uHalf - a) * r); }
+      else if (uShape == 2) { float x = abs(vL.x), z = vL.y; rr = z / uLen; inside = z > 0.0 && z < uLen && x < uWid * 0.5; edge = min(uWid * 0.5 - x, min(uLen - z, z)); }
+      else if (uShape == 4) { float r = length(vL); vec2 c = floor(vL / uCell); vec2 fr = vL - c * uCell; inside = abs(mod(c.x + c.y, 2.0) - uPar) < 0.5 && r < uR;
+        edge = min(min(min(fr.x, uCell - fr.x), min(fr.y, uCell - fr.y)), uR - r); rr = 0.5; }
+      else { float r = length(vL); bool band = r > uR0 && r < uR1; inside = (uInv > 0.5 ? !band : band) && r < uR;
+        edge = uInv > 0.5 ? (uR1 > 0.0 ? min(abs(r - uR0), abs(r - uR1)) : 1e3) : min(r - uR0, uR1 - r); edge = min(edge, uR - r);
+        if (uHole.z > 0.0) { float hd = length(vL - uHole.xy) - uHole.z; if (hd < 0.0) inside = false; edge = min(edge, hd); }
+        if (uHole2.z > 0.0) { float hd = length(vL - uHole2.xy) - uHole2.z; if (hd < 0.0) inside = false; edge = min(edge, hd); }
+        rr = uInv > 0.5 ? r / uR : (r - uR0) / max(min(uR1, uR) - uR0, 1e-3); }
+      if (!inside) discard;
+      vec3 wave = uWave > 3.5 ? uRed : uWave > 2.5 ? uGray : (uWave > 0.5 && uWave < 1.5) ? uBlue : uWave > 1.5 ? uGray : uRed;
+      if (uAlly > 0.5) {                                       /* 우리 편 효과: 연한 빗금 · 얇은 테두리 (위험 아님) */
+        if (edge < uB * 0.45) col = uSoft; else if (stripe < 0.18 * uFade) col = uSoft; else discard;
+      } else {
+        bool front = uLock > 0.5 && rr < uProg;
+        float dash = fract(atan(vL.x, vL.y) * 6.0 + length(vL) * 2.0);
+        if (edge < uB) { if (uLock < 0.5 && dash > 0.55) discard; col = uInk; }                 /* 굵은 테두리 (조준 중엔 끊긴 선) */
+        else if (edge < uB * 1.75) { col = wave; }                                                /* 안쪽 = 파장 색 (빨강 패리 · 파랑 청파 · 회색 못 막음) */
+        else {
+          float duty = uLock < 0.5 ? 0.16 : (front ? 0.62 : 0.3); if (uActive > 0.5) duty = 0.7;
+          if (stripe > duty * clamp(uFade * 1.2, 0.0, 1.0)) discard; col = uInk;
+        }
+      }
+      pc_fragColor = vec4(col, 1.0);
+      gInfo = vec4((uFloorId + 1.0) / 255.0, 0.0, 0.0, 1.0);
+    }`;
   SH.blitFrag = `
     precision highp float; uniform sampler2D tSrc; in vec2 vUv; out vec4 outColor;
     void main() { outColor = vec4(texture(tSrc, vUv).rgb, 1.0); }`;
@@ -149,6 +203,13 @@ const T1R = (() => {
       const m = new THREE.ShaderMaterial({ vertexShader: SH.texVert, fragmentShader: SH.texFrag,
         uniforms: { uMap: { value: tex }, uUseMap: { value: tex ? 1 : 0 }, uCol: { value: hex(THREE, col) }, uId: { value: o.id ?? R.newId() }, uLine: { value: o.line ?? 1 } } });
       m.userData.tex = tex; R.mats.push(m); return m;
+    };
+    R.floorId = 0;
+    R.teleMat = (U) => {   /* U = 게임 장판의 uniforms (값을 같이 읽음 · 게임 값은 안 바꿈) */
+      const P = D.pal, m = new THREE.ShaderMaterial({ vertexShader: SH.teleVert, fragmentShader: SH.teleFrag, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4,
+        uniforms: Object.assign({}, U, { uInk: { value: hex(THREE, P.ink) }, uRed: { value: hex(THREE, P.red) }, uBlue: { value: hex(THREE, P.blue) }, uGray: { value: hex(THREE, P.shadeW) },
+          uSoft: { value: hex(THREE, P.hatch) }, uB: { value: D.fx.teleBorder }, uK: { value: 1 / D.fx.teleStep }, uFloorId: { value: R.floorId } }) });
+      m.userData.tele = true; R.mats.push(m); return m;
     };
     R.newId = () => { R.ids = (R.ids + 7) % 250; return R.ids; };   /* 부품 ID: 이웃끼리 다르게 */
     R.resize = (w, h) => {

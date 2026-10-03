@@ -1,0 +1,87 @@
+{
+ "wide": {
+  "info": {
+   "calls": 32,
+   "tris": 14308,
+   "models": {
+    "rapier": {
+     "tris": 4388,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4574,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 1036
+ },
+ "close": {
+  "info": {
+   "calls": 31,
+   "tris": 14194,
+   "models": {
+    "rapier": {
+     "tris": 4388,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4574,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 591
+ },
+ "finisher": {
+  "info": {
+   "calls": 34,
+   "tris": 14343,
+   "models": {
+    "rapier": {
+     "tris": 4388,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4574,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 648
+ },
+ "hud": {
+  "info": {
+   "calls": 33,
+   "tris": 14326,
+   "models": {
+    "rapier": {
+     "tris": 4388,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4574,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 1028
+ },
+ "logs": []
+}

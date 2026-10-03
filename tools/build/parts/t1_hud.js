@@ -6,7 +6,7 @@
  * ========================================================================== */
 const T1H = (() => {
   const H = { ready: false, faces: [], por: {}, t: 0 };
-  const F_EN = "'T1 Archivo', 'Arial Black', sans-serif", F_KO = "'T1 Noto KR', sans-serif", F_KB = "'T1 Black Han', 'T1 Noto KR', sans-serif";
+  const F_EN = "'T1 Archivo', 'Arial Black', sans-serif", F_KO = "'T1 Noto KR', sans-serif", F_KB = "'T1 Noto KR Black', 'T1 Noto KR', sans-serif";
   H.init = (D) => {
     H.D = D;
     if (typeof FontFace !== 'undefined' && typeof document !== 'undefined' && document.fonts && typeof FONTS !== 'undefined' && FONTS.t1) {
@@ -22,7 +22,7 @@ const T1H = (() => {
   H.left = () => -H.ox / H.u; H.right = () => (H.W - H.ox) / H.u;   /* 화면 가장자리 (넓은 화면에서 패널을 끝에 붙임) */
   const P = () => H.D.pal;
   H.text = (ctx, s, x, y, size, col, o = {}) => {
-    ctx.font = `${o.weight || 400} ${size}px ${o.ko ? (o.big ? F_KB : F_KO) : F_EN}`; ctx.textAlign = o.al || 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `${o.ko ? (o.big ? 900 : 700) : 400} ${size}px ${o.ko ? (o.big ? F_KB : F_KO) : F_EN}`; ctx.textAlign = o.al || 'left'; ctx.textBaseline = 'alphabetic';
     if (o.stroke) { ctx.lineJoin = 'round'; ctx.lineWidth = o.stroke; ctx.strokeStyle = o.sc || P().paper; ctx.strokeText(s, x, y); }
     ctx.fillStyle = col; ctx.fillText(s, x, y);
     return ctx.measureText(s).width;

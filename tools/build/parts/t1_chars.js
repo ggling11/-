@@ -84,7 +84,7 @@ const T1C = (() => {
   }
   /* 머리카락 덩어리: 두개골 덮개 + 가닥(끝 뾰족, 틈 없이 겹침) — 가닥 = [시작 방향(머리 중심 기준 단위벡터), 길이, 폭, 휨, 체인] */
   function hair(K, S, hc, m, strands, o = {}) {
-    const k = S.k, R = o.R || [0.112 * k, 0.142 * k, 0.126 * k];
+    const k = S.k, R = o.R || [0.122 * k, 0.15 * k, 0.136 * k];
     K.ell(m, add(hc, [0, 0.012 * k, -0.012 * k]), R, [['head', 1]], { rings: 10, seg: 16, shape: (p, u) => (u[1] < -0.2 && u[2] > 0.1 ? add(p, [0, 0.0, -0.06 * k * (u[2])]) : p) });
     const r = rng(o.seed || 1);
     for (const st of strands) {
@@ -98,7 +98,7 @@ const T1C = (() => {
         pts.push(add(pts[i - 1], add(mul(dirv, L / 4), mul(bend, t * 0.04 * k))));
       }
       const ws = pts.map((_, i) => chain ? [[chain[Math.min(chain.length - 1, Math.max(0, i - 1))], 1]] : [['head', 1]]);
-      K.strand(mat || m, pts, [wd * k, wd * 0.95 * k, wd * 0.75 * k, wd * 0.45 * k, 0.002], ws, { thick: 0.42, up: d });
+      K.strand(mat || m, pts, [wd * k, wd * 0.95 * k, wd * 0.75 * k, wd * 0.45 * k, 0.002], ws, { thick: o.thick || 0.75, up: d });
       if (st[6]) { /* 끝을 잔가닥으로 쪼갬 */
         for (let j = 0; j < 2; j++) { const tp = pts[3], ex = add(tp, add(mul(norm(sub(pts[4], pts[2])), L * (0.22 + r() * 0.1)), [(r() - 0.5) * 0.05 * k, 0, (r() - 0.5) * 0.04 * k]));
           K.strand(mat || m, [lerp(pts[2], tp, 0.6), tp, ex], [wd * 0.35 * k, wd * 0.22 * k, 0.002], ws.slice(2), { thick: 0.4, up: d }); }
@@ -130,8 +130,8 @@ const T1C = (() => {
     const hR = addChain(S, 'hR', 'head', [[-0.1 * k, 2.08 * k, 0.03 * k], [-0.12 * k, 1.92 * k, 0.03 * k]]);
     const cFL = addChain(S, 'cFL', 'body', [[0.16 * k, 1.05 * k, 0.12 * k], [0.21 * k, 0.78 * k, 0.15 * k]]);
     const cFR = addChain(S, 'cFR', 'body', [[-0.16 * k, 1.05 * k, 0.12 * k], [-0.21 * k, 0.78 * k, 0.15 * k]]);
-    const cBL = addChain(S, 'cBL', 'body', [[0.14 * k, 1.05 * k, -0.15 * k], [0.2 * k, 0.78 * k, -0.2 * k]]);
-    const cBR = addChain(S, 'cBR', 'body', [[-0.14 * k, 1.05 * k, -0.15 * k], [-0.2 * k, 0.78 * k, -0.2 * k]]);
+    const cBL = addChain(S, 'cBL', 'body', [[0.14 * k, 1.05 * k, -0.15 * k], [0.2 * k, 0.7 * k, -0.22 * k]]);
+    const cBR = addChain(S, 'cBR', 'body', [[-0.14 * k, 1.05 * k, -0.15 * k], [-0.2 * k, 0.7 * k, -0.22 * k]]);
     const sa = addChain(S, 'sa', 'body', [[0.12 * k, 1.1 * k, 0.11 * k], [0.14 * k, 0.92 * k, 0.12 * k]]);
     /* 다리 (검정 하의 · 뾰족한 구두) */
     leg(K, 'ink', 'L', S); leg(K, 'ink', 'R', S);
@@ -156,22 +156,24 @@ const T1C = (() => {
     };
     coat(K, 'ink', [
       { y: 1.9 * k, rx: 0.17 * k, rz: 0.1 * k, gap: 0.55 }, { y: 1.7 * k, rx: 0.165 * k, rz: 0.115 * k, gap: 0.48 }, { y: 1.42 * k, rx: 0.135 * k, rz: 0.1 * k, gap: 0.42 },
-      { y: 1.16 * k, rx: 0.17 * k, rz: 0.13 * k, gap: 0.5 }, { y: 0.92 * k, rx: 0.23 * k, rz: 0.18 * k, gap: 0.62 }, { y: 0.66 * k, rx: 0.29 * k, rz: 0.23 * k, gap: 0.72 },
+      { y: 1.16 * k, rx: 0.17 * k, rz: 0.13 * k, gap: 0.5 }, { y: 0.86 * k, rx: 0.25 * k, rz: 0.2 * k, gap: 0.62 }, { y: 0.48 * k, rx: 0.36 * k, rz: 0.29 * k, gap: 0.74 },
     ], coatW, { cols: 26, hem: (a, t) => { const s = [0.04, 0.22, 0.5, 0.78, 0.96]; let m = 0; for (const q of s) m = Math.max(m, 1 - Math.abs(t - q) / 0.11); return -m * 0.16 * k + (t < 0.04 || t > 0.96 ? 0.06 * k : 0); },
-      fold: (a, i) => (i >= 4 ? 0.025 * k * Math.max(0, Math.cos(a * 3)) : 0) });
+      fold: (a, i) => (i >= 4 ? 0.05 * k * (Math.cos(a * 3) > 0.3 ? 1 : 0) : 0) });
     /* 팔: 흰 셔츠 소매 (가늘게) + 검정 장갑 */
     arm(K, 'white', 'ink', 'L', S); arm(K, 'white', 'ink', 'R', S);
     /* 머리 · 얼굴 · 파랑 눈가 선 */
     const hf = headFace(K, S, 'skin', 'ink', 'blue', { accent: true });
     /* 머리카락: 등까지 흘러내리는 큰 덩어리 + 끝 잔가닥 + 얼굴을 가로지르는 한 가닥 + 파랑 브리지 */
     const hc = hf.c;
+    const fan = [];   /* 뒤 · 옆 커튼: 촘촘히 겹친 넓은 다발 (틈 없이 한 덩어리) · 끝은 잔가닥 */
+    for (let i = 0; i <= 10; i++) { const a = Math.PI * (0.05 + 0.9 * i / 10), d = [Math.cos(a) * 0.95, 0.3, -Math.sin(a)], side = Math.cos(a);
+      fan.push([d, (0.5 + 0.28 * Math.sin(a)) * k, 0.2 + 0.05 * Math.sin(a), [side * 1.2, 0, -0.6], side > 0.35 ? hL : side < -0.35 ? hR : hB, null, i % 2 === 0]); }
     hair(K, S, hc, 'ink', [
-      [[0, 0.35, -1], 0.55 * k, 0.15, [0, 0, -1], hB, null, true], [[0.5, 0.3, -0.8], 0.5 * k, 0.13, [1, 0, -0.5], hB, null, true], [[-0.5, 0.3, -0.8], 0.5 * k, 0.13, [-1, 0, -0.5], hB, null, true],
-      [[0.85, 0.2, -0.3], 0.42 * k, 0.11, [1, 0, 0], hL, null, true], [[-0.85, 0.2, -0.3], 0.42 * k, 0.11, [-1, 0, 0], hR, null, true],
-      [[0.75, 0.25, 0.45], 0.3 * k, 0.08, [0.5, 0, 0.4], hL], [[-0.75, 0.25, 0.45], 0.3 * k, 0.08, [-0.5, 0, 0.4], hR],
-      [[0.25, 0.65, 0.75], 0.17 * k, 0.07, [0.3, 0, 1], null], [[-0.2, 0.7, 0.72], 0.16 * k, 0.07, [-0.2, 0, 1], null], [[0.0, 0.78, 0.62], 0.15 * k, 0.065, [0, 0, 1], null],
-      [[0.45, 0.55, 0.7], 0.15 * k, 0.06, [0.5, 0, 1], null], [[-0.12, 0.62, 0.8], 0.24 * k, 0.045, [-0.6, -0.2, 1], null],   /* 얼굴을 가로지르는 가닥 */
-      [[0.6, 0.45, 0.3], 0.36 * k, 0.05, [0.6, 0, 0.2], hL, 'blue'], [[0.7, 0.35, -0.1], 0.4 * k, 0.04, [0.8, 0, -0.2], hL, 'blue'],
+      ...fan,
+      [[0.75, 0.25, 0.45], 0.36 * k, 0.12, [0.8, 0, 0.4], hL, null, true], [[-0.75, 0.25, 0.45], 0.36 * k, 0.12, [-0.8, 0, 0.4], hR, null, true],
+      [[0.25, 0.65, 0.75], 0.17 * k, 0.09, [0.3, 0, 1], null], [[-0.2, 0.7, 0.72], 0.16 * k, 0.09, [-0.2, 0, 1], null], [[0.0, 0.78, 0.62], 0.15 * k, 0.08, [0, 0, 1], null],
+      [[0.45, 0.55, 0.7], 0.15 * k, 0.08, [0.5, 0, 1], null], [[-0.42, 0.58, 0.7], 0.14 * k, 0.08, [-0.5, 0, 1], null], [[-0.12, 0.62, 0.8], 0.24 * k, 0.05, [-0.6, -0.2, 1], null],
+      [[0.6, 0.45, 0.3], 0.44 * k, 0.06, [1.0, 0, 0.2], hL, 'blue'], [[0.7, 0.35, -0.1], 0.5 * k, 0.05, [1.3, 0, -0.2], hL, 'blue'],
     ], { seed: D.model.rapier.seed });
     /* 흰 하이라이트 띠 (초승달 2줄, 선 없음) */
     for (const [y, w] of [[0.112, 0.07], [0.09, 0.05]]) K.strand('hi', [-1, -0.3, 0.3, 1].map(t => add(hc, [t * w * k, (y + 0.03 * (1 - t * t)) * k, (0.105 - 0.02 * t * t) * k])), [0.003, 0.012 * k, 0.012 * k, 0.003], [['head', 1]], { thick: 0.3, up: [0, 1, 0.4] });
@@ -191,7 +193,7 @@ const T1C = (() => {
   /* --------------------------------------------------------------------------- 대검 (적) */
   function great(R, D) {
     const P = D.pal, S = humanSkel(D.model.great.H, D.model.great), k = S.k, K = Kit(S);
-    const pt = addChain(S, 'pt', 'head', [[0, 2.3 * k, -0.16 * k], [0, 2.12 * k, -0.24 * k], [0, 1.92 * k, -0.28 * k], [0, 1.7 * k, -0.28 * k]]);
+    const pt = addChain(S, 'pt', 'head', [[0, 2.24 * k, -0.2 * k], [0, 2.0 * k, -0.3 * k], [0, 1.74 * k, -0.34 * k], [0, 1.46 * k, -0.34 * k]]);
     const cFL = addChain(S, 'cFL', 'body', [[0.17 * k, 1.05 * k, 0.12 * k], [0.24 * k, 0.6 * k, 0.15 * k]]);
     const cFR = addChain(S, 'cFR', 'body', [[-0.17 * k, 1.05 * k, 0.12 * k], [-0.24 * k, 0.6 * k, 0.15 * k]]);
     const cBL = addChain(S, 'cBL', 'body', [[0.15 * k, 1.05 * k, -0.16 * k], [0.24 * k, 0.6 * k, -0.24 * k]]);
@@ -228,11 +230,11 @@ const T1C = (() => {
       [[0.15, 0.6, 0.78], 0.22 * k, 0.035, [0.2, 0, 1], null], [[-0.25, 0.55, 0.78], 0.2 * k, 0.035, [-0.3, 0, 1], null],
       [[0.85, 0.3, 0.2], 0.2 * k, 0.07, [1, 0, 0], null], [[-0.85, 0.3, 0.2], 0.2 * k, 0.07, [-1, 0, 0], null],
     ], { seed: D.model.great.seed, R: [0.11 * k, 0.138 * k, 0.124 * k] });
-    const ptp = [add(hc, [0, 0.13 * k, -0.08 * k]), ...pt.map(n => S.pos[n]), [0, 1.48 * k, -0.27 * k]];
-    K.strand('ink', ptp, [0.06 * k, 0.13 * k, 0.14 * k, 0.13 * k, 0.09 * k, 0.003], [['head', 1], [pt[0], 1], [pt[1], 1], [pt[2], 1], [pt[3], 1], [pt[3], 1]], { thick: 0.55, up: [1, 0, 0] });
+    const ptp = [add(hc, [0, 0.08 * k, -0.12 * k]), ...pt.map(n => S.pos[n]), [0, 1.2 * k, -0.32 * k]];
+    K.strand('ink', ptp, [0.08 * k, 0.17 * k, 0.2 * k, 0.18 * k, 0.12 * k, 0.003], [['head', 1], [pt[0], 1], [pt[1], 1], [pt[2], 1], [pt[3], 1], [pt[3], 1]], { thick: 0.55, up: [1, 0, 0] });
     for (const dx of [-1, 1]) K.strand('ink', [S.pos[pt[2]], S.pos[pt[3]], [dx * 0.06 * k, 1.44 * k, -0.24 * k]], [0.06 * k, 0.04 * k, 0.002], [[pt[2], 1], [pt[3], 1], [pt[3], 1]], { thick: 0.5, up: [1, 0, 0] });
     K.strand('red', [add(ptp[1], [0.03 * k, 0, -0.01 * k]), add(ptp[2], [0.04 * k, 0, -0.02 * k]), add(ptp[3], [0.045 * k, 0, -0.02 * k]), add(ptp[4], [0.03 * k, 0, -0.01 * k])], [0.03 * k, 0.035 * k, 0.03 * k, 0.003], [[pt[0], 1], [pt[1], 1], [pt[2], 1], [pt[3], 1]], { thick: 0.6, up: [1, 0, 0] });
-    K.tube('red', [{ p: add(hc, [0, 0.14 * k, -0.1 * k]), r: 0.03 * k, w: [['head', 1]] }, { p: add(hc, [0, 0.1 * k, -0.15 * k]), r: 0.03 * k, w: [['head', 1]] }], { seg: 8 });
+    K.tube('red', [{ p: add(hc, [0, 0.08 * k, -0.11 * k]), r: 0.035 * k, w: [['head', 1]] }, { p: add(hc, [0, 0.04 * k, -0.15 * k]), r: 0.035 * k, w: [['head', 1]] }], { seg: 8 });
     for (const [y, w] of [[0.118, 0.07]]) K.strand('hi', [-1, -0.3, 0.3, 1].map(t => add(hc, [t * w * k, (y + 0.025 * (1 - t * t)) * k, (0.09 - 0.02 * t * t) * k])), [0.003, 0.013 * k, 0.013 * k, 0.003], [['head', 1]], { thick: 0.3, up: [0, 1, 0.4] });
     /* 대검: 곧은 큰 검정 날(끝 비스듬) + 흰 날 선 + 금 코등이 + 빨강 손잡이 · 술 — 바인드에서 칼끝이 아래 */
     const wp = S.pos.weapon, L = 1.25 * k, bw = 0.075 * k;
@@ -251,10 +253,10 @@ const T1C = (() => {
     const P = D.pal, H = D.model.warden.H, k = H / 3.9;
     const S = { order: [], parent: {}, pos: {}, k };
     const B = (n, p, q) => { S.order.push(n); S.parent[n] = p; S.pos[n] = q.map(v => v * k); };
-    B('root', null, [0, 0, 0]); B('body', 'root', [0, 1.05, -0.1]); B('spine', 'body', [0, 1.55, 0.02]); B('chest', 'spine', [0, 2.15, 0.0]);
-    B('neck', 'chest', [0, 2.6, 0.08]); B('head', 'neck', [0, 3.15, 0.3]);
-    B('shL', 'chest', [0.42, 2.45, 0.08]); B('elL', 'shL', [0.62, 2.0, 0.12]); B('hdL', 'elL', [0.6, 1.58, 0.32]);
-    B('shR', 'chest', [-0.42, 2.45, 0.08]); B('elR', 'shR', [-0.62, 2.0, 0.12]); B('hdR', 'elR', [-0.6, 1.58, 0.32]); B('weapon', 'hdR', [-0.6, 1.45, 0.4]);
+    B('root', null, [0, 0, 0]); B('body', 'root', [0, 1.0, -0.15]); B('spine', 'body', [0, 1.55, 0.0]); B('chest', 'spine', [0, 2.1, -0.04]);
+    B('neck', 'chest', [0, 2.5, 0.02]); B('head', 'neck', [0, 3.2, 0.32]);
+    B('shL', 'chest', [0.34, 2.35, 0.1]); B('elL', 'shL', [0.5, 1.95, 0.22]); B('hdL', 'elL', [0.46, 1.6, 0.42]);
+    B('shR', 'chest', [-0.34, 2.35, 0.1]); B('elR', 'shR', [-0.5, 1.95, 0.22]); B('hdR', 'elR', [-0.46, 1.6, 0.42]); B('weapon', 'hdR', [-0.46, 1.45, 0.5]);
     B('thL', 'body', [0.38, 0.95, -0.05]); B('knL', 'thL', [0.44, 0.55, 0.3]); B('ftL', 'knL', [0.42, 0.14, -0.05]);
     B('thR', 'body', [-0.38, 0.95, -0.05]); B('knR', 'thR', [-0.44, 0.55, 0.3]); B('ftR', 'knR', [-0.42, 0.14, -0.05]);
     B('cape', 'chest', [0, 2.5, -0.2]);
@@ -262,36 +264,36 @@ const T1C = (() => {
     const K = Kit(S), r = rng(D.model.warden.seed);
     const fur = (amp) => () => (r() - 0.5) * amp;   /* 털뭉치 모양 그림자 경계: 정점마다 그림자 경향을 흔듦 */
     /* 몸통: 엉덩이 → 배 → 가슴 → 목 → 머리 (하나의 S곡선 관) */
-    K.tube('white', [
-      { p: [0, 0.7 * k, -0.2 * k], r: [0.42 * k, 0.4 * k], w: [['body', 1]] }, { p: [0, 1.0 * k, -0.1 * k], r: [0.62 * k, 0.56 * k], w: [['body', 1]] },
-      { p: [0, 1.45 * k, 0.05 * k], r: [0.66 * k, 0.6 * k], w: [['body', 0.4], ['spine', 0.6]] }, { p: [0, 1.95 * k, 0.04 * k], r: [0.56 * k, 0.5 * k], w: [['spine', 0.5], ['chest', 0.5]] },
-      { p: [0, 2.35 * k, 0.02 * k], r: [0.44 * k, 0.4 * k], w: [['chest', 1]] }, { p: [0, 2.7 * k, 0.12 * k], r: [0.3 * k, 0.3 * k], w: [['chest', 0.3], ['neck', 0.7]] },
-      { p: [0, 3.0 * k, 0.24 * k], r: [0.24 * k, 0.24 * k], w: [['neck', 1]] }, { p: [0, 3.18 * k, 0.34 * k], r: [0.2 * k, 0.21 * k], w: [['neck', 0.4], ['head', 0.6]] },
-    ], { seg: 22, biasFn: fur(0.5) });
+    K.tube('white', [   /* 길쭉한 몸: 엉덩이 → 배 → 가슴 → 굵고 긴 목 (S는 자세로) */
+      { p: [0, 0.62 * k, -0.28 * k], r: [0.34 * k, 0.34 * k], w: [['body', 1]] }, { p: [0, 0.95 * k, -0.15 * k], r: [0.5 * k, 0.47 * k], w: [['body', 1]] },
+      { p: [0, 1.4 * k, 0.0], r: [0.5 * k, 0.47 * k], w: [['body', 0.4], ['spine', 0.6]] }, { p: [0, 1.85 * k, -0.02 * k], r: [0.44 * k, 0.42 * k], w: [['spine', 0.5], ['chest', 0.5]] },
+      { p: [0, 2.25 * k, -0.03 * k], r: [0.38 * k, 0.36 * k], w: [['chest', 1]] }, { p: [0, 2.55 * k, 0.02 * k], r: [0.3 * k, 0.3 * k], w: [['chest', 0.4], ['neck', 0.6]] },
+      { p: [0, 2.85 * k, 0.12 * k], r: [0.26 * k, 0.26 * k], w: [['neck', 1]] }, { p: [0, 3.1 * k, 0.26 * k], r: [0.23 * k, 0.23 * k], w: [['neck', 0.5], ['head', 0.5]] },
+    ], { seg: 22, biasFn: fur(0.45) });
     /* 털 끝 뾰족 실루엣: 큰 뭉치 몇 개 (어깨 · 가슴 털깃 · 엉덩이 · 팔꿈치) */
-    for (let i = 0; i < 26; i++) {
-      const a = r() * Math.PI * 2, y = [1.0, 1.4, 2.35, 2.55][i % 4] * k, rr = (y > 2.2 * k ? 0.44 : 0.62) * k;
+    for (let i = 0; i < 14; i++) {   /* 털 끝: 옆 실루엣에만 (앞면 조각 없음) */
+      const a = (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9, y = [0.95, 1.3, 2.2, 2.45][i % 4] * k, rr = (y > 2.0 * k ? 0.36 : 0.5) * k;
       const base = [Math.cos(a) * rr * 0.92, y + (r() - 0.5) * 0.15 * k, Math.sin(a) * rr * 0.86 + (y > 2.2 * k ? 0.02 * k : 0)];
-      const tip = add(base, [Math.cos(a) * (0.1 + r() * 0.12) * k, -(0.06 + r() * 0.12) * k, Math.sin(a) * (0.1 + r() * 0.1) * k]);
-      K.spike('white', base, tip, (0.05 + r() * 0.04) * k, [[y > 2.2 * k ? 'chest' : y > 1.3 * k ? 'spine' : 'body', 1]], { seg: 5 });
+      const tip = add(base, [Math.cos(a) * (0.16 + r() * 0.16) * k, -(0.1 + r() * 0.16) * k, Math.sin(a) * (0.16 + r() * 0.14) * k]);
+      K.spike('white', base, tip, (0.07 + r() * 0.05) * k, [[y > 2.2 * k ? 'chest' : y > 1.3 * k ? 'spine' : 'body', 1]], { seg: 5 });
     }
     /* 머리: 작게 · 긴 주둥이 앞으로 · 분홍 코 · 작은 둥근 귀 · 붉은 실눈 */
-    const hc = [0, 3.28 * k, 0.4 * k];
-    K.ell('white', hc, [0.22 * k, 0.19 * k, 0.24 * k], [['head', 1]], { rings: 10, seg: 16, normC: hc, biasFn: fur(0.3) });
-    K.tube('white', [{ p: add(hc, [0, -0.02 * k, 0.12 * k]), r: [0.16 * k, 0.13 * k], w: [['head', 1]] }, { p: add(hc, [0, -0.06 * k, 0.3 * k]), r: [0.1 * k, 0.08 * k], w: [['head', 1]] },
-      { p: add(hc, [0, -0.08 * k, 0.4 * k]), r: [0.05 * k, 0.04 * k], w: [['head', 1]] }], { seg: 12, cap0: false });
-    K.ell('pink', add(hc, [0, -0.07 * k, 0.42 * k]), [0.04 * k, 0.03 * k, 0.03 * k], [['head', 1]], { rings: 4, seg: 8 });
+    const hc = [0, 3.32 * k, 0.4 * k];   /* 머리: 길쭉 (주둥이까지 한 덩어리) */
+    K.ell('white', hc, [0.25 * k, 0.21 * k, 0.3 * k], [['head', 1]], { rings: 10, seg: 16, normC: hc, biasFn: fur(0.3) });
+    K.tube('white', [{ p: add(hc, [0, -0.03 * k, 0.16 * k]), r: [0.19 * k, 0.15 * k], w: [['head', 1]] }, { p: add(hc, [0, -0.08 * k, 0.38 * k]), r: [0.12 * k, 0.095 * k], w: [['head', 1]] },
+      { p: add(hc, [0, -0.11 * k, 0.52 * k]), r: [0.06 * k, 0.05 * k], w: [['head', 1]] }], { seg: 12, cap0: false });
+    K.ell('pink', add(hc, [0, -0.1 * k, 0.55 * k]), [0.05 * k, 0.04 * k, 0.035 * k], [['head', 1]], { rings: 4, seg: 8 });
     for (const sx of [-1, 1]) {
-      K.ell('white', add(hc, [sx * 0.17 * k, 0.15 * k, -0.05 * k]), [0.075 * k, 0.07 * k, 0.03 * k], [['head', 1]], { rings: 5, seg: 10 });
-      K.ell('pink', add(hc, [sx * 0.17 * k, 0.15 * k, -0.025 * k]), [0.045 * k, 0.042 * k, 0.012 * k], [['head', 1]], { rings: 4, seg: 8 });
-      K.strand('eye', [add(hc, [sx * 0.07 * k, 0.03 * k, 0.21 * k]), add(hc, [sx * 0.12 * k, 0.045 * k, 0.17 * k]), add(hc, [sx * 0.17 * k, 0.07 * k, 0.1 * k])], [0.012 * k, 0.022 * k, 0.003], [['head', 1]], { thick: 0.5, up: [0, 1, 0.3] });
+      K.ell('white', add(hc, [sx * 0.19 * k, 0.16 * k, -0.1 * k]), [0.07 * k, 0.065 * k, 0.03 * k], [['head', 1]], { rings: 5, seg: 10 });
+      K.ell('pink', add(hc, [sx * 0.19 * k, 0.16 * k, -0.075 * k]), [0.04 * k, 0.038 * k, 0.012 * k], [['head', 1]], { rings: 4, seg: 8 });
+      K.strand('eye', [add(hc, [sx * 0.08 * k, 0.03 * k, 0.27 * k]), add(hc, [sx * 0.15 * k, 0.05 * k, 0.21 * k]), add(hc, [sx * 0.21 * k, 0.08 * k, 0.12 * k])], [0.016 * k, 0.03 * k, 0.003], [['head', 1]], { thick: 0.5, up: [0, 1, 0.3] });
     }
-    K.strand('ink', [add(hc, [-0.06 * k, -0.13 * k, 0.33 * k]), add(hc, [0, -0.15 * k, 0.36 * k]), add(hc, [0.06 * k, -0.13 * k, 0.33 * k])], [0.006 * k, 0.008 * k, 0.006 * k], [['head', 1]], { thick: 1 });
+    K.strand('ink', [add(hc, [-0.08 * k, -0.16 * k, 0.4 * k]), add(hc, [0, -0.18 * k, 0.46 * k]), add(hc, [0.08 * k, -0.16 * k, 0.4 * k])], [0.008 * k, 0.01 * k, 0.008 * k], [['head', 1]], { thick: 1 });
     /* 앞발: 오른쪽 = 긴 검정 발톱 · 왼쪽 = 검정 방패 */
     for (const s of ['L', 'R']) {
       const sh = S.pos['sh' + s], el = S.pos['el' + s], hd = S.pos['hd' + s];
-      K.tube('white', [{ p: sh, r: 0.2 * k, w: [['chest', 0.5], ['sh' + s, 0.5]] }, { p: lerp(sh, el, 0.5), r: 0.17 * k, w: [['sh' + s, 1]] }, { p: el, r: 0.145 * k, w: [['sh' + s, 0.5], ['el' + s, 0.5]] },
-        { p: lerp(el, hd, 0.6), r: 0.14 * k, w: [['el' + s, 1]] }, { p: hd, r: 0.13 * k, w: [['el' + s, 0.3], ['hd' + s, 0.7]] }], { seg: 14, biasFn: fur(0.4) });
+      K.tube('white', [{ p: sh, r: 0.17 * k, w: [['chest', 0.5], ['sh' + s, 0.5]] }, { p: lerp(sh, el, 0.5), r: 0.14 * k, w: [['sh' + s, 1]] }, { p: el, r: 0.12 * k, w: [['sh' + s, 0.5], ['el' + s, 0.5]] },
+        { p: lerp(el, hd, 0.6), r: 0.115 * k, w: [['el' + s, 1]] }, { p: hd, r: 0.11 * k, w: [['el' + s, 0.3], ['hd' + s, 0.7]] }], { seg: 14, biasFn: fur(0.4) });
       K.ell('white', add(hd, [0, -0.08 * k, 0.06 * k]), [0.16 * k, 0.12 * k, 0.15 * k], [['hd' + s, 1]], { rings: 7, seg: 12, biasFn: fur(0.3) });
       K.spike('white', add(el, [(s === 'L' ? 1 : -1) * 0.1 * k, 0, -0.08 * k]), add(el, [(s === 'L' ? 1 : -1) * 0.24 * k, -0.06 * k, -0.2 * k]), 0.07 * k, [['el' + s, 1]], { seg: 5 });
       for (let f = 0; f < 4; f++) {
@@ -307,7 +309,7 @@ const T1C = (() => {
     /* 뒷다리: 큰 엉덩이 덩어리 + 역관절 + 큰 발 · 검정 발톱 */
     for (const s of ['L', 'R']) {
       const th = S.pos['th' + s], kn = S.pos['kn' + s], ft = S.pos['ft' + s], sx = s === 'L' ? 1 : -1;
-      K.ell('white', add(th, [sx * 0.04 * k, -0.08 * k, 0.12 * k]), [0.3 * k, 0.36 * k, 0.36 * k], [['body', 0.4], ['th' + s, 0.6]], { rings: 8, seg: 14, biasFn: fur(0.5) });
+      K.ell('white', add(th, [sx * 0.02 * k, -0.06 * k, 0.08 * k]), [0.24 * k, 0.3 * k, 0.3 * k], [['body', 0.4], ['th' + s, 0.6]], { rings: 8, seg: 14, biasFn: fur(0.5) });
       K.tube('white', [{ p: lerp(th, kn, 0.4), r: 0.2 * k, w: [['th' + s, 1]] }, { p: kn, r: 0.15 * k, w: [['th' + s, 0.5], ['kn' + s, 0.5]] }, { p: lerp(kn, ft, 0.5), r: 0.11 * k, w: [['kn' + s, 1]] }, { p: ft, r: 0.1 * k, w: [['kn' + s, 0.3], ['ft' + s, 0.7]] }], { seg: 12, biasFn: fur(0.4) });
       K.ell('white', add(ft, [0, -0.07 * k, 0.16 * k]), [0.14 * k, 0.08 * k, 0.24 * k], [['ft' + s, 1]], { rings: 6, seg: 12 });
       for (let f = 0; f < 4; f++) { const b = add(ft, [(f - 1.5) * 0.06 * k, -0.1 * k, 0.36 * k]); K.spike('ink', b, add(b, [0, -0.04 * k, 0.12 * k]), 0.022 * k, [['ft' + s, 1]], { seg: 5 }); }
@@ -318,7 +320,7 @@ const T1C = (() => {
     K.tube('white', tpts.slice(0, 5).map((p, i) => ({ p, r: tr[i] * k, w: [[i ? tl[i - 1] : 'body', 1]] })), { seg: 14, biasFn: fur(0.5) });
     K.tube('ink', tpts.slice(4).map((p, i) => ({ p, r: tr[4 + i] * k, w: [[tl[3 + i] || tl[tl.length - 1], 1]] })).concat([{ p: add(tpts[tpts.length - 1], [0.08 * k, 0.25 * k, -0.02 * k]), r: 0.002, w: [[tl[tl.length - 1], 1]] }]), { seg: 14, cap0: false });
     /* 검정 망토: 어깨를 덮는 한 덩어리 (찢긴 끝 3개) */
-    coat(K, 'ink', [{ y: 2.72 * k, rx: 0.34 * k, rz: 0.32 * k, cz: 0.08 * k, gap: 0.9 }, { y: 2.45 * k, rx: 0.56 * k, rz: 0.5 * k, cz: 0.04 * k, gap: 0.75 }, { y: 2.1 * k, rx: 0.66 * k, rz: 0.58 * k, cz: 0.0, gap: 0.6 }],
+    coat(K, 'ink', [{ y: 2.62 * k, rx: 0.33 * k, rz: 0.33 * k, cz: 0.04 * k, gap: 0.9 }, { y: 2.38 * k, rx: 0.48 * k, rz: 0.46 * k, cz: 0.0, gap: 0.7 }, { y: 2.0 * k, rx: 0.56 * k, rz: 0.53 * k, cz: -0.02 * k, gap: 0.5 }],
       (i, a) => (i === 0 ? [['chest', 0.5], ['neck', 0.5]] : [['chest', 1]]), { cols: 24, hem: (a, t) => { let m = 0; for (const q of [0.2, 0.5, 0.8]) m = Math.max(m, 1 - Math.abs(t - q) / 0.12); return -m * 0.38 * k; } });
     /* 붓글씨 문신 획 (배 · 왼쪽 옆구리) */
     for (let i = 0; i < 6; i++) {
@@ -331,12 +333,12 @@ const T1C = (() => {
 
   /* 재질 표 → 메쉬 */
   function finish(R, D, K, kind) {
-    const P = D.pal, T = R.THREE;
+    const P = D.pal, T = R.THREE, L = D.model.line[kind] || 1;   /* 실루엣 선 굵기 배율 (캐릭터가 게임 거리에서 읽히게) */
     const mats = {
-      white: R.mat(P.paper, P.shadeW), ink: R.mat(P.ink, P.ink, { flat: true, side: T.DoubleSide }), skin: R.mat(P.skin, P.skinSh),
-      blue: R.mat(P.blue, P.blueSh, { flat: true, side: T.DoubleSide }), red: R.mat(P.red, P.redSh, { flat: true, side: T.DoubleSide }), gold: R.mat(P.gold, P.goldSh),
-      steel: R.mat(P.steel, P.steelSh, { side: T.DoubleSide }), hi: R.mat('#e6dfe0', '#e6dfe0', { flat: true, line: 0, side: T.DoubleSide }), pink: R.mat(P.pink, P.pink, { flat: true }),
-      eye: R.mat(P.eye, P.eye, { flat: true, side: T.DoubleSide }),
+      white: R.mat(P.paper, P.shadeW, { line: L }), ink: R.mat(P.ink, P.ink, { flat: true, side: T.DoubleSide, line: L }), skin: R.mat(P.skin, P.skinSh, { line: L }),
+      blue: R.mat(P.blue, P.blueSh, { flat: true, side: T.DoubleSide, line: L }), red: R.mat(P.red, P.redSh, { flat: true, side: T.DoubleSide, line: L }), gold: R.mat(P.gold, P.goldSh, { line: L }),
+      steel: R.mat(P.steel, P.steelSh, { side: T.DoubleSide, line: L }), hi: R.mat('#e6dfe0', '#e6dfe0', { flat: true, line: 0, side: T.DoubleSide }), pink: R.mat(P.pink, P.pink, { flat: true, line: L }),
+      eye: R.mat(P.eye, P.eye, { flat: true, side: T.DoubleSide, line: L }),
     };
     mats.white.side = T.DoubleSide;   /* 판형 옷(코트 · 깃)은 양면 */
     const M = K.build(T, mats, R); M.kind = kind; M.mats = mats;

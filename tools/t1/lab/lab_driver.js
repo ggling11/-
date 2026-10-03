@@ -15,9 +15,9 @@ const deg = Math.PI / 180;
 const LABPOSE = {
   rIdle: { body: [0, 0.1, 5], spine: [3, -4, -6], chest: [4, -6, -3], neck: [6, 0, 4], head: [8, 12, 9], shR: [8, 0, -10], elR: [-24, 0, -6], hdR: [-10, 0, 0], weapon: [-38, 0, -18],
            shL: [4, 0, 10], elL: [-55, -10, 18], hdL: [0, 0, 10], thR: [0, 0, -3], knR: [3, 0, 0], ftR: [-3, 0, 0], thL: [-14, 8, 6], knL: [22, 0, 0], ftL: [-6, 10, 0] },
-  gIdle: { body: [0, -0.1, -5], spine: [2, 4, 5], chest: [3, 8, 2], neck: [4, 0, -4], head: [4, -14, -5], shR: [-38, 0, -30], elR: [-95, 20, 0], hdR: [-20, 0, -20], weapon: [-30, 0, 85],
+  gIdle: { body: [0, -0.1, -5], spine: [2, 4, 5], chest: [3, 8, 2], neck: [4, 0, -4], head: [4, -14, -5], shR: [-20, 0, -14], elR: [-70, 0, 0], hdR: [0, 0, 0], weapon: [-150, 0, -10],
            shL: [4, 0, 6], elL: [-12, 0, 4], hdL: [0, 0, 0], thL: [0, 0, 3], knL: [3, 0, 0], thR: [-12, -10, -8], knR: [20, 0, 0], ftR: [-6, -10, 0] },
-  wIdle: { body: [6, 0, 0], spine: [12, 0, 0], chest: [8, 0, 0], neck: [-26, 0, 0], head: [30, 8, 0], shR: [-40, 0, -14], elR: [-50, 0, 10], hdR: [20, 0, 0], shL: [-36, 0, 18], elL: [-62, 0, -12], hdL: [10, 0, 0],
+  wIdle: { body: [8, 0, 0], spine: [-10, 0, 0], chest: [-14, 0, 0], neck: [44, 0, 0], head: [20, 8, 0], shR: [-30, 0, -14], elR: [-40, 0, 10], hdR: [20, 0, 0], shL: [-24, 0, 14], elL: [-50, 0, -8], hdL: [-10, 0, 0],
            thL: [-20, 0, 6], knL: [34, 0, 0], ftL: [-14, 0, 0], thR: [-20, 0, -6], knR: [34, 0, 0], ftR: [-14, 0, 0], tl0: [10, 0, 0], tl1: [8, 10, 0], tl2: [0, 20, 0], tl3: [-10, 18, 0], tl4: [-14, 10, 0] },
   rThrust: { body: [8, -30, 0], spine: [10, -16, 0], chest: [12, -20, 0], neck: [-6, 10, 0], head: [-6, 30, 0], shR: [-78, 0, -8], elR: [-6, 0, 0], hdR: [-4, 0, 0], weapon: [-90, 0, 0],
              shL: [30, 0, 30], elL: [-20, 0, 10], thR: [-50, 0, -6], knR: [40, 0, 0], ftR: [10, 0, 0], thL: [30, 0, 10], knL: [10, 0, 0], ftL: [-20, 0, 0] },
@@ -64,6 +64,12 @@ const SCENES = {
     FX.smear([-1.1, 0, 1.5], 1.6, 1.2, 3.4, 1.6, { w: 0.5, life: 99, dy: -0.2 }); FX.ink(new THREE.Vector3(-0.3, 1.9, -0.4), R.camera, { size: 1.3, life: 99 });
     FX.speed(R.camera, { life: 99 }); LAB.tech = { s: 'FLASH THRUST', ko: '섬광 찌르기', col: D.pal.blue, t: 0.6 }; },
   hud() { SCENES.wide(); LAB.hud = true; },
+  models() { pose(M.rapier, LABPOSE.rIdle); pose(M.great, LABPOSE.gIdle); pose(M.warden, LABPOSE.wIdle);
+    place(M.rapier, -1.4, 0.6, 0.35); place(M.great, 0.0, 0.8, -0.3); place(M.warden, 2.5, -0.6, -0.5);
+    const c = D.cam; R.camera.fov = 22; R.camera.position.set(0.6, 2.3, 12.5); R.camera.rotation.set(-0.08, 0, 0); R.camera.updateProjectionMatrix(); R.camera.updateMatrixWorld(true); },
+  models2() { pose(M.rapier, LABPOSE.rIdle); pose(M.great, LABPOSE.gIdle); pose(M.warden, LABPOSE.wIdle);
+    place(M.rapier, -1.4, 0.6, -1.2); place(M.great, 0.0, 0.8, 2.0); place(M.warden, 2.5, -0.6, 1.0);
+    R.camera.fov = 22; R.camera.position.set(0.6, 2.3, 12.5); R.camera.rotation.set(-0.08, 0, 0); R.camera.updateProjectionMatrix(); R.camera.updateMatrixWorld(true); },
 };
 const LAB = window.LAB = { R, M, FX, D, hud: false, tech: null, ready: false,
   scene(name) { FX.clear(); LAB.hud = false; LAB.tech = null; size(); SCENES[name](); LAB.draw(); return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, models: Object.fromEntries(Object.entries(M).map(([k, m]) => [k, { tris: m.tris, meshes: Object.keys(m.meshes).length }])) }; },
@@ -77,4 +83,4 @@ const LAB = window.LAB = { R, M, FX, D, hud: false, tech: null, ready: false,
   },
 };
 addEventListener('resize', () => LAB.ready && LAB.draw());
-document.fonts && document.fonts.ready.then(() => { setTimeout(() => { LAB.ready = true; }, 50); }); if (!document.fonts) LAB.ready = true;
+const waitReady = () => { if (T1H.ready) LAB.ready = true; else setTimeout(waitReady, 50); }; waitReady();

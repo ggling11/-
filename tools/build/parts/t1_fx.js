@@ -91,7 +91,7 @@ const T1F = (() => {
     /* 바닥 그림자 (회색 평면 한 단 · 가장자리 딱) */
     F.shadowMesh = (rx, rz) => {
       const g = new THREE.CircleGeometry(1, 28); g.rotateX(-Math.PI / 2); g.scale(rx, 1, rz);
-      const m = new THREE.Mesh(g, R.mat(D.pal.floorSh, D.pal.floorSh, { flat: true, line: 0 })); m.position.y = 0.012; m.renderOrder = -1; return m;
+      const m = new THREE.Mesh(g, R.mat(D.pal.floorSh, D.pal.floorSh, { flat: true, line: 0, id: R.floorId })); m.position.y = 0.012; m.renderOrder = -1; return m;
     };
     return F;
   }

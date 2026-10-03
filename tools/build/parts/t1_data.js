@@ -31,13 +31,14 @@ const T1 = {
     rapier: { H: 2.38, heads: 7.6, shoulder: 0.165, seed: 11 },
     great: { H: 2.5, heads: 7.8, shoulder: 0.18, seed: 23 },
     warden: { H: 3.9, seed: 37 },
+    line: { rapier: 1.35, great: 1.35, warden: 1.5 },   /* 실루엣 선 굵기 배율 */
   },
   /* 자세 (F): 동작 이름 → 키 자세 (보이는 리그 관절 각도, 라디안). 라운드 6~7에서 채움 */
   poses: {},
   /* 아레나 (G): 워든 = 연회색 바닥 + 사선 빗금 많이(띠 · 구역) */
-  arena: { R: 9.5, ring: 0.7, hatchW: 0.22, hatchGap: 0.22, bands: 3, props: 14, seed: 5 },
+  arena: { R: 9.5, ring: 0.7, hatchW: 0.22, hatchGap: 0.22, bands: 2, props: 20, seed: 5 },
   /* 이펙트 */
-  fx: { smearLife: 0.16, inkN: 10, inkLife: 0.45, accentN: 4, speedLines: 18 },
+  fx: { smearLife: 0.16, inkN: 10, inkLife: 0.45, accentN: 4, speedLines: 18, teleBorder: 0.16, teleStep: 0.36, trailN: 14 },
   /* UI (U) */
   ui: { nameT: 0.8, stampT: 0.35, slideT: 0.18, wipeT: 0.35 },
 };

@@ -1,0 +1,108 @@
+{
+ "wide": {
+  "info": {
+   "calls": 32,
+   "tris": 14218,
+   "models": {
+    "rapier": {
+     "tris": 4598,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4274,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 1196
+ },
+ "close": {
+  "info": {
+   "calls": 31,
+   "tris": 14104,
+   "models": {
+    "rapier": {
+     "tris": 4598,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4274,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 691
+ },
+ "finisher": {
+  "info": {
+   "calls": 34,
+   "tris": 14253,
+   "models": {
+    "rapier": {
+     "tris": 4598,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4274,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 780
+ },
+ "hud": {
+  "info": {
+   "calls": 33,
+   "tris": 14236,
+   "models": {
+    "rapier": {
+     "tris": 4598,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4274,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 1096
+ },
+ "models": {
+  "info": {
+   "calls": 32,
+   "tris": 14122,
+   "models": {
+    "rapier": {
+     "tris": 4598,
+     "meshes": 7
+    },
+    "great": {
+     "tris": 3374,
+     "meshes": 7
+    },
+    "warden": {
+     "tris": 4274,
+     "meshes": 6
+    }
+   }
+  },
+  "ms": 633
+ },
+ "logs": []
+}
