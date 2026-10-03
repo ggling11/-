@@ -122,12 +122,12 @@ await page.keyboard.press('KeyF');
 await waitState(() => __game.G.stats.fin === 1 || !__game.G.fin);
 results.practiceFin = await ev(() => __game.G.stats.fin);
 
-// 4) [알파] 충격 해방: 1P 충격 2칸에서 정확한 받기(→3칸) → 2P 합 → 충격이 피해로 풀리고 0칸
+// 4) [알파] 충격 해방: 1P 충격 2칸에서 정확한 받기(→3칸) → 2P 합 → 충격이 피해로 풀리고 0칸 (피해량을 정확히 보므로 노림은 끈다)
 await page.keyboard.press('Escape');
 await page.keyboard.press('Digit2');
 await waitState(() => __game.G.mode === 'duo' && __game.G.running);
 await ev(() => {
-  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  const { G, CFG } = __game; const B = G.boss, [P1, P2] = G.players; CFG.aimOn = false;
   B.pos.set(0, 0, 0); P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3.2); P2.yaw = 0; P1.yaw = Math.PI; P1.impact = 2;
   B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.12;
 });
@@ -184,7 +184,46 @@ results.tagCoverState = await ev(() => __game.G.players[1].state);
 await waitState(() => __game.G.boss.state !== 'windup');
 results.tagCover = await ev(() => [__game.G.boss.state, __game.G.stats.save, __game.G.players[1].impact]);
 
-// 8) [A] 합 연출 보기: 자동으로 합과 완벽한 합이 나오는지, 완벽한 합 정지 화면, 기존 연출로 바꿔도 도는지
+// 8) 알파-2 시선과 노림 (듀오): 1P가 보스 정면에서 버티고 2P는 등 뒤에서 기다림 → 노림 가득 → 받기 → 노림 합
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+await ev(() => {
+  const { G, CFG } = __game; const B = G.boss, [P1, P2] = G.players; CFG.aimOn = true;
+  B.cd = 99; B.pos.set(0, 0, 0); B.yaw = Math.PI; P1.pos.set(0, 0, -3); P2.pos.set(0, 0, 3.2); P2.yaw = Math.PI; B.target = P1;
+});
+await waitState(() => __game.G.players[1].aim >= 1, 30000);
+results.aimFrontDot = await ev(() => { const { G } = __game; return +G.boss.forward().dot({ x: 0, y: 0, z: -1 }).toFixed(2); });
+await page.screenshot({ path: path.join(out, '4_aim_full.png') });
+const hp0 = await ev(() => __game.G.boss.hp);
+await ev(() => { const { G } = __game; G.boss.begin('slam'); G.boss.t = G.boss.atk.windup - 0.12; });
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.boss.state !== 'gap');
+results.aimHap = await ev(() => __game.G.stats.aimHap);
+results.aimHapDamage = hp0 - await ev(() => __game.G.boss.hp);
+results.aimClearedAfter = await ev(() => __game.G.players[1].aim);
+await page.screenshot({ path: path.join(out, '4_aim_hap.png') });
+
+// 9) 혼자 하기: A가 보스 코앞에서 버티는 동안 B 노림이 참 → 받기 → 태그 진입 노림 합. 틈 밖 태그는 노림을 날린다
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit1');
+await waitState(() => __game.G.mode === 'solo' && __game.G.running);
+await ev(() => { const { G } = __game; const B = G.boss, A = G.players[0]; B.cd = 99; B.pos.set(0, 0, 0); B.yaw = 0; A.pos.set(0, 0, 2.6); });
+await waitState(() => __game.G.players[1].aim >= 1, 30000);
+await ev(() => { const { G } = __game; G.boss.begin('slam'); G.boss.t = G.boss.atk.windup - 0.12; });
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.boss.state !== 'gap');
+results.soloAimHap = await ev(() => __game.G.stats.aimHap);
+results.soloBenchAimAfter = await ev(() => __game.G.players[0].aim);
+await page.screenshot({ path: path.join(out, '5_solo_aim_hap.png') });
+
+// 10) [A] 합 연출 보기: 자동으로 합과 완벽한 합이 나오는지, 완벽한 합 정지 화면, 기존 연출로 바꿔도 도는지
 await page.keyboard.press('Escape');
 await page.keyboard.press('Digit4');
 await waitState(() => __game.G.mode === 'demo' && __game.G.running);
@@ -192,11 +231,11 @@ await ev(() => { __game.CFG.freezePerfect = 2.5; }); // 헤드리스는 느려�
 await waitState(() => __game.G.stats.hap - __game.G.stats.perfect >= 1, 180000);
 results.demoHap = await ev(() => __game.G.stats.hap);
 await waitState(() => !!__game.G.release && __game.G.impact === 0, 180000);
-await page.screenshot({ path: path.join(out, '3_demo_perfect_freeze.png') });
+await page.screenshot({ path: path.join(out, 'A1_demo_perfect_freeze.png') });
 results.demoFreeze = await ev(() => ({ cine: document.body.classList.contains('cine'), stamp: document.getElementById('stamp').classList.contains('go') }));
 await ev(() => { __game.CFG.freezePerfect = 0.3; });
 await waitState(() => !__game.G.release && __game.G.slow, 60000);
-await page.screenshot({ path: path.join(out, '4_demo_release.png') });
+await page.screenshot({ path: path.join(out, 'A2_demo_release.png') });
 await waitState(() => __game.G.stats.perfect >= 2, 240000); // 'trust' (믿고 먼저) 순서까지
 results.demoPerfect = await ev(() => __game.G.stats.perfect);
 await page.click('#fxBtn');
@@ -204,7 +243,8 @@ const before = await ev(() => __game.G.stats.hap);
 await page.waitForFunction(n => __game.G.stats.hap > n, before, { timeout: 180000 });
 results.demoOldFx = await ev(() => __game.CFG.fx);
 
-// 9) 모바일 폭에서 가로 스크롤이 없는지
+
+// 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
 results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > innerWidth);
@@ -217,7 +257,8 @@ const alpha = results.impactFull === 3 && results.releaseDmg === (10 + 3 * 10) *
   && results.tagCoverState === 'receive' && results.tagCover[0] === 'gap' && results.tagCover[1] === 1 && results.tagCover[2] >= 1;
 const ok = alpha && results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
   && results.unison.n === 1 && results.soloReceive === 'gap' && results.soloHap === 1 && results.soloFin.fin === 1 && results.soloFin.active === 0
-  && results.practiceReceive === 'gap' && results.practiceHap === 1 && results.practiceFin === 1 && !results.mobileOverflow && !errors.length
+  && results.practiceReceive === 'gap' && results.practiceHap === 1 && results.practiceFin === 1 && results.aimHap === 1 && results.aimHapDamage >= 45 && results.aimClearedAfter === 0 && results.soloAimHap === 1
+  && !results.mobileOverflow && !errors.length
   && results.demoHap >= 1 && results.demoFreeze?.cine && results.demoFreeze?.stamp && results.demoPerfect >= 2 && results.demoOldFx === '기존';
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);
