@@ -50,6 +50,49 @@ await page.keyboard.press('KeyK');
 await waitState(() => __game.G.boss.state !== 'gap');
 results.duoHap = await ev(() => __game.G.stats.hap);
 await page.screenshot({ path: path.join(out, '1_duo_hap.png') });
+// 1-2) 받은 1P가 반동 중에 공격을 눌러 두면 반동이 풀릴 때 맺기
+results.duoFinOpen = await ev(() => !!__game.G.fin);
+await page.keyboard.press('KeyF');
+await waitState(() => __game.G.stats.fin === 1 || !__game.G.fin);
+results.duoFin = await ev(() => __game.G.stats.fin);
+await page.screenshot({ path: path.join(out, '1b_duo_fin.png') });
+// 1-3) 기세 가득 + 완벽한 합 → 합기
+await waitState(() => __game.G.boss.state === 'chase');
+await ev(() => {
+  const { G, addMom } = __game; const B = G.boss, [P1, P2] = G.players;
+  G.mom = 99; addMom(5);
+  B.pos.set(0, 0, 0); P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3.2); P2.yaw = 0; P1.yaw = Math.PI;
+  P1.state = P2.state = 'free';
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.12;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.stats.hap === 2);
+results.unison = await ev(() => ({ n: __game.G.stats.unison, mom: __game.G.mom }));
+await page.screenshot({ path: path.join(out, '1c_unison.png') });
+
+// 1-4) 혼자 하기: 받기 → Q(합) → Q(맺기)
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit1');
+await waitState(() => __game.G.mode === 'solo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, A = G.players[0];
+  B.pos.set(0, 0, 0); A.pos.set(0, 0, 3); A.yaw = Math.PI;
+  B.target = A; B.begin('slam'); B.t = B.atk.windup - 0.12;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+results.soloReceive = await ev(() => __game.G.boss.state);
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.stats.hap === 1 || __game.G.boss.state !== 'gap');
+results.soloHap = await ev(() => __game.G.stats.hap);
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.stats.fin === 1 || !__game.G.fin);
+results.soloFin = await ev(() => ({ fin: __game.G.stats.fin, active: __game.G.active }));
+await page.screenshot({ path: path.join(out, '1d_solo_fin.png') });
 
 // 2) 혼자 듀오 연습: A 받기 자세 유지한 채 Q → B로 틈 공격
 await page.keyboard.press('Escape');
@@ -71,6 +114,13 @@ await page.keyboard.press('KeyF');
 await waitState(() => __game.G.boss.state !== 'gap');
 results.practiceHap = await ev(() => __game.G.stats.hap);
 await page.screenshot({ path: path.join(out, '2_practice_hap.png') });
+// 연습: Q로 받은 캐릭터 A로 넘겨서 맺기
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.active === 0);
+await waitState(() => __game.G.players[0].state === 'free' || !__game.G.fin);
+await page.keyboard.press('KeyF');
+await waitState(() => __game.G.stats.fin === 1 || !__game.G.fin);
+results.practiceFin = await ev(() => __game.G.stats.fin);
 
 // 4) 알파-2 시선과 노림 (듀오): 1P가 보스 정면에서 버티고 2P는 등 뒤에서 기다림 → 노림 가득 → 받기 → 노림 합
 await page.keyboard.press('Escape');
@@ -118,8 +168,9 @@ results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > i
 await page.screenshot({ path: path.join(out, '3_mobile_title.png') });
 
 await browser.close();
-const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1
-  && results.aimHap === 1 && results.aimHapDamage >= 45 && results.aimClearedAfter === 0 && results.soloAimHap === 1
+const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
+  && results.unison.n === 1 && results.soloReceive === 'gap' && results.soloHap === 1 && results.soloFin.fin === 1 && results.soloFin.active === 0
+  && results.practiceReceive === 'gap' && results.practiceHap === 1 && results.practiceFin === 1 && results.aimHap === 1 && results.aimHapDamage >= 45 && results.aimClearedAfter === 0 && results.soloAimHap === 1
   && !results.mobileOverflow && !errors.length;
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);
