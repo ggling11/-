@@ -72,7 +72,7 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .logo p { margin: 0; font-size: 15px; color: var(--ink-dim); }
 .rule { margin: 0; font-size: 16px; line-height: 1.7; max-width: 60ch; text-wrap: pretty; }
 .rule strong { color: var(--gold); font-weight: 600; }
-.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .mode { all: unset; cursor: pointer; display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,0.04); transition: background 0.12s, border-color 0.12s; }
 .mode:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,210,63,0.6); }
 .mode:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -157,6 +157,10 @@ td:first-child { color: var(--ink-dim); }
         <span class="big">둘이 하기</span>
         <span class="desc"><kbd>2</kbd>로컬 2인, 각자 움직이기</span>
       </button>
+      <button class="mode" id="practiceBtn" type="button">
+        <span class="big">혼자 듀오 연습</span>
+        <span class="desc"><kbd>3</kbd>둘 다 필드에, Q로 조작 캐릭터 바꾸기</span>
+      </button>
     </div>
     <div class="table-wrap">
       <table>
@@ -166,7 +170,7 @@ td:first-child { color: var(--ink-dim); }
           <tr><td>공격</td><td>F</td><td>K</td><td>X / □</td></tr>
           <tr><td>받기 (누르고 있기)</td><td>G</td><td>L</td><td>B / ○ 또는 RB</td></tr>
           <tr><td>회피</td><td>Space</td><td>J</td><td>A / ✕</td></tr>
-          <tr><td>태그 (혼자 하기)</td><td>Q</td><td>I</td><td>Y / △ 또는 LB</td></tr>
+          <tr><td>태그 / 조작 바꾸기</td><td>Q</td><td>I</td><td>Y / △ 또는 LB</td></tr>
         </tbody>
       </table>
     </div>
@@ -447,14 +451,15 @@ addEventListener('keydown', e => {
   if (e.code === 'Escape') showTitle();
   if (!titleEl.hidden && (e.code === 'Digit1' || e.code === 'Numpad1')) start('solo');
   if (!titleEl.hidden && (e.code === 'Digit2' || e.code === 'Numpad2')) start('duo');
+  if (!titleEl.hidden && (e.code === 'Digit3' || e.code === 'Numpad3')) start('practice');
 });
 addEventListener('keyup', e => keysDown.delete(e.code));
 addEventListener('blur', () => keysDown.clear());
 
 function pads() { return [...(navigator.getGamepads?.() || [])].filter(Boolean); }
 function getCtrl(slot) {
-  const schemes = G.mode === 'solo' ? KB : [KB[slot]];
-  const padSlots = G.mode === 'solo' ? [0, 1] : [slot];
+  const schemes = G.mode === 'duo' ? [KB[slot]] : KB;
+  const padSlots = G.mode === 'duo' ? [slot] : [0, 1];
   let mx = 0, my = 0, atk = false, rcvHeld = false, rcvPressed = false, dodge = false, tag = false;
   for (const k of schemes) {
     mx += (keysDown.has(k.right) ? 1 : 0) - (keysDown.has(k.left) ? 1 : 0);
@@ -551,7 +556,7 @@ class Player {
   update(dt, c) {
     this.rcvCd -= dt; this.dodgeCd -= dt; this.iframe -= dt; this.flash -= dt;
     if (this.state === 'down') {
-      if (G.mode === 'duo') { this.respawnT -= dt; if (this.respawnT <= 0) this.revive(); }
+      if (isDuo()) { this.respawnT -= dt; if (this.respawnT <= 0) this.revive(); }
       return;
     }
     const B = G.boss;
@@ -630,9 +635,13 @@ class Player {
     const og = clamp(this.hapGlow / 0.7, 0, 1);
     for (const om of this.outlines) om.color.set(style.outline).lerp(new THREE.Color(COLOR.gold), og);
     this.bodyMat.color.set(s === 'down' ? 0x777777 : this.color);
-    this.mark.visible = G.mode === 'duo' && G.boss.target === this && !G.boss.dead && s !== 'down';
+    this.mark.visible = isDuo() && G.boss.target === this && !G.boss.dead && s !== 'down';
     this.mark.position.y = 2.4 + Math.sin(G.time * 6) * 0.08;
     this.foot.visible = s !== 'down';
+    const practice = G.mode === 'practice', ctrl = practice && G.active === this.idx;
+    this.foot.material.color.set(ctrl ? 0xffffff : this.color);
+    this.foot.material.opacity = practice && !ctrl ? 0.25 : ctrl ? 0.95 : 0.55;
+    this.foot.scale.setScalar(ctrl ? 1.12 + Math.sin(G.time * 6) * 0.06 : 1);
   }
 }
 
@@ -791,7 +800,7 @@ class Boss {
   }
   choose(d) {
     const alive = activePlayers();
-    if (G.mode === 'duo' && alive.length === 2 && distXZ(alive[0].pos, alive[1].pos) < 6.5 && Math.random() < 0.35) return this.begin('midSlam');
+    if (isDuo() && alive.length === 2 && distXZ(alive[0].pos, alive[1].pos) < 6.5 && Math.random() < 0.35) return this.begin('midSlam');
     if (d < 4.0) return this.begin(Math.random() < 0.72 ? 'slam' : 'shock');
     if (d > 5.0 && Math.random() < 0.7) return this.begin('charge');
     if (Math.random() < 0.12) return this.begin('shock');
@@ -909,6 +918,7 @@ const G = {
 G.players = [new Player(0, COLOR.p1), new Player(1, COLOR.p2)];
 G.boss = new Boss();
 
+const isDuo = () => G.mode === 'duo' || G.mode === 'practice';
 const above = (o, h = 2.6) => V(o.pos.x, (o.root?.position.y || 0) + h, o.pos.z);
 function activePlayers() {
   if (G.mode === 'solo') { const p = G.players[G.active]; return p.alive ? [p] : []; }
@@ -982,7 +992,7 @@ function doHap(p, grade, dtr) {
   const weakPos = B.pos.clone().addScaledVector(B.openDir, B.R * 0.95).setY(2.1);
   B.hapDone = true; B.hideOpen();
   if (!B.dead) { B.state = 'stagger'; B.t = perfect ? CFG.staggerPerfect : CFG.staggerHap; }
-  if (G.mode === 'duo') { B.target = p; G.players.forEach(q => (q.aggro = 0)); }
+  if (isDuo()) { B.target = p; G.players.forEach(q => (q.aggro = 0)); }
   G.stats.hap++; if (perfect) G.stats.perfect++;
   G.stats.last = dtr;
   // 연출
@@ -1028,7 +1038,7 @@ function playerHitsBoss(p) {
   burst(hitPoint, 0xffffff, 5, 4);
   popText(hitPoint, String(base), 'dmg', 0.5);
   G.recentHits.push({ p, time: G.now, base });
-  if (G.mode === 'duo' && B.target !== p && ['chase', 'recover', 'windup'].includes(B.state)) {
+  if (isDuo() && B.target !== p && ['chase', 'recover', 'windup'].includes(B.state)) {
     p.aggro++;
     if (p.aggro >= CFG.aggroHits) {
       B.target = p; G.players.forEach(q => (q.aggro = 0));
@@ -1059,6 +1069,21 @@ function tryTag(auto) {
   SFX.tag();
 }
 
+// 혼자 듀오 연습: 둘 다 필드에 있고 조작만 넘긴다. 받기 자세로 두고 넘기면 자세가 유지된다.
+function switchControl() {
+  const out = G.players[G.active], inn = G.players[1 - G.active];
+  out.latchRcv = out.state === 'receive';
+  inn.latchRcv = false;
+  G.active = 1 - G.active;
+  fxRing(inn.pos, 0xffffff, 0.4, 1.6, 0.25, 0.6);
+  popText(above(inn, 2.9), out.latchRcv ? '조작 · 상대는 받기 유지' : '조작', 'small', 0.7);
+  SFX.tag();
+}
+const IDLE_MOVE = V();
+function idleCtrl(p) {
+  return { move: IDLE_MOVE, atk: false, rcvHeld: !!p.latchRcv, rcvPressed: false, dodge: false, tag: false };
+}
+
 function resolveCollisions() {
   const B = G.boss, list = activePlayers();
   for (const p of list) {
@@ -1085,6 +1110,13 @@ function step(dt) {
     if (c.tag) tryTag(false);
     if (G.autoTag > 0) { G.autoTag -= dt; if (G.autoTag <= 0) tryTag(true); }
     G.players[G.active].update(dt, c);
+  } else if (G.mode === 'practice') {
+    const c = getCtrl(0);
+    if (c.tag) switchControl();
+    const me = G.players[G.active], other = G.players[1 - G.active];
+    me.update(dt, c);
+    other.update(dt, idleCtrl(other));
+    if (other.state !== 'receive') other.latchRcv = false;
   } else {
     G.players[0].update(dt, getCtrl(0));
     G.players[1].update(dt, getCtrl(1));
@@ -1112,11 +1144,14 @@ function start(mode) {
   G.boss.reset(); G.boss.target = G.players[0];
   camTarget.set(0, 0, 1);
   titleEl.hidden = resultEl.hidden = true; hudEl.hidden = false; tuneBtn.hidden = false;
-  $('name0').textContent = mode === 'solo' ? '캐릭터 A' : '1P';
-  $('name1').textContent = mode === 'solo' ? '캐릭터 B' : '2P';
-  $('hint').innerHTML = mode === 'solo'
-    ? '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받은 직후 태그하면 틈으로 들어가요'
-    : '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피';
+  G.players.forEach(p => (p.latchRcv = false));
+  $('name0').textContent = mode === 'duo' ? '1P' : '캐릭터 A';
+  $('name1').textContent = mode === 'duo' ? '2P' : '캐릭터 B';
+  $('hint').innerHTML = {
+    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받은 직후 태그하면 틈으로 들어가요',
+    duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피',
+    practice: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 조작 바꾸기 — 받기를 누른 채 바꾸면 그 캐릭터는 받기 자세를 유지해요',
+  }[mode];
   renderer.domElement.focus?.();
 }
 function endGame(win) {
@@ -1143,6 +1178,7 @@ function showTitle() {
 }
 $('soloBtn').addEventListener('click', () => start('solo'));
 $('duoBtn').addEventListener('click', () => start('duo'));
+$('practiceBtn').addEventListener('click', () => start('practice'));
 $('againBtn').addEventListener('click', () => start(G.mode));
 $('menuBtn').addEventListener('click', showTitle);
 
@@ -1192,11 +1228,14 @@ const tmpV = V();
 function drawHud() {
   const B = G.boss;
   $('bossHp').style.width = `${(B.hp / B.maxHp) * 100}%`;
-  const label = p => ({ receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: G.mode === 'duo' ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
+  const label = p => ({ receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: isDuo() ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
   G.players.forEach((p, i) => {
     $('hp' + i).style.width = `${clamp(p.hp, 0, 100)}%`;
-    $('state' + i).textContent = (G.mode === 'solo' && i !== G.active && p.alive ? '대기' : label(p)) + (CFG.infiniteHP ? ' · 피 무한' : '');
-    $('card' + i).classList.toggle('bench', G.mode === 'solo' && i !== G.active);
+    const benched = G.mode !== 'duo' && i !== G.active;
+    let st = G.mode === 'solo' && benched && p.alive ? '대기' : label(p);
+    if (G.mode === 'practice' && !benched) st = st ? `조작 중 · ${st}` : '조작 중';
+    $('state' + i).textContent = st + (CFG.infiniteHP ? ' · 피 무한' : '');
+    $('card' + i).classList.toggle('bench', benched);
   });
   const s = G.stats;
   if (!s) return;
