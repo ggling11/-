@@ -1,0 +1,50 @@
+{
+ "p1": {
+  "note": "",
+  "calls": 37,
+  "tris": 39461,
+  "art": 1,
+  "ms": 2138,
+  "errors": []
+ },
+ "p2": {
+  "note": "phase 2",
+  "calls": 32,
+  "tris": 39451,
+  "art": 1,
+  "ms": 1464,
+  "errors": []
+ },
+ "fin": {
+  "note": "fin true DIVING FLASH THRUST",
+  "calls": 32,
+  "tris": 39451,
+  "art": 1,
+  "ms": 1570,
+  "errors": []
+ },
+ "dash": {
+  "note": "dash dodge",
+  "calls": 37,
+  "tris": 39463,
+  "art": 1,
+  "ms": 1397,
+  "errors": []
+ },
+ "qte": {
+  "note": "qte true cells 5 done 2",
+  "calls": 31,
+  "tris": 39449,
+  "art": 1,
+  "ms": 1326,
+  "errors": []
+ },
+ "tele": {
+  "note": "tele true slam",
+  "calls": 49,
+  "tris": 40316,
+  "art": 1,
+  "ms": 2791,
+  "errors": []
+ }
+}

@@ -53,6 +53,16 @@ const T1F = (() => {
       const m = F.mesh(tris, { line: 0, order: 5 });
       return F.add(m, o.life ?? D.fx.inkLife, (e) => { const k = e.t / e.life; e.mesh.material.uniforms.uOpacity.value = k < 0.7 ? 1 : 0.0 + (Math.floor((1 - k) * 12) % 2); e.mesh.scale.setScalar(1 + k * 0.25); });
     };
+    /* 눈 반짝임 (보스 예고 순간): 빨간 4갈래 별 · 화면을 향한 판 · 짧게 커졌다 사라짐 */
+    F.glint = (p, cam, o = {}) => {
+      const tris = [], red = col(o.color || D.pal.red), S = o.size || 0.5;
+      const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+      const P2 = q => [p.x + right.x * q[0] + up.x * q[1], p.y + right.y * q[0] + up.y * q[1], p.z + right.z * q[0] + up.z * q[1]];
+      for (const [ax, ay, L, w] of [[1, 0, 1, 0.09], [0, 1, 0.75, 0.09], [0.7, 0.7, 0.32, 0.06], [0.7, -0.7, 0.32, 0.06]])
+        for (const sg of [1, -1]) tris.push({ p: [[sg * ax * L * S, sg * ay * L * S], [-ay * w * S, ax * w * S], [ay * w * S, -ax * w * S]].map(P2), c: red });
+      const m = F.mesh(tris, { line: 0, depthTest: false, order: 21 });
+      return F.add(m, o.life ?? 0.32, (e) => { const k = e.t / e.life; e.mesh.scale.setScalar(k < 0.25 ? 0.3 + k / 0.25 * 0.9 : 1.2 - (k - 0.25) * 1.4); });
+    };
     /* 스피드 라인: 화면 가장자리에서 중심으로 모이는 검정 쐐기 (카메라 앞 판) */
     F.speed = (cam, o = {}) => {
       const r = F.rand, tris = [], ink = col(D.pal.ink), N = o.n ?? D.fx.speedLines, dist = cam.near + 0.5;

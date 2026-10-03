@@ -710,7 +710,7 @@ const T1 = {
   const R = T1.poses.rapier, G = T1.poses.great, W = T1.poses.warden;
   const mix = (...a) => Object.assign({}, ...a);
   /* ---------------------------------------------------------------- 세검 (청): 펜싱 — 옆으로 선 몸(오른 어깨 앞), 오른발 앞, 칼 팔을 길게, 왼손은 뒤로 들어 균형 */
-  const rEG = { $b: [0.03, -0.12, 0], body: [0, 38, 0], spine: [5, 10, 0], chest: [3, 10, 0], neck: [0, -22, 0], head: [6, -32, 0],
+  const rEG = { $b: [0.03, -0.12, 0], body: [0, 38, -5], spine: [5, 10, 2], chest: [3, 10, 5], neck: [0, -22, 0], head: [6, -32, -6],   /* 라운드 7: 몸이 S자 액션 라인 */
     $fR: [-0.05, 0, 0.3], ftR: [0, 12, 0], $fL: [0.2, 0, -0.2], ftL: [0, 70, 0],
     $hR: [-0.12, 1.28, 0.5], $wR: [0.04, 0.22, 1], $hL: [0.36, 1.82, -0.22], $wL: [0.2, 1, -0.2], $pL: [1, -1, 0] };
   const rIdle = { $b: [0.05, -0.05, 0], body: [0, 18, -4], spine: [3, 4, 7], chest: [2, 4, 3], neck: [0, -6, -4], head: [8, -14, -6],
@@ -758,9 +758,9 @@ const T1 = {
   /* 패리: 칼을 세워(끝이 위) 앞을 막음 — 한 번에 끊어 들어가 유지 */
   R.parry = { keys: [
     [0, rEG],
-    [2, { $b: [0.02, -0.2, -0.1], body: [-4, 30, 0], spine: [-6, 6, 0], chest: [-4, 6, 0], head: [0, -26, 0],
-      $hR: [-0.04, 1.52, 0.4], $wR: [0.18, 1, 0.22], $nR: [0, 0, 1], $hL: [0.36, 1.72, -0.3] }, 'snap'],
-    [5, { $b: [0.02, -0.22, -0.12], $hR: [-0.03, 1.55, 0.42] }, 'hold'],
+    [2, { $b: [0.06, -0.26, -0.2], body: [-10, 25, -6], spine: [-10, 6, 0], chest: [-8, 6, 6], head: [6, -20, -8], $fR: [-0.05, 0, 0.36], $fL: [0.22, 0, -0.3],
+      $hR: [-0.02, 1.58, 0.42], $wR: [0.22, 1, 0.3], $nR: [0, 0, 1], $hL: [0.44, 1.5, -0.48], $wL: [0.5, 0.2, -1] }, 'snap'],   /* 라운드 7: 몸을 뒤로 젖히고 왼팔을 뒤로 던짐 (실루엣이 바뀌게) */
+    [5, { $b: [0.06, -0.28, -0.22], $hR: [-0.01, 1.6, 0.44] }, 'hold'],
     [7, rEG],
   ] };
   /* 피격: 몸이 뒤로 꺾이고 팔이 흩어짐 (1프레임에 끊어 들어감) */
@@ -13821,6 +13821,16 @@ const T1F = (() => {
       const m = F.mesh(tris, { line: 0, order: 5 });
       return F.add(m, o.life ?? D.fx.inkLife, (e) => { const k = e.t / e.life; e.mesh.material.uniforms.uOpacity.value = k < 0.7 ? 1 : 0.0 + (Math.floor((1 - k) * 12) % 2); e.mesh.scale.setScalar(1 + k * 0.25); });
     };
+    /* 눈 반짝임 (보스 예고 순간): 빨간 4갈래 별 · 화면을 향한 판 · 짧게 커졌다 사라짐 */
+    F.glint = (p, cam, o = {}) => {
+      const tris = [], red = col(o.color || D.pal.red), S = o.size || 0.5;
+      const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+      const P2 = q => [p.x + right.x * q[0] + up.x * q[1], p.y + right.y * q[0] + up.y * q[1], p.z + right.z * q[0] + up.z * q[1]];
+      for (const [ax, ay, L, w] of [[1, 0, 1, 0.09], [0, 1, 0.75, 0.09], [0.7, 0.7, 0.32, 0.06], [0.7, -0.7, 0.32, 0.06]])
+        for (const sg of [1, -1]) tris.push({ p: [[sg * ax * L * S, sg * ay * L * S], [-ay * w * S, ax * w * S], [ay * w * S, -ax * w * S]].map(P2), c: red });
+      const m = F.mesh(tris, { line: 0, depthTest: false, order: 21 });
+      return F.add(m, o.life ?? 0.32, (e) => { const k = e.t / e.life; e.mesh.scale.setScalar(k < 0.25 ? 0.3 + k / 0.25 * 0.9 : 1.2 - (k - 0.25) * 1.4); });
+    };
     /* 스피드 라인: 화면 가장자리에서 중심으로 모이는 검정 쐐기 (카메라 앞 판) */
     F.speed = (cam, o = {}) => {
       const r = F.rand, tris = [], ink = col(D.pal.ink), N = o.n ?? D.fx.speedLines, dist = cam.near + 0.5;
@@ -14229,8 +14239,20 @@ const T1T = (() => {
     M.root.updateMatrixWorld(true);
     const sh = S.shadows[kind]; sh.position.set(ch.pos.x, 0.012, ch.pos.z); const hgt = Math.max(0, ch.pos.y); sh.scale.setScalar(Math.max(0.35, 1 - hgt * 0.12));
     const fl = ch.flashT > 0 ? 1 : 0; for (const k in M.mats) M.mats[k].uniforms.uFlash.value = fl;
+    if (kind === 'warden') eyeTele(M, dt);
   }
-  /* 카메라: 원근 · 47° · 서 있는 키 15% · 게임 카메라의 목표점과 방향(yaw)을 그대로 따라감 + 넓히기 · 흔들림 · 확대 */
+  /* 보스 예고 순간 붉은 눈이 빛남: 예고 장판이 새로 생기면 두 눈에 빨간 별 + 눈 색이 잠깐 밝은 빨강 (화면만) */
+  function eyeTele(M, dt) {
+    const n = (AI.tele && AI.tele.length) || 0, eye = M.mats.eye;
+    if (n > (S.teleN || 0) && !ART.headless && M.bones.head) {
+      const h = M.bones.head, cam = S.R.camera;
+      for (const sx of [-1, 1]) S.FX.glint(new THREE.Vector3(sx * 0.17 * M.k1, 0.12 * M.k1, 0.3 * M.k1).applyMatrix4(h.matrixWorld), cam, { size: 0.42 });
+      S.eyeT = 0.3;
+    }
+    S.teleN = n; S.eyeT = Math.max(0, (S.eyeT || 0) - dt);
+    if (eye) eye.uniforms.uLit.value.copy(S.eyeT > 0 ? S.eyeHot || (S.eyeHot = T1R.hex(THREE, '#ff2a48')) : S.eyeBase || (S.eyeBase = eye.uniforms.uLit.value.clone()));
+  }
+  /* 카메라: 원근 · 41° · 서 있는 키 20% · 게임 카메라의 목표점과 방향(yaw)을 그대로 따라감 + 넓히기 · 흔들림 · 확대 */
   function camera(dt) {
     const C = D.cam, cam = S.R.camera, p = C.pitch * Math.PI / 180, yaw = CamRig.yaw;
     const tgt = CamRig.target;
@@ -14254,7 +14276,7 @@ const T1T = (() => {
     S.camW += (want - S.camW) * (1 - Math.exp(-dt * (want > S.camW ? 6 : 1.5)));
     /* 확대(마무리 첫 적중) · 흔들림 · 반동: 게임 카메라 값을 이 카메라 크기로 */
     let zoom = 1, zf = null;
-    if (CamRig.zp && CamRig.zw > 0) { zoom = 1 + 0.4 * CamRig.zw; zf = CamRig.zp.f; }
+    if (CamRig.zp && CamRig.zw > 0) { zoom = 1 + 0.55 * Math.pow(CamRig.zw, 0.6); zf = CamRig.zp.f; }   /* 라운드 7: 마무리 첫 적중 확대를 더 짧고 날카롭게 (빨리 들어가 버팀) */
     const T = zf ? new THREE.Vector3().copy(tgt).lerp(zf, 0.6 * CamRig.zw) : tgt, d = S.camK * S.camW / zoom;
     const vh = 2 * d * Math.tan(C.fov * Math.PI / 360), px = vh / 270 * (UI.shake ?? 1) * C.shakeMul;
     const R3 = CamRig.R, U3 = CamRig.U;
@@ -14343,7 +14365,7 @@ const T1T = (() => {
     return true;
   }
   ART.themes[1] = { id: 1, name: ART.names[1], apply, dispose, frame, hud };
-  S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; };
+  S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; S.eyeT = 0; S.teleN = (AI.tele && AI.tele.length) || 0; };
   return S;
 })();
 /* =============================================================================

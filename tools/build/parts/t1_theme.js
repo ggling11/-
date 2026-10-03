@@ -108,8 +108,20 @@ const T1T = (() => {
     M.root.updateMatrixWorld(true);
     const sh = S.shadows[kind]; sh.position.set(ch.pos.x, 0.012, ch.pos.z); const hgt = Math.max(0, ch.pos.y); sh.scale.setScalar(Math.max(0.35, 1 - hgt * 0.12));
     const fl = ch.flashT > 0 ? 1 : 0; for (const k in M.mats) M.mats[k].uniforms.uFlash.value = fl;
+    if (kind === 'warden') eyeTele(M, dt);
   }
-  /* 카메라: 원근 · 47° · 서 있는 키 15% · 게임 카메라의 목표점과 방향(yaw)을 그대로 따라감 + 넓히기 · 흔들림 · 확대 */
+  /* 보스 예고 순간 붉은 눈이 빛남: 예고 장판이 새로 생기면 두 눈에 빨간 별 + 눈 색이 잠깐 밝은 빨강 (화면만) */
+  function eyeTele(M, dt) {
+    const n = (AI.tele && AI.tele.length) || 0, eye = M.mats.eye;
+    if (n > (S.teleN || 0) && !ART.headless && M.bones.head) {
+      const h = M.bones.head, cam = S.R.camera;
+      for (const sx of [-1, 1]) S.FX.glint(new THREE.Vector3(sx * 0.17 * M.k1, 0.12 * M.k1, 0.3 * M.k1).applyMatrix4(h.matrixWorld), cam, { size: 0.42 });
+      S.eyeT = 0.3;
+    }
+    S.teleN = n; S.eyeT = Math.max(0, (S.eyeT || 0) - dt);
+    if (eye) eye.uniforms.uLit.value.copy(S.eyeT > 0 ? S.eyeHot || (S.eyeHot = T1R.hex(THREE, '#ff2a48')) : S.eyeBase || (S.eyeBase = eye.uniforms.uLit.value.clone()));
+  }
+  /* 카메라: 원근 · 41° · 서 있는 키 20% · 게임 카메라의 목표점과 방향(yaw)을 그대로 따라감 + 넓히기 · 흔들림 · 확대 */
   function camera(dt) {
     const C = D.cam, cam = S.R.camera, p = C.pitch * Math.PI / 180, yaw = CamRig.yaw;
     const tgt = CamRig.target;
@@ -133,7 +145,7 @@ const T1T = (() => {
     S.camW += (want - S.camW) * (1 - Math.exp(-dt * (want > S.camW ? 6 : 1.5)));
     /* 확대(마무리 첫 적중) · 흔들림 · 반동: 게임 카메라 값을 이 카메라 크기로 */
     let zoom = 1, zf = null;
-    if (CamRig.zp && CamRig.zw > 0) { zoom = 1 + 0.4 * CamRig.zw; zf = CamRig.zp.f; }
+    if (CamRig.zp && CamRig.zw > 0) { zoom = 1 + 0.55 * Math.pow(CamRig.zw, 0.6); zf = CamRig.zp.f; }   /* 라운드 7: 마무리 첫 적중 확대를 더 짧고 날카롭게 (빨리 들어가 버팀) */
     const T = zf ? new THREE.Vector3().copy(tgt).lerp(zf, 0.6 * CamRig.zw) : tgt, d = S.camK * S.camW / zoom;
     const vh = 2 * d * Math.tan(C.fov * Math.PI / 360), px = vh / 270 * (UI.shake ?? 1) * C.shakeMul;
     const R3 = CamRig.R, U3 = CamRig.U;
@@ -222,6 +234,6 @@ const T1T = (() => {
     return true;
   }
   ART.themes[1] = { id: 1, name: ART.names[1], apply, dispose, frame, hud };
-  S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; };
+  S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; S.eyeT = 0; S.teleN = (AI.tele && AI.tele.length) || 0; };
   return S;
 })();

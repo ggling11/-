@@ -21,6 +21,9 @@ JS = r"""async ([name]) => {
   else if (name === 'qte') { P.setup({ mode: 'duo', bots: [null, null], seed: 401, boss: 1, chars: ['rapier', 'great'] }); AI.state = 'idle'; AI.t = 999; AI.cur = null; run(0.3); AI.phase = 2; const Q = P.Qte3;
     P.Dk.with(P.Dk.main(), () => { if (Q.can(1)) Q.start(); }); for (const f of P.fighters) f.bot = { inp: new P.BotInput(), mode: 'coop' }; run(1.9); note = 'qte ' + Q.on + ' cells ' + (Q.cells || []).length + ' done ' + (Q.cells || []).filter(c => c.res).length; }
   else if (name === 'title') { P.Title3.open(); for (let i = 0; i < 40; i++) P.step(1 / 60, false); }
+  else if (name === 'tele') { setup(9); run(1.5); const ok = until(() => AI.tele && AI.tele.length > 0 && AI.cur !== 'qte', 40); note = 'tele ' + ok + ' ' + AI.cur;
+    P.Game.bannerT = 0; P.Game.noteT = 0; const r = P.renderer; for (let i = 0; i < 3; i++) P.step(1 / 60, true); r.info.autoReset = false; r.info.reset(); P.step(1 / 60, true);
+    return { note, calls: r.info.render.calls, tris: r.info.render.triangles, art: P.ART ? P.ART.cur : 0 }; }
   else if (name === 'menu') { setup(5); run(3.0); P.Menu3.open(); for (let i = 0; i < 20; i++) P.step(1 / 60, false); note = 'menu ' + P.Menu3.on; }
   else if (name === 'res') { setup(5); run(2.0); P.Game.win(); run(3.2); note = 'res ' + P.Game.state + ' ' + P.Game.endT.toFixed(2); }
   else if (name === 'lost') { setup(5); run(2.0); P.Game.lose ? P.Game.lose() : 0; run(2.6); note = 'lost ' + P.Game.state; }
