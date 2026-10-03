@@ -1,0 +1,2929 @@
+{
+ "rigs": {
+  "rapier": {
+   "clips": {
+    "idle": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "run": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "combo1": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "combo2": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "combo3": {
+     "frames": 13,
+     "loop": false,
+     "events": [
+      {
+       "f": 7,
+       "type": "hit"
+      },
+      {
+       "f": 8,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      7
+     ],
+     "root": true
+    },
+    "dodge": {
+     "frames": 9,
+     "loop": false,
+     "events": [
+      {
+       "f": 1,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "dash": {
+     "frames": 4,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 3,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "kneel": {
+     "frames": 12,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "parry": {
+     "frames": 7,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "hit": {
+     "frames": 6,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": true
+    },
+    "death": {
+     "frames": 21,
+     "loop": false,
+     "events": [
+      {
+       "f": 15,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "launch": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "link": {
+     "frames": 6,
+     "loop": false,
+     "events": [],
+     "smears": [
+      2
+     ],
+     "root": false
+    },
+    "linkEnd": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 6,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "held": {
+     "frames": 8,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "idleB": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runB": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "gs1": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "gs2": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "gs3": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 8,
+       "type": "hit"
+      },
+      {
+       "f": 9,
+       "type": "hit"
+      },
+      {
+       "f": 8,
+       "type": "gsSlam"
+      }
+     ],
+     "smears": [
+      8
+     ],
+     "root": true
+    },
+    "sThrust": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 4,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sSpin": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sSmash": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "fSkyPierce": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "fin"
+      },
+      {
+       "f": 9,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": false
+    },
+    "fSkyDance": {
+     "frames": 20,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "fin"
+      },
+      {
+       "f": 8,
+       "type": "fin"
+      },
+      {
+       "f": 11,
+       "type": "fin"
+      },
+      {
+       "f": 14,
+       "type": "fin"
+      },
+      {
+       "f": 17,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      5,
+      8,
+      11,
+      14
+     ],
+     "root": false
+    },
+    "fCrown": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 8,
+       "type": "fin"
+      },
+      {
+       "f": 13,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      8
+     ],
+     "root": false
+    },
+    "fSpine": {
+     "frames": 20,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "fin"
+      },
+      {
+       "f": 9,
+       "type": "fin"
+      },
+      {
+       "f": 12,
+       "type": "fin"
+      },
+      {
+       "f": 17,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      6,
+      9,
+      12
+     ],
+     "root": false
+    },
+    "fTopple": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "fin"
+      },
+      {
+       "f": 5,
+       "type": "stomp"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": false
+    },
+    "fBackRiser": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "fin"
+      },
+      {
+       "f": 10,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": false
+    },
+    "fPin": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 7,
+       "type": "fin"
+      },
+      {
+       "f": 16,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      7
+     ],
+     "root": false
+    },
+    "sWind": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 4,
+       "type": "cast"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      },
+      {
+       "f": 8,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4,
+      6,
+      8
+     ],
+     "root": true
+    },
+    "sEarth": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "idleC": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runC": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "cc1": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "cc2": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "cc3": {
+     "frames": 13,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      },
+      {
+       "f": 7,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "cSnatch": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "dust"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "cHook": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 8,
+       "type": "cast"
+      },
+      {
+       "f": 10,
+       "type": "cast"
+      },
+      {
+       "f": 12,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "cWhirl": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "idleS": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runS": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "sc1": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sc2": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sc3": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "hLift": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "hSlam": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "hCharge": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "cast"
+      },
+      {
+       "f": 6,
+       "type": "step"
+      },
+      {
+       "f": 8,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "step"
+      },
+      {
+       "f": 11,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      5,
+      8,
+      11
+     ],
+     "root": true
+    },
+    "idleT": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runT": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "tc1": {
+     "frames": 8,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "hit"
+      },
+      {
+       "f": 4,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      3
+     ],
+     "root": true
+    },
+    "tc2": {
+     "frames": 8,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "hit"
+      },
+      {
+       "f": 4,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      3
+     ],
+     "root": true
+    },
+    "tc3": {
+     "frames": 9,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4,
+      4
+     ],
+     "root": true
+    },
+    "tc4": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      3
+     ],
+     "root": true
+    },
+    "tCross": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "cast"
+      },
+      {
+       "f": 5,
+       "type": "cast"
+      },
+      {
+       "f": 7,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      3,
+      5,
+      7,
+      9
+     ],
+     "root": true
+    },
+    "tRise": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      },
+      {
+       "f": 10,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "tDrop": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 9,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": true
+    }
+   },
+   "remap": null,
+   "joints": [
+    "body",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "shL",
+    "elL",
+    "hdL",
+    "shR",
+    "elR",
+    "hdR",
+    "thL",
+    "knL",
+    "ftL",
+    "thR",
+    "knR",
+    "ftR",
+    "cape",
+    "weapon"
+   ],
+   "named": [
+    "player",
+    "body",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "tail1",
+    "tail2",
+    "lockR",
+    "lockL",
+    "shL",
+    "elL",
+    "hdL",
+    "shR",
+    "elR",
+    "hdR",
+    "weapon",
+    "cape",
+    "cp0a",
+    "cp0b",
+    "cp1a",
+    "cp1b",
+    "cp2a",
+    "cp2b",
+    "cp3a",
+    "cp3b",
+    "thL",
+    "knL",
+    "ftL",
+    "thR",
+    "knR",
+    "ftR"
+   ],
+   "radius": 0.3
+  },
+  "great": {
+   "clips": {
+    "idle": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "run": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "combo1": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "combo2": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "combo3": {
+     "frames": 13,
+     "loop": false,
+     "events": [
+      {
+       "f": 7,
+       "type": "hit"
+      },
+      {
+       "f": 8,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      7
+     ],
+     "root": true
+    },
+    "dodge": {
+     "frames": 9,
+     "loop": false,
+     "events": [
+      {
+       "f": 1,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "dash": {
+     "frames": 4,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 3,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "kneel": {
+     "frames": 12,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "parry": {
+     "frames": 7,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "hit": {
+     "frames": 6,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": true
+    },
+    "death": {
+     "frames": 21,
+     "loop": false,
+     "events": [
+      {
+       "f": 15,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "launch": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "link": {
+     "frames": 6,
+     "loop": false,
+     "events": [],
+     "smears": [
+      2
+     ],
+     "root": false
+    },
+    "linkEnd": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 6,
+       "type": "land"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "held": {
+     "frames": 8,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "idleB": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runB": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "gs1": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "gs2": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "gs3": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 8,
+       "type": "hit"
+      },
+      {
+       "f": 9,
+       "type": "hit"
+      },
+      {
+       "f": 8,
+       "type": "gsSlam"
+      }
+     ],
+     "smears": [
+      8
+     ],
+     "root": true
+    },
+    "sThrust": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 4,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sSpin": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sSmash": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "fSkyPierce": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "fin"
+      },
+      {
+       "f": 9,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": false
+    },
+    "fSkyDance": {
+     "frames": 20,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "fin"
+      },
+      {
+       "f": 8,
+       "type": "fin"
+      },
+      {
+       "f": 11,
+       "type": "fin"
+      },
+      {
+       "f": 14,
+       "type": "fin"
+      },
+      {
+       "f": 17,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      5,
+      8,
+      11,
+      14
+     ],
+     "root": false
+    },
+    "fCrown": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 8,
+       "type": "fin"
+      },
+      {
+       "f": 13,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      8
+     ],
+     "root": false
+    },
+    "fSpine": {
+     "frames": 20,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "fin"
+      },
+      {
+       "f": 9,
+       "type": "fin"
+      },
+      {
+       "f": 12,
+       "type": "fin"
+      },
+      {
+       "f": 17,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      6,
+      9,
+      12
+     ],
+     "root": false
+    },
+    "fTopple": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "fin"
+      },
+      {
+       "f": 5,
+       "type": "stomp"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": false
+    },
+    "fBackRiser": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "fin"
+      },
+      {
+       "f": 10,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": false
+    },
+    "fPin": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 0,
+       "type": "dust"
+      },
+      {
+       "f": 7,
+       "type": "fin"
+      },
+      {
+       "f": 16,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      7
+     ],
+     "root": false
+    },
+    "sWind": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 4,
+       "type": "cast"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      },
+      {
+       "f": 8,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4,
+      6,
+      8
+     ],
+     "root": true
+    },
+    "sEarth": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "idleC": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runC": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "cc1": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "cc2": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "cc3": {
+     "frames": 13,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      },
+      {
+       "f": 7,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "cSnatch": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "dust"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "cHook": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 8,
+       "type": "cast"
+      },
+      {
+       "f": 10,
+       "type": "cast"
+      },
+      {
+       "f": 12,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "cWhirl": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "idleS": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runS": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "sc1": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sc2": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4
+     ],
+     "root": true
+    },
+    "sc3": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "hLift": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "hSlam": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": true
+    },
+    "hCharge": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "cast"
+      },
+      {
+       "f": 6,
+       "type": "step"
+      },
+      {
+       "f": 8,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "step"
+      },
+      {
+       "f": 11,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      5,
+      8,
+      11
+     ],
+     "root": true
+    },
+    "idleT": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "runT": {
+     "frames": 8,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "step"
+      },
+      {
+       "f": 4,
+       "type": "step"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "tc1": {
+     "frames": 8,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "hit"
+      },
+      {
+       "f": 4,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      3
+     ],
+     "root": true
+    },
+    "tc2": {
+     "frames": 8,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "hit"
+      },
+      {
+       "f": 4,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      3
+     ],
+     "root": true
+    },
+    "tc3": {
+     "frames": 9,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "hit"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      4,
+      4
+     ],
+     "root": true
+    },
+    "tc4": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "dust"
+      },
+      {
+       "f": 5,
+       "type": "hit"
+      },
+      {
+       "f": 6,
+       "type": "hit"
+      }
+     ],
+     "smears": [
+      3
+     ],
+     "root": true
+    },
+    "tCross": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "cast"
+      },
+      {
+       "f": 5,
+       "type": "cast"
+      },
+      {
+       "f": 7,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "cast"
+      }
+     ],
+     "smears": [
+      3,
+      5,
+      7,
+      9
+     ],
+     "root": true
+    },
+    "tRise": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 6,
+       "type": "cast"
+      },
+      {
+       "f": 10,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      5
+     ],
+     "root": true
+    },
+    "tDrop": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "dust"
+      },
+      {
+       "f": 9,
+       "type": "cast"
+      },
+      {
+       "f": 9,
+       "type": "land"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": true
+    }
+   },
+   "remap": {
+    "idle": "idleB",
+    "run": "runB"
+   },
+   "joints": [
+    "body",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "shL",
+    "elL",
+    "hdL",
+    "shR",
+    "elR",
+    "hdR",
+    "thL",
+    "knL",
+    "ftL",
+    "thR",
+    "knR",
+    "ftR",
+    "cape",
+    "weapon"
+   ],
+   "named": [
+    "player",
+    "body",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "tail1",
+    "tail2",
+    "lockR",
+    "lockL",
+    "shL",
+    "elL",
+    "hdL",
+    "shR",
+    "elR",
+    "hdR",
+    "weapon",
+    "cape",
+    "cp0a",
+    "cp0b",
+    "cp1a",
+    "cp1b",
+    "cp2a",
+    "cp2b",
+    "cp3a",
+    "cp3b",
+    "thL",
+    "knL",
+    "ftL",
+    "thR",
+    "knR",
+    "ftR"
+   ],
+   "radius": 0.3
+  },
+  "boss": {
+   "clips": {
+    "idle": {
+     "frames": 28,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "walk": {
+     "frames": 16,
+     "loop": true,
+     "events": [
+      {
+       "f": 0,
+       "type": "stomp"
+      },
+      {
+       "f": 8,
+       "type": "stomp"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "slam": {
+     "frames": 26,
+     "loop": false,
+     "events": [
+      {
+       "f": 12,
+       "type": "impact"
+      }
+     ],
+     "smears": [
+      12
+     ],
+     "root": false
+    },
+    "sweep": {
+     "frames": 24,
+     "loop": false,
+     "events": [
+      {
+       "f": 11,
+       "type": "sweep"
+      },
+      {
+       "f": 12,
+       "type": "sweep"
+      }
+     ],
+     "smears": [
+      11
+     ],
+     "root": false
+    },
+    "shot": {
+     "frames": 21,
+     "loop": false,
+     "events": [
+      {
+       "f": 9,
+       "type": "shoot"
+      },
+      {
+       "f": 13,
+       "type": "shoot2"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": false
+    },
+    "nova": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 8,
+       "type": "nova"
+      },
+      {
+       "f": 11,
+       "type": "nova2"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "spiral": {
+     "frames": 36,
+     "loop": false,
+     "events": [
+      {
+       "f": 6,
+       "type": "spin"
+      },
+      {
+       "f": 8,
+       "type": "spin"
+      },
+      {
+       "f": 10,
+       "type": "spin"
+      },
+      {
+       "f": 12,
+       "type": "spin"
+      },
+      {
+       "f": 14,
+       "type": "spin"
+      },
+      {
+       "f": 16,
+       "type": "spin"
+      },
+      {
+       "f": 18,
+       "type": "spin"
+      },
+      {
+       "f": 20,
+       "type": "spin"
+      },
+      {
+       "f": 22,
+       "type": "spin"
+      },
+      {
+       "f": 24,
+       "type": "spin"
+      },
+      {
+       "f": 26,
+       "type": "spin"
+      },
+      {
+       "f": 28,
+       "type": "spin"
+      },
+      {
+       "f": 30,
+       "type": "spin"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "charge": {
+     "frames": 16,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "leap": {
+     "frames": 23,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "cast": {
+     "frames": 16,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "groggy": {
+     "frames": 24,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "death": {
+     "frames": 36,
+     "loop": false,
+     "events": [
+      {
+       "f": 16,
+       "type": "kneel"
+      },
+      {
+       "f": 29,
+       "type": "fall"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "jabR": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 6,
+       "type": "jab"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": false
+    },
+    "jabL": {
+     "frames": 10,
+     "loop": false,
+     "events": [
+      {
+       "f": 6,
+       "type": "jab"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": false
+    },
+    "grab": {
+     "frames": 20,
+     "loop": false,
+     "events": [
+      {
+       "f": 9,
+       "type": "grab"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": false
+    },
+    "hold": {
+     "frames": 12,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "grabSlam": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 9,
+       "type": "grabSlam"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": false
+    },
+    "grabRelease": {
+     "frames": 12,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "stomp"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "lifted": {
+     "frames": 16,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "liftDrop": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 2,
+       "type": "kneel"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "kneelDown": {
+     "frames": 16,
+     "loop": false,
+     "events": [
+      {
+       "f": 3,
+       "type": "kneel"
+      }
+     ],
+     "smears": [],
+     "root": false
+    },
+    "staggered": {
+     "frames": 16,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "turned": {
+     "frames": 16,
+     "loop": true,
+     "events": [],
+     "smears": [],
+     "root": false
+    },
+    "reel": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 4,
+       "type": "stomp"
+      }
+     ],
+     "smears": [],
+     "root": true
+    },
+    "orbThrow": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 9,
+       "type": "orb"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": false
+    },
+    "mark": {
+     "frames": 14,
+     "loop": false,
+     "events": [
+      {
+       "f": 6,
+       "type": "markOn"
+      }
+     ],
+     "smears": [
+      6
+     ],
+     "root": false
+    },
+    "bash": {
+     "frames": 18,
+     "loop": false,
+     "events": [
+      {
+       "f": 9,
+       "type": "bash"
+      },
+      {
+       "f": 9,
+       "type": "stomp"
+      }
+     ],
+     "smears": [
+      9
+     ],
+     "root": true
+    },
+    "shieldRush": {
+     "frames": 16,
+     "loop": false,
+     "events": [],
+     "smears": [],
+     "root": false
+    }
+   },
+   "joints": [
+    "body",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "shL",
+    "elL",
+    "hdL",
+    "shR",
+    "elR",
+    "hdR",
+    "thL",
+    "knL",
+    "ftL",
+    "thR",
+    "knR",
+    "ftR",
+    "cape",
+    "weapon"
+   ],
+   "named": [
+    "boss",
+    "body",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "shR",
+    "elR",
+    "hdR",
+    "shL",
+    "elL",
+    "hdL",
+    "weapon",
+    "chA0",
+    "chA1",
+    "chA2",
+    "chA3",
+    "cape",
+    "bc0a",
+    "bc0b",
+    "bc1a",
+    "bc1b",
+    "bc2a",
+    "bc2b",
+    "bc3a",
+    "bc3b",
+    "thL",
+    "knL",
+    "ftL",
+    "thR",
+    "knR",
+    "ftR",
+    "chB0",
+    "chB1",
+    "chB2"
+   ],
+   "radius": 0.9750000000000001,
+   "focus": 1.9500000000000002,
+   "scale": 0.78
+  }
+ },
+ "SLAM_AT": {
+  "x": -0.8172138332735993,
+  "y": 0.27737635537959,
+  "z": 2.3487932743594984
+ },
+ "SHOT_AT": {
+  "x": 0.24650142175227938,
+  "y": 2.2593890075159084,
+  "z": 3.467344963453279
+ },
+ "BOSS2": {
+  "name": "THE AZURE WARDEN",
+  "skin": "azure",
+  "size": 1,
+  "hp": 0.39,
+  "speed": 1,
+  "attach": [
+   "shield"
+  ],
+  "pools": [
+   [
+    "slam",
+    "sweep",
+    "bash",
+    "shieldRush",
+    "nova",
+    "combo",
+    "grab",
+    "mark"
+   ],
+   [
+    "slam",
+    "sweep",
+    "bash",
+    "shieldRush",
+    "nova",
+    "combo",
+    "grab",
+    "leap",
+    "shot",
+    "mark"
+   ],
+   [
+    "slam",
+    "sweep",
+    "charge",
+    "nova",
+    "combo",
+    "grab",
+    "leap",
+    "shot",
+    "spiral",
+    "mark"
+   ]
+  ],
+  "weights": {
+   "mark": 2.6,
+   "bash": 2.6,
+   "shieldRush": 2,
+   "combo": 3,
+   "slam": 2.4,
+   "sweep": 2.4,
+   "grab": 1.5,
+   "charge": 1.6
+  },
+  "waves": {
+   "slam": "blue",
+   "sweep": "red",
+   "charge": "red",
+   "leap": "blue",
+   "shot": "red",
+   "combo": "red",
+   "bash": "blue",
+   "shieldRush": "blue",
+   "nova": null,
+   "spiral": null,
+   "grab": null
+  },
+  "floorWave": null,
+  "floorChance": [
+   0.2,
+   0.26,
+   0.3
+  ],
+  "floors": [
+   [
+    "split",
+    "checker",
+    "donut"
+   ],
+   [
+    "split",
+    "cross",
+    "rdonut",
+    "chain"
+   ],
+   [
+    "split",
+    "rotor",
+    "xcross",
+    "safe"
+   ]
+  ],
+  "look": {
+   "shieldUntil": 2,
+   "horns": 2,
+   "wings": 3
+  },
+  "banners": [
+   "THE WARD HARDENS",
+   "THE SHIELD SHATTERS"
+  ]
+ },
+ "START_CHARS": [
+  "rapier",
+  "great"
+ ],
+ "CHARS": {
+  "rapier": {
+   "label": "RAPIER",
+   "color": "blue",
+   "combo": "ATK",
+   "skills": [
+    "thrust",
+    "spin",
+    "windThrust"
+   ],
+   "def": [
+    "thrust",
+    "spin"
+   ],
+   "cdHit": 0.15,
+   "ready": true,
+   "rig": {
+    "cloak": null,
+    "hair": null,
+    "blade": null,
+    "face": {
+     "H": 11,
+     "h": 8,
+     "c": 14
+    }
+   }
+  },
+  "great": {
+   "label": "GREATSWORD",
+   "color": "red",
+   "combo": "ATK_B",
+   "skills": [
+    "launch",
+    "smash",
+    "earthSplit"
+   ],
+   "def": [
+    "launch",
+    "smash"
+   ],
+   "cdHit": 0.3,
+   "ready": true,
+   "rig": {
+    "cloak": [
+     25,
+     26,
+     27,
+     28
+    ],
+    "hair": [
+     17,
+     26,
+     27,
+     28
+    ],
+    "blade": "great",
+    "face": {
+     "H": 27,
+     "h": 26,
+     "c": 28
+    },
+    "remap": {
+     "idle": "idleB",
+     "run": "runB"
+    }
+   }
+  }
+ },
+ "FEEL_keys": [
+  "MOVE_SPEED",
+  "RUN_STRIDE",
+  "MOVE_ACCEL",
+  "MOVE_DECEL",
+  "TURN_SNAP",
+  "BUF_ATTACK",
+  "BUF_DODGE",
+  "ATK",
+  "ATK_B",
+  "ATK_C",
+  "ATK_S",
+  "ATK_T",
+  "PULL",
+  "DK",
+  "BELL",
+  "COVER_BOOST",
+  "RELIC",
+  "ATK_EARLY_DODGE",
+  "HIT_CANCEL_BONUS",
+  "STEER_RATE",
+  "AIM_RANGE",
+  "AIM_CONE_INPUT",
+  "AIM_CONE_IDLE",
+  "AIM_MAX_SNAP",
+  "MAGNET_GAP",
+  "MAGNET_MAX",
+  "MAGNET_MIN",
+  "DASH_DIST",
+  "IFRAME",
+  "DODGE_ATTACK_F",
+  "DODGE_REROLL_F",
+  "DODGE_MIN_GAP",
+  "DODGE_MOVE_F",
+  "DASH_TRAIL",
+  "HURT_DODGE_F",
+  "HURT_CONTROL_F",
+  "HURT_INVULN",
+  "REVIVE_R",
+  "REVIVE_T",
+  "REVIVE_HP",
+  "HITSTOP_WEAK_ADD",
+  "HITSTOP_BREAK",
+  "HITSTOP_KILL",
+  "HITSTOP_HURT",
+  "HITSTOP_HURT_HEAVY",
+  "SHUDDER_PX",
+  "SHUDDER_T",
+  "SFX_VOLUME",
+  "BOSS_SCALE",
+  "CAM_PITCH",
+  "CUT_RADIUS",
+  "CUT_STRENGTH",
+  "XRAY_SHADE",
+  "TELE_ON_TOP",
+  "PARRY_WINDOW",
+  "PARRY_REACH",
+  "PARRY_RECOVER",
+  "PARRY_LATE",
+  "PARRY_RING_LEAD",
+  "P2_CHARGE",
+  "P2_BLAST_R",
+  "P2_BLAST_DMG",
+  "PARRY_BUF",
+  "PARRY_BRK",
+  "PARRY_HITSTOP",
+  "ABSORB_TIMESCALE",
+  "WAVE_SHARD_SCALE",
+  "WAVE_TRAIL_HZ",
+  "WAVE_AURA",
+  "PERFECT_WINDOW",
+  "PERFECT_SLOW",
+  "PERFECT_BRK",
+  "LINK_WINDOW",
+  "LIFT_H",
+  "STATUS_HIT_MUL",
+  "LIFT_IMMUNE",
+  "STATUS_REST",
+  "LINK",
+  "FINISH",
+  "FINISH_MAXD",
+  "FIN_COMMON",
+  "SHUTTLE",
+  "MARK",
+  "WARDEN",
+  "RUSH",
+  "WAVE",
+  "STAGE",
+  "RESTART_HOLD",
+  "SELECT_START",
+  "SELECT_STAND",
+  "SELECT_FOCUS_Y",
+  "SELECT_ZOOM",
+  "BACK_HALF",
+  "BACK_MUL",
+  "BACK_BRK_MUL",
+  "AGGRO_SWAP_DMG",
+  "AGGRO_MIN_T",
+  "RALLY_MAX",
+  "RALLY_DECAY",
+  "RALLY_BRK",
+  "RALLY_BUFF_AT",
+  "RALLY_BUFF_DMG",
+  "RALLY_BUFF_SPD",
+  "RALLY_BUFF_T",
+  "RALLY_FULL_STOP",
+  "COMBO_POISE",
+  "RALLY_WHIFF_T",
+  "RALLY_HIT_RESET",
+  "COVER_R",
+  "COVER_RALLY",
+  "TAG_CD",
+  "TAG_PARRY_LEAD",
+  "GRAB",
+  "SPLIT",
+  "LOCAL_HITSTOP",
+  "LOCAL_BOSS_STOP",
+  "FLOOR_WAVE_COLOR",
+  "BOSS_DMG",
+  "HAZ_DMG",
+  "SKILLS"
+ ]
+}

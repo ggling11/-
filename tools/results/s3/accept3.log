@@ -1,0 +1,50 @@
+m_rapier_great {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":478,"clearTimeMin":445.7,"clearTimeMax":505.68,"links":36.3,"covers":24.4,
+m_rapier_shield {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":481.4,"clearTimeMin":429.65,"clearTimeMax":530.48,"links":36.3,"covers":19
+m_chain_great {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":511.4,"clearTimeMin":458.7,"clearTimeMax":597.85,"links":39.6,"covers":25.
+m_chain_shield {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":511.5,"clearTimeMin":457.92,"clearTimeMax":588.97,"links":37.5,"covers":25
+m_twin_rapier {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":495.1,"clearTimeMin":452,"clearTimeMax":560.83,"links":37.4,"covers":25.3,
+m_twin_great {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":537.7,"clearTimeMin":465.15,"clearTimeMax":577.95,"links":39.8,"covers":27
+m_twin_chain {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":524.9,"clearTimeMin":456.6,"clearTimeMax":608.57,"links":37.3,"covers":24.
+m_twin_shield {"cfg":"duo coop,coop","runs":10,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":559.9,"clearTimeMin":519.05,"clearTimeMax":620.95,"links":38.9,"covers":30
+b_rapier_great_coop {"cfg":"duo coop,coop","runs":20,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":476.9,"clearTimeMin":444.85,"clearTimeMax":530.77,"links":37.15,"covers":2
+b_rapier_great_ignore {"cfg":"duo ignore,ignore","runs":20,"clear":0.45,"lost":11,"timeout":0,"error":0,"clearTime":888.2,"clearTimeMin":801.22,"clearTimeMax":1038.02,"links":0,"cove
+b_rapier_great_spam {"cfg":"duo spam,spam","runs":20,"clear":0,"lost":20,"timeout":0,"error":0,"clearTime":0,"clearTimeMin":null,"clearTimeMax":null,"links":0,"covers":4.45,"fullRa
+b_rapier_great_mixed {"cfg":"duo coop,spam","runs":20,"clear":0.8,"lost":4,"timeout":0,"error":0,"clearTime":730.4,"clearTimeMin":621.13,"clearTimeMax":785.38,"links":24.9,"covers":
+b_rapier_great_tag {"cfg":"tag tag","runs":20,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":532,"clearTimeMin":444.1,"clearTimeMax":613.17,"links":35.2,"covers":10.1,"fullR
+b_chain_shield_coop {"cfg":"duo coop,coop","runs":20,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":505.9,"clearTimeMin":451.13,"clearTimeMax":560.38,"links":35.45,"covers":2
+b_chain_shield_ignore {"cfg":"duo ignore,ignore","runs":20,"clear":0.45,"lost":11,"timeout":0,"error":0,"clearTime":829.7,"clearTimeMin":738.67,"clearTimeMax":993.63,"links":0,"cover
+b_chain_shield_spam {"cfg":"duo spam,spam","runs":20,"clear":0,"lost":20,"timeout":0,"error":0,"clearTime":0,"clearTimeMin":null,"clearTimeMax":null,"links":0,"covers":5.1,"fullRal
+b_chain_shield_mixed {"cfg":"duo coop,spam","runs":20,"clear":0.55,"lost":9,"timeout":0,"error":0,"clearTime":754,"clearTimeMin":698.85,"clearTimeMax":847.48,"links":21.8,"covers":4
+b_chain_shield_tag {"cfg":"tag tag","runs":20,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":558.7,"clearTimeMin":459.03,"clearTimeMax":751.35,"links":30.85,"covers":12.4,"f
+x_spam_dk {"cfg":"duo spam,spam","runs":20,"clear":0,"lost":20,"timeout":0,"error":0,"clearTime":0,"clearTimeMin":null,"clearTimeMax":null,"links":0,"covers":4.75,"fullRa
+x_spam_b2 {"cfg":"duo spam,spam","runs":20,"clear":0,"lost":20,"timeout":0,"error":0,"clearTime":0,"clearTimeMin":null,"clearTimeMax":null,"links":0,"covers":2.35,"fullRa
+
+   "seen": {
+    "shuttle": 0,
+    "mark": 0,
+    "finishers": 12,
+    "covers": 9
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 4,
+   "chars": [
+    "chain",
+    "rapier"
+   ],
+   "frames": 7200,
+   "record": "672aa23b",
+   "replay1": "672aa23b",
+   "replay2": "672aa23b",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 0,
+    "finishers": 12,
+    "covers": 0
+   }
+  }
+ ],
+ "errors": 0
+}

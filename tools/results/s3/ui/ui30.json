@@ -1,0 +1,45 @@
+{
+ "res": {
+  "U1_title": {
+   "calls": 482,
+   "state": "title",
+   "menu": false
+  },
+  "U2_menu_title": {
+   "calls": 482,
+   "state": "title",
+   "menu": true
+  },
+  "U3_menu_keys": {
+   "calls": 482,
+   "state": "title",
+   "menu": true
+  },
+  "U4_menu_keys2p": {
+   "calls": 482,
+   "state": "title",
+   "menu": true
+  },
+  "U5_menu_pad": {
+   "calls": 482,
+   "state": "title",
+   "menu": true
+  },
+  "U6_select": {
+   "calls": 286,
+   "state": "select",
+   "menu": false
+  },
+  "U7_fight_menu": {
+   "calls": 488,
+   "state": "play",
+   "menu": true
+  },
+  "U8_tagsolo": {
+   "calls": 359,
+   "state": "play",
+   "menu": false
+  }
+ },
+ "errors": []
+}

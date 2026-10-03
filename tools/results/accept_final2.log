@@ -1,0 +1,70 @@
+{"cfg":"duo coop,coop","runs":20,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":507,"clearTimeMin":438.78,"clearTimeMax":546.25,"links":35.75,"covers":34.65,"fullRally":14.45,"rally2":29.15,"rallyMax":5,"tagParry":0,"tagLink":0,"tagRescue":0,"parry":93.9,"perfect":16.3,"launches":57.6,"launchHits":49.2,"lifts":36,"grabs":3.5,"grabFrees":3.15,"grabSlams":0.35,"splitOK":3.55,"splitFail":0.05,"backShare":0.285,"aggroSwaps":83.3,"groggy":30.1,"downs":0,"dmgTaken":178,"rallyBreaks":3.7,"bossActive":0.593,"bossAttack":0.414,"freeze":0.031,"phaseReached":3,"errors":0,"wall":104,"fin":{"lift:1":12,"lift:2":79,"kneel:1":46,"kneel:2":158,"stagger:1":161,"stagger:2":36,"turn:1":62,"turn:2":161},"finMin":12,"starters":1152,"statusN":719,"shuttle":{"start":76,"smash":53,"fail":23,"returns":408,"rate":0.697},"mark":{"start":85,"atk":420,"cover":338,"fail":82,"rate":0.805},"bossT":[236.5,262.5],"bossTmin":[209.32,221.47],"bossTmax":[273.62,288.45],"bossReached":1}
+{"cfg":"duo ignore,ignore","runs":20,"clear":0.4,"lost":12,"timeout":0,"error":0,"clearTime":866.6,"clearTimeMin":801.17,"clearTimeMax":1003.12,"links":0,"covers":9.8,"fullRally":8.4,"rally2":25.65,"rallyMax":5,"tagParry":0,"tagLink":0,"tagRescue":0,"parry":202.6,"perfect":20.1,"launches":86,"launchHits":69.8,"lifts":50.9,"grabs":8.9,"grabFrees":5.8,"grabSlams":3.1,"splitOK":0.7,"splitFail":3.95,"backShare":0.107,"aggroSwaps":93.3,"groggy":32.3,"downs":6.85,"dmgTaken":567,"rallyBreaks":3.8,"bossActive":0.624,"bossAttack":0.439,"freeze":0.011,"phaseReached":2.85,"errors":0,"wall":144,"fin":{"lift:1":0,"lift:2":0,"kneel:1":0,"kneel:2":0,"stagger:1":0,"stagger:2":0,"turn:1":0,"turn:2":0},"finMin":0,"starters":1719,"statusN":1017,"shuttle":{"start":124,"smash":80,"fail":44,"returns":641,"rate":0.645},"mark":{"start":125,"atk":422,"cover":0,"fail":422,"rate":0},"bossT":[396.6,461],"bossTmin":[325.4,332.5],"bossTmax":[472.37,594.45],"bossReached":0.9}
+{"cfg":"duo spam,spam","runs":20,"clear":0,"lost":20,"timeout":0,"error":0,"clearTime":0,"clearTimeMin":null,"clearTimeMax":null,"links":0,"covers":1.35,"fullRally":0,"rally2":0.15,"rallyMax":0.85,"tagParry":0,"tagLink":0,"tagRescue":0,"parry":51,"perfect":4.5,"launches":25.3,"launchHits":21.9,"lifts":15.2,"grabs":3,"grabFrees":1.85,"grabSlams":1.15,"splitOK":0.15,"splitFail":1.3,"backShare":0.133,"aggroSwaps":23.6,"groggy":7.2,"downs":2.7,"dmgTaken":242,"rallyBreaks":0.5,"bossActive":0.646,"bossAttack":0.419,"freeze":0.006,"phaseReached":1.85,"errors":0,"wall":44,"fin":{"lift:1":0,"lift:2":0,"kneel:1":0,"kneel:2":0,"stagger:1":0,"stagger:2":0,"turn:1":0,"turn:2":0},"finMin":0,"starters":506,"statusN":304,"shuttle":{"start":73,"smash":0,"fail":73,"returns":23,"rate":0},"mark":{"start":0,"atk":0,"cover":0,"fail":0,"rate":null},"bossT":[null,null],"bossTmin":[null,null],"bossTmax":[null,null],"bossReached":0}
+{"cfg":"duo coop,spam","runs":20,"clear":0.1,"lost":18,"timeout":0,"error":0,"clearTime":736.1,"clearTimeMin":701.22,"clearTimeMax":770.97,"links":16.55,"covers":22.4,"fullRally":1.15,"rally2":20.45,"rallyMax":4.55,"tagParry":0,"tagLink":0,"tagRescue":0,"parry":113.5,"perfect":16.3,"launches":61.8,"launchHits":53.9,"lifts":37.5,"grabs":5.45,"grabFrees":4.3,"grabSlams":1.15,"splitOK":2.05,"splitFail":1.5,"backShare":0.2,"aggroSwaps":72.3,"groggy":26.1,"downs":4.05,"dmgTaken":394,"rallyBreaks":10.8,"bossActive":0.626,"bossAttack":0.434,"freeze":0.015,"phaseReached":2.95,"errors":0,"wall":105,"fin":{"lift:1":33,"lift:2":82,"kneel:1":109,"kneel:2":107,"stagger:1":0,"stagger:2":0,"turn:1":0,"turn:2":0},"finMin":0,"starters":1236,"statusN":751,"shuttle":{"start":117,"smash":1,"fail":116,"returns":289,"rate":0.009},"mark":{"start":60,"atk":237,"cover":120,"fail":117,"rate":0.506},"bossT":[348.7,361.3],"bossTmin":[296.32,343.02],"bossTmax":[383.38,379.58],"bossReached":0.6}
+{"cfg":"tag tag","runs":20,"clear":1,"lost":0,"timeout":0,"error":0,"clearTime":602.1,"clearTimeMin":554.42,"clearTimeMax":659.75,"links":36.6,"covers":27.7,"fullRally":23.55,"rally2":36.9,"rallyMax":5,"tagParry":101.65,"tagLink":36.6,"tagRescue":3.9,"parry":105.4,"perfect":0.3,"launches":43.7,"launchHits":39,"lifts":36.6,"grabs":3.9,"grabFrees":3.9,"grabSlams":0,"splitOK":0,"splitFail":0,"backShare":0.151,"aggroSwaps":0,"groggy":33.2,"downs":0,"dmgTaken":73,"rallyBreaks":0.3,"bossActive":0.583,"bossAttack":0.411,"freeze":0.15,"phaseReached":3,"errors":0,"wall":87,"fin":{"lift:1":65,"lift:2":83,"kneel:1":29,"kneel:2":176,"stagger:1":159,"stagger:2":28,"turn:1":31,"turn:2":161},"finMin":28,"starters":874,"statusN":732,"shuttle":{"start":75,"smash":73,"fail":0,"returns":490,"rate":0.973},"mark":{"start":100,"atk":476,"cover":476,"fail":0,"rate":1},"bossT":[280.1,314.1],"bossTmin":[252.3,281.87],"bossTmax":[313.05,345.48],"bossReached":1}
+{
+ "replay": [
+  {
+   "mode": "duo",
+   "boss": 1,
+   "frames": 7200,
+   "record": "dd2afba1",
+   "replay1": "dd2afba1",
+   "replay2": "dd2afba1",
+   "same": true,
+   "seen": {
+    "shuttle": 1,
+    "mark": 0,
+    "finishers": 8,
+    "covers": 12
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 1,
+   "frames": 7200,
+   "record": "45745a3f",
+   "replay1": "45745a3f",
+   "replay2": "45745a3f",
+   "same": true,
+   "seen": {
+    "shuttle": 1,
+    "mark": 0,
+    "finishers": 7,
+    "covers": 1
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 2,
+   "frames": 7200,
+   "record": "d85373c0",
+   "replay1": "d85373c0",
+   "replay2": "d85373c0",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 3,
+    "finishers": 9,
+    "covers": 17
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 2,
+   "frames": 7200,
+   "record": "70b6a171",
+   "replay1": "70b6a171",
+   "replay2": "70b6a171",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 2,
+    "finishers": 7,
+    "covers": 8
+   }
+  }
+ ],
+ "errors": 0
+}

@@ -1,0 +1,73 @@
+{
+ "ok": true,
+ "color": {
+  "sat": {
+   "ref": 0.433,
+   "old": 0.375,
+   "new": 0.543
+  },
+  "val": {
+   "ref": 0.567,
+   "old": 0.198,
+   "new": 0.47
+  },
+  "dist_new_ref": 0.0485,
+  "dist_old_ref": 0.0599,
+  "dist_new_old": 0.0767,
+  "gate": true
+ },
+ "blind": [
+  {
+   "round": "A (아트 2차 전, 이식 직후 카메라 12%)",
+   "sets": [
+    {
+     "pick": "ref",
+     "conf": "high",
+     "score": 6,
+     "other": 1
+    },
+    {
+     "pick": "ref",
+     "conf": "high",
+     "score": 5,
+     "other": 1
+    }
+   ]
+  },
+  {
+   "round": "B (아트 2차 뒤)",
+   "sets": [
+    {
+     "pick": "ref",
+     "conf": "high",
+     "score": 5.5,
+     "other": 1
+    },
+    {
+     "pick": "ref",
+     "conf": "high",
+     "score": 6,
+     "other": 1
+    }
+   ]
+  },
+  {
+   "round": "C (아트 최종 — 빌드 5c813945. 최종 95538f8f와 싸움 화면 그림은 같음: 이후 바뀐 건 보스 패턴 가중치 · 패드 BACK · 휴식 화면 글자)",
+   "sets": [
+    {
+     "pick": "ref",
+     "conf": "high",
+     "score": 6,
+     "other": 2
+    },
+    {
+     "pick": "ref",
+     "conf": "high",
+     "score": 5,
+     "other": 2
+    }
+   ]
+  }
+ ],
+ "note": "색 거리 새→레퍼런스 0.0485 < 옛→레퍼런스 0.0599 · 처음 보는 에이전트 6세트 모두 레퍼런스 선택(확신 high) · 비슷함 5~6/10 (옛 그림 1~2/10)"
+}

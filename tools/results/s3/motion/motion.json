@@ -1,0 +1,56 @@
+{
+ "old": {
+  "stand": {
+   "standTop": 1.83,
+   "standPx": 176,
+   "standPct": 16.3
+  },
+  "dashlen": {
+   "standTop": 1.83,
+   "standPx": 176,
+   "standPct": 16.3,
+   "dash": 3.36
+  },
+  "dash": {
+   "standTop": 1.83,
+   "standPx": 176,
+   "standPct": 16.3,
+   "dashMid": 1.95
+  },
+  "apex": {
+   "standTop": 1.83,
+   "standPx": 176,
+   "standPct": 16.3,
+   "apexY": 3.05,
+   "apexPx": 282,
+   "apexPct": 26.1
+  }
+ },
+ "new": {
+  "stand": {
+   "standTop": 2.39,
+   "standPx": 135,
+   "standPct": 12.5
+  },
+  "dashlen": {
+   "standTop": 2.39,
+   "standPx": 135,
+   "standPct": 12.5,
+   "dash": 4.37
+  },
+  "dash": {
+   "standTop": 2.39,
+   "standPx": 135,
+   "standPct": 12.5,
+   "dashMid": 2.54
+  },
+  "apex": {
+   "standTop": 2.39,
+   "standPx": 135,
+   "standPct": 12.5,
+   "apexY": 6.15,
+   "apexPx": 376,
+   "apexPct": 34.8
+  }
+ }
+}

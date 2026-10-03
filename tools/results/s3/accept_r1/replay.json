@@ -1,0 +1,202 @@
+{
+ "replay": [
+  {
+   "mode": "duo",
+   "boss": 1,
+   "chars": null,
+   "frames": 7200,
+   "record": "b28fc0b2",
+   "replay1": "b28fc0b2",
+   "replay2": "b28fc0b2",
+   "same": true,
+   "seen": {
+    "shuttle": 2,
+    "mark": 0,
+    "finishers": 7,
+    "covers": 5
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 1,
+   "chars": null,
+   "frames": 7200,
+   "record": "b710aa6d",
+   "replay1": "b710aa6d",
+   "replay2": "b710aa6d",
+   "same": true,
+   "seen": {
+    "shuttle": 2,
+    "mark": 0,
+    "finishers": 5,
+    "covers": 4
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 2,
+   "chars": null,
+   "frames": 7200,
+   "record": "25649a63",
+   "replay1": "25649a63",
+   "replay2": "25649a63",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 3,
+    "finishers": 8,
+    "covers": 12
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 2,
+   "chars": null,
+   "frames": 7200,
+   "record": "425dfdaf",
+   "replay1": "425dfdaf",
+   "replay2": "425dfdaf",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 3,
+    "finishers": 7,
+    "covers": 15
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 1,
+   "chars": [
+    "twin",
+    "chain"
+   ],
+   "frames": 7200,
+   "record": "32a24451",
+   "replay1": "32a24451",
+   "replay2": "32a24451",
+   "same": true,
+   "seen": {
+    "shuttle": 1,
+    "mark": 0,
+    "finishers": 9,
+    "covers": 6
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 2,
+   "chars": [
+    "shield",
+    "twin"
+   ],
+   "frames": 7200,
+   "record": "732249d5",
+   "replay1": "732249d5",
+   "replay2": "732249d5",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 2,
+    "finishers": 7,
+    "covers": 8
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 2,
+   "chars": [
+    "rapier",
+    "great"
+   ],
+   "frames": 7200,
+   "record": "e99142c8",
+   "replay1": "e99142c8",
+   "replay2": "e99142c8",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 2,
+    "finishers": 9,
+    "covers": 10
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 3,
+   "chars": [
+    "chain",
+    "shield"
+   ],
+   "frames": 7200,
+   "record": "e7e54aa9",
+   "replay1": "e7e54aa9",
+   "replay2": "e7e54aa9",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 0,
+    "finishers": 8,
+    "covers": 4
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 3,
+   "chars": [
+    "twin",
+    "great"
+   ],
+   "frames": 7200,
+   "record": "1447afd4",
+   "replay1": "1447afd4",
+   "replay2": "1447afd4",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 0,
+    "finishers": 8,
+    "covers": 0
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 4,
+   "chars": [
+    "twin",
+    "shield"
+   ],
+   "frames": 7200,
+   "record": "c8e93002",
+   "replay1": "c8e93002",
+   "replay2": "c8e93002",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 0,
+    "finishers": 12,
+    "covers": 8
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 4,
+   "chars": [
+    "chain",
+    "rapier"
+   ],
+   "frames": 7200,
+   "record": "b4f85482",
+   "replay1": "b4f85482",
+   "replay2": "b4f85482",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 0,
+    "finishers": 11,
+    "covers": 0
+   }
+  }
+ ],
+ "errors": 0
+}

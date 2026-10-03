@@ -1,0 +1,69 @@
+{
+ "R04_exclusive_art": {
+  "info": {
+   "fin": "skyPierce"
+  },
+  "calls": 483,
+  "errors": []
+ },
+ "R05_select": {
+  "info": {
+   "state": "select"
+  },
+  "calls": 286,
+  "errors": []
+ },
+ "R06_relic_cards": {
+  "info": {
+   "open": true
+  },
+  "calls": 291,
+  "errors": []
+ },
+ "R07_bell_beat": {
+  "info": {
+   "beat": true
+  },
+  "calls": 353,
+  "errors": []
+ },
+ "R08_bell_phase3": {
+  "info": {
+   "phase": 3
+  },
+  "calls": 358,
+  "errors": []
+ },
+ "R09_dokkaebi_pair": {
+  "info": {
+   "s": [
+    "idle",
+    "idle"
+   ]
+  },
+  "calls": 461,
+  "errors": []
+ },
+ "R10_link_break": {
+  "info": {
+   "brk": 1.98
+  },
+  "calls": 462,
+  "errors": []
+ },
+ "R11_hap_dae_hap": {
+  "info": {
+   "cut": 1.82
+  },
+  "calls": 470,
+  "errors": []
+ },
+ "R12_tag_finisher": {
+  "info": {
+   "fin": "lift:launch",
+   "tagFin": 1
+  },
+  "calls": 368,
+  "errors": []
+ }
+}

@@ -1,0 +1,65 @@
+{
+ "replay": [
+  {
+   "mode": "duo",
+   "boss": 1,
+   "frames": 7200,
+   "record": "dd2afba1",
+   "replay1": "dd2afba1",
+   "replay2": "dd2afba1",
+   "same": true,
+   "seen": {
+    "shuttle": 1,
+    "mark": 0,
+    "finishers": 8,
+    "covers": 12
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 1,
+   "frames": 7200,
+   "record": "45745a3f",
+   "replay1": "45745a3f",
+   "replay2": "45745a3f",
+   "same": true,
+   "seen": {
+    "shuttle": 1,
+    "mark": 0,
+    "finishers": 7,
+    "covers": 1
+   }
+  },
+  {
+   "mode": "duo",
+   "boss": 2,
+   "frames": 7200,
+   "record": "d85373c0",
+   "replay1": "d85373c0",
+   "replay2": "d85373c0",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 3,
+    "finishers": 9,
+    "covers": 17
+   }
+  },
+  {
+   "mode": "tag",
+   "boss": 2,
+   "frames": 7200,
+   "record": "70b6a171",
+   "replay1": "70b6a171",
+   "replay2": "70b6a171",
+   "same": true,
+   "seen": {
+    "shuttle": 0,
+    "mark": 2,
+    "finishers": 7,
+    "covers": 8
+   }
+  }
+ ],
+ "errors": 0
+}

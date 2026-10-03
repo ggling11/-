@@ -1,0 +1,317 @@
+[
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyG",
+  "who": "A",
+  "want": "attack",
+  "got": "attack",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyH",
+  "who": "A",
+  "want": "parry",
+  "got": "parry",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "Space",
+  "who": "A",
+  "want": "dodge",
+  "got": "dodge",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyT",
+  "who": "A",
+  "want": "thrust",
+  "got": "thrust",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyY",
+  "who": "A",
+  "want": "spin",
+  "got": "spin",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "KeyL",
+  "who": "B",
+  "want": "attack",
+  "got": "attack",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "KeyK",
+  "who": "B",
+  "want": "parry",
+  "got": "parry",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "Slash",
+  "who": "B",
+  "want": "dodge",
+  "got": "dodge",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "KeyO",
+  "who": "B",
+  "want": "launch",
+  "got": "launch",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "KeyI",
+  "who": "B",
+  "want": "smash",
+  "got": "smash",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "Numpad7",
+  "who": "B",
+  "want": "launch",
+  "got": "launch",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "Numpad8",
+  "who": "B",
+  "want": "smash",
+  "got": "smash",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyJ",
+  "who": "A",
+  "want": "move",
+  "got": "move",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyU",
+  "who": "A",
+  "want": "move",
+  "got": "move",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-1P",
+  "mode": "duo",
+  "input": "KeyB (hold)",
+  "who": "A",
+  "want": "revive held",
+  "got": "revive held",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "Period (hold)",
+  "who": "B",
+  "want": "revive held",
+  "got": "revive held",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "ArrowUp",
+  "who": "B",
+  "want": "axis (0, 1)",
+  "got": "axis (0, 1)",
+  "ok": true
+ },
+ {
+  "id": "SPLIT-2P",
+  "mode": "duo",
+  "input": "ArrowLeft",
+  "who": "B",
+  "want": "axis (-1, 0)",
+  "got": "axis (-1, 0)",
+  "ok": true
+ },
+ {
+  "id": "SPLIT",
+  "mode": "duo",
+  "input": "W+T (1P) and Up+O (2P) same frame",
+  "who": "AB",
+  "want": "('thrust', 'launch')",
+  "got": "('thrust', 'launch')",
+  "ok": true
+ },
+ {
+  "id": "SOLO-1P",
+  "mode": "ai2",
+  "input": "KeyU",
+  "who": "A",
+  "want": "thrust",
+  "got": "thrust",
+  "ok": true
+ },
+ {
+  "id": "SOLO-1P",
+  "mode": "ai2",
+  "input": "KeyI",
+  "who": "A",
+  "want": "spin",
+  "got": "spin",
+  "ok": true
+ },
+ {
+  "id": "SOLO-1P",
+  "mode": "ai2",
+  "input": "KeyK",
+  "who": "A",
+  "want": "parry",
+  "got": "parry",
+  "ok": true
+ },
+ {
+  "id": "SOLO-1P",
+  "mode": "ai2",
+  "input": "KeyJ",
+  "who": "A",
+  "want": "attack",
+  "got": "attack",
+  "ok": true
+ },
+ {
+  "id": "SOLO-1P",
+  "mode": "tag",
+  "input": "KeyU",
+  "who": "A",
+  "want": "thrust",
+  "got": "thrust",
+  "ok": true
+ },
+ {
+  "id": "SOLO-1P",
+  "mode": "tag",
+  "input": "KeyI",
+  "who": "A",
+  "want": "spin",
+  "got": "spin",
+  "ok": true
+ },
+ {
+  "id": "KEYS",
+  "mode": "-",
+  "input": "overlap",
+  "who": "-",
+  "want": "[]",
+  "got": "[]",
+  "ok": true
+ },
+ {
+  "id": "JOIN",
+  "mode": "tag",
+  "input": "O alone",
+  "who": "B",
+  "want": "duo, 2P person, split on",
+  "got": "{'tag': False, 'bot': False, 'split': True, 'banner': '1P G H T Y   2P L K O I'}",
+  "ok": true
+ },
+ {
+  "id": "LABELS",
+  "mode": "duo",
+  "input": "keyNames",
+  "who": "AB",
+  "want": "G H T Y / L K O I / numpad 2",
+  "got": "['G', 'H', 'T', 'Y'] ['L', 'K', 'O', 'I'] 2",
+  "ok": true
+ },
+ {
+  "id": "RESTART",
+  "mode": "duo",
+  "input": "R held 0.3 s / 0.8 s",
+  "who": "-",
+  "want": "no restart / restart",
+  "got": "t 2.05 \u2192 2.35 \u2192 0.22",
+  "ok": true
+ },
+ {
+  "id": "PAD",
+  "mode": "duo",
+  "input": "pad1 button 7",
+  "who": "A",
+  "want": "thrust",
+  "got": "thrust",
+  "ok": true
+ },
+ {
+  "id": "PAD",
+  "mode": "duo",
+  "input": "pad1 button 6",
+  "who": "A",
+  "want": "spin",
+  "got": "spin",
+  "ok": true
+ },
+ {
+  "id": "PAD",
+  "mode": "duo",
+  "input": "pad1 button 4",
+  "who": "A",
+  "want": "thrust",
+  "got": "thrust",
+  "ok": true
+ },
+ {
+  "id": "PAD",
+  "mode": "duo",
+  "input": "pad2 button 7",
+  "who": "B",
+  "want": "launch",
+  "got": "launch",
+  "ok": true
+ },
+ {
+  "id": "PAD",
+  "mode": "duo",
+  "input": "pad2 button 6",
+  "who": "B",
+  "want": "smash",
+  "got": "smash",
+  "ok": true
+ },
+ {
+  "id": "PAD",
+  "mode": "tag",
+  "input": "pad1 RB (tag solo)",
+  "who": "B",
+  "want": "B on field",
+  "got": "B on field",
+  "ok": true
+ }
+]

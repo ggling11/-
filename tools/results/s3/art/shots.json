@@ -1,0 +1,30 @@
+{
+ "B1_colossus": {
+  "info": {
+   "calls": 488,
+   "state": "attack"
+  },
+  "errors": []
+ },
+ "B2_warden": {
+  "info": {
+   "calls": 512,
+   "state": "attack"
+  },
+  "errors": []
+ },
+ "B3_bell": {
+  "info": {
+   "calls": 354,
+   "state": "idle"
+  },
+  "errors": []
+ },
+ "B4_dokkaebi": {
+  "info": {
+   "calls": 482,
+   "state": "idle"
+  },
+  "errors": []
+ }
+}

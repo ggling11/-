@@ -1,0 +1,604 @@
+{
+ "pass": 24,
+ "total": 24,
+ "rows": [
+  {
+   "id": "A1",
+   "what": "합 봇 4체 러시 클리어율 (8쌍 × 10판)",
+   "val": [
+    1,
+    1
+   ],
+   "shown": "평균 100.0% · 최저 100.0% (rapier_great)",
+   "limit": "평균 80% 이상 · 어떤 쌍도 60% 미만 없음",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A2",
+   "what": "무시 봇 클리어율 (세검+대검 · 사슬낫+방패)",
+   "val": [
+    0.45,
+    0.45
+   ],
+   "shown": "rapier_great 45.0% · chain_shield 45.0%",
+   "limit": "30~70%",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A3",
+   "what": "합 봇 ÷ 무시 봇 클리어 시간",
+   "val": 0.5721022378517038,
+   "shown": "0.572 (합 491초 · 무시 859초)",
+   "limit": "0.65 이하",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A4",
+   "what": "마무리 12칸 사용 (8쌍 합계)",
+   "val": 51,
+   "shown": "최소 51회 (turn:single) · 전용 ex:ramLink 18 ex:spineRide 5 ex:pinDown 8 ex:crownThrust 2 ex:topple 9 ex:backRiser 1 ex:skyPierce 1",
+   "limit": "칸마다 20회 이상",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A6",
+   "what": "셔틀 · 표식 (1.5 기준)",
+   "val": {
+    "shC": 0.7142857142857143,
+    "shM": 0.07142857142857142,
+    "shS": 0.005494505494505495,
+    "mkC": 0.8076923076923077,
+    "mkI": 0
+   },
+   "shown": "셔틀 합 71.4% · 혼합 7.1% · 연타 0.5% / 표식 합 80.8% · 무시 0.0%",
+   "limit": "셔틀 합 70%↑ · 혼합 20%↓ · 연타 10%↓ · 표식 합 70%↑ · 무시 10%↓",
+   "ok": true,
+   "near": true
+  },
+  {
+   "id": "A7",
+   "what": "맥놀이 막음률 (맞는 색이 막음)",
+   "val": {
+    "c": 0.785603314344899,
+    "i": 0
+   },
+   "shown": "합 78.6% · 무시 0.0%",
+   "limit": "합 70% 이상 · 무시 20% 이하",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A8",
+   "what": "도깨비 합 끊기 (커버 성공)",
+   "val": {
+    "c": {
+     "r": 0.746268656716418,
+     "n": 67
+    },
+    "s": {
+     "r": 0.0625,
+     "n": 32
+    }
+   },
+   "shown": "합 74.6% (67번) · 연타 6.3% (32번, 보스 4 시작 20판 포함)",
+   "limit": "합 60% 이상 · 연타 10% 이하",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A9",
+   "what": "합동 필살 동시 패리",
+   "val": {
+    "r": 0.5644171779141104,
+    "n": 163
+   },
+   "shown": "합 56.4% (163번)",
+   "limit": "합 50% 이상",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A12",
+   "what": "합 봇 보스당 처치 시간",
+   "val": [
+    124.83062500000003,
+    138.82075,
+    107.88325000000002,
+    116.92912499999997
+   ],
+   "shown": "보스1 2.08분 · 보스2 2.31분 · 보스3 1.80분 · 보스4 1.95분",
+   "limit": "1.5~3분",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A13",
+   "what": "보스 활동 비중",
+   "val": 0.598089556758648,
+   "shown": "59.8%",
+   "limit": "55% 이상",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A14",
+   "what": "2인 전체 정지 비중",
+   "val": 0.034256538132921836,
+   "shown": "3.4%",
+   "limit": "4% 이하",
+   "ok": true,
+   "near": true
+  },
+  {
+   "id": "A15",
+   "what": "입력 기록 재생 2회 (보스 1~4 × 2인·태그 + QTE · 메뉴 열고 닫기)",
+   "val": [
+    11,
+    11
+   ],
+   "shown": "봇 재생 11/11 일치 · 메뉴 포함 일치 · QTE+메뉴 일치",
+   "limit": "전부 일치",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "A16",
+   "what": "콘솔 에러",
+   "val": 0,
+   "shown": "0",
+   "limit": "0",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "Q1",
+   "what": "QTE 완주율 (합 봇)",
+   "val": 0.5598705501618123,
+   "shown": "56.0% (346/618)",
+   "limit": "50~85%",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "Q2",
+   "what": "QTE 칸 성공률 (합 봇)",
+   "val": 0.9180327868852459,
+   "shown": "91.8% (3584/3904)",
+   "limit": "85% 이상",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "Q3",
+   "what": "QTE 완주율 (연타 봇)",
+   "val": 0,
+   "shown": "0.0% (0/98, 보스 2 · 4 시작 판 포함)",
+   "limit": "5% 이하",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "Q4",
+   "what": "QTE 완주율 (태그 봇)",
+   "val": 0.6082949308755761,
+   "shown": "60.8% (132/217)",
+   "limit": "40% 이상",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "P1",
+   "what": "가짜 패드 시나리오 (6-4)",
+   "val": true,
+   "shown": "O 누르기 전 없음 true · 1P true · 2P true · 끊김 유지 true · 재연결 true · START 메뉴 true / O 막힘 true · 재시도 true · 트리거 true/true · 떨림 true · 이동 true · 비표준 true",
+   "limit": "전부 통과",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "P2",
+   "what": "혼자일 때 2P 키 전부 눌러도 참가 0번 · 꾹 참가 · 메뉴 · F4",
+   "val": true,
+   "shown": "탭 10개 뒤 혼자 true · 꾹 참가 true · F4 혼자 true · 메뉴 AI true → 2P true",
+   "limit": "전부 통과",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "U1",
+   "what": "화면 글자 동시 표시 (봇 판 전부, 매 프레임)",
+   "val": 3,
+   "shown": "최대 3 (10033590프레임)",
+   "limit": "3개 이하",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "U2",
+   "what": "싸우는 화면 기본 키 표시",
+   "val": true,
+   "shown": "그리기 true · 2P 키 false · 20초 기술명 7번",
+   "limit": "1P만",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "M1",
+   "what": "위로 뜨는 동작 최고 높이 · 화면 속 플레이어 키",
+   "val": [
+    2.016393442622951,
+    12.5
+   ],
+   "shown": "최고 높이 3.05 → 6.15 (×2.02) · 서 있는 키 16.3% → 12.5%",
+   "limit": "2배 이상 · 12% 이상",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "S1",
+   "what": "아트 차이 게이트 (색 거리 · 처음 보는 에이전트)",
+   "val": true,
+   "shown": "색 거리 새→레퍼런스 0.0485 < 옛→레퍼런스 0.0599 · 처음 보는 에이전트 6세트 모두 레퍼런스 선택(확신 high) · 비슷함 5~6/10 (옛 그림 1~2/10)",
+   "limit": "전부 통과",
+   "ok": true,
+   "near": false
+  },
+  {
+   "id": "S2",
+   "what": "드로우콜 (보스 4체 장면 최대)",
+   "val": 512,
+   "shown": "B1 488 · B2 512 · B3 354 · B4 482",
+   "limit": "600 이하",
+   "ok": true,
+   "near": false
+  }
+ ],
+ "extra": {
+  "pairs": [
+   {
+    "pair": "rapier_great",
+    "runs": 10,
+    "clear": 1,
+    "time": 478.00600000000003,
+    "violet": 13.5
+   },
+   {
+    "pair": "rapier_shield",
+    "runs": 10,
+    "clear": 1,
+    "time": 481.35299999999995,
+    "violet": 15.3
+   },
+   {
+    "pair": "chain_great",
+    "runs": 10,
+    "clear": 1,
+    "time": 511.35699999999997,
+    "violet": 16.2
+   },
+   {
+    "pair": "chain_shield",
+    "runs": 10,
+    "clear": 1,
+    "time": 511.50200000000007,
+    "violet": 15.2
+   },
+   {
+    "pair": "twin_rapier",
+    "runs": 10,
+    "clear": 1,
+    "time": 495.08599999999996,
+    "violet": 9.7
+   },
+   {
+    "pair": "twin_great",
+    "runs": 10,
+    "clear": 1,
+    "time": 537.666,
+    "violet": 12.3
+   },
+   {
+    "pair": "twin_chain",
+    "runs": 10,
+    "clear": 1,
+    "time": 524.854,
+    "violet": 9.4
+   },
+   {
+    "pair": "twin_shield",
+    "runs": 10,
+    "clear": 1,
+    "time": 559.883,
+    "violet": 11.7
+   }
+  ],
+  "fin2": {
+   "stagger:multi": 430,
+   "stagger:single": 261,
+   "kneel:multi": 577,
+   "lift:multi": 388,
+   "kneel:single": 254,
+   "lift:single": 296,
+   "ex:ramLink": 18,
+   "turn:multi": 322,
+   "turn:area": 176,
+   "ex:spineRide": 5,
+   "ex:pinDown": 8,
+   "turn:single": 51,
+   "stagger:area": 62,
+   "kneel:area": 58,
+   "ex:crownThrust": 2,
+   "ex:topple": 9,
+   "ex:backRiser": 1,
+   "lift:area": 117,
+   "ex:skyPierce": 1
+  },
+  "relics": {
+   "violet": 198,
+   "exTurn": 40,
+   "echo": 96,
+   "quick": 114,
+   "exStag": 34,
+   "exKneel": 40,
+   "longBeat": 139,
+   "ward": 125,
+   "handoff": 256,
+   "ember": 96,
+   "slot4": 247,
+   "exLift": 43
+  },
+  "bell": {
+   "coop": {
+    "rings": 0,
+    "match": 1931,
+    "block": 1517,
+    "prot": 956,
+    "hit": 747,
+    "miss": 243
+   },
+   "ignore": {
+    "rings": 0,
+    "match": 1028,
+    "block": 0,
+    "prot": 0,
+    "hit": 2096,
+    "miss": 1028
+   }
+  },
+  "dk": {
+   "coop": {
+    "link": 148,
+    "linkLift": 67,
+    "linkMiss": 25,
+    "linkBreak": 50,
+    "linkHit": 14,
+    "swap": 58,
+    "throwN": 92,
+    "throwGrab": 49,
+    "throwMiss": 6,
+    "throwFree": 37,
+    "counter": 7,
+    "throwHit": 3,
+    "coin": 229,
+    "coinN": 1712,
+    "coinGot": 35,
+    "coinHit": 23,
+    "ult": 163,
+    "ultSync": 92,
+    "ultBlock": 256,
+    "down": 130,
+    "revive": 10,
+    "reviveTry": 26,
+    "reviveBreak": 16,
+    "swapN": 58
+   },
+   "spam": {}
+  },
+  "battery": {
+   "rapier_great:coop": {
+    "runs": 20,
+    "clear": 1,
+    "time": 476.9225,
+    "reached": 4
+   },
+   "rapier_great:ignore": {
+    "runs": 20,
+    "clear": 0.45,
+    "time": 888.1655555555556,
+    "reached": 4
+   },
+   "rapier_great:spam": {
+    "runs": 20,
+    "clear": 0,
+    "time": null,
+    "reached": 1.3
+   },
+   "rapier_great:mixed": {
+    "runs": 20,
+    "clear": 0.8,
+    "time": 730.37625,
+    "reached": 4
+   },
+   "rapier_great:tag": {
+    "runs": 20,
+    "clear": 1,
+    "time": 531.9730000000001,
+    "reached": 4
+   },
+   "chain_shield:coop": {
+    "runs": 20,
+    "clear": 1,
+    "time": 505.8735,
+    "reached": 4
+   },
+   "chain_shield:ignore": {
+    "runs": 20,
+    "clear": 0.45,
+    "time": 829.7022222222222,
+    "reached": 3.7
+   },
+   "chain_shield:spam": {
+    "runs": 20,
+    "clear": 0,
+    "time": null,
+    "reached": 1.7
+   },
+   "chain_shield:mixed": {
+    "runs": 20,
+    "clear": 0.55,
+    "time": 753.9672727272729,
+    "reached": 4
+   },
+   "chain_shield:tag": {
+    "runs": 20,
+    "clear": 1,
+    "time": 558.7085,
+    "reached": 4
+   }
+  },
+  "bossTimes": [
+   124.83062500000003,
+   138.82075,
+   107.88325000000002,
+   116.92912499999997
+  ],
+  "starts": {
+   "thrust": 380,
+   "spin": 316,
+   "launch": 293,
+   "smash": 338,
+   "windThrust": 431,
+   "earthSplit": 430,
+   "shieldLift": 305,
+   "shieldCharge": 223,
+   "maceSlam": 450,
+   "chainSnatch": 448,
+   "chainWhirl": 344,
+   "sickleHook": 437,
+   "crossCut": 453,
+   "twinDrop": 314,
+   "spinRise": 620
+  },
+  "finSk": {
+   "stagger:earthSplit": 166,
+   "stagger:launch": 48,
+   "kneel:windThrust": 124,
+   "lift:windThrust": 114,
+   "kneel:thrust": 89,
+   "lift:thrust": 60,
+   "turn:earthSplit": 53,
+   "turn:smash": 95,
+   "kneel:spin": 17,
+   "turn:launch": 17,
+   "stagger:smash": 22,
+   "lift:spin": 26,
+   "stagger:shieldLift": 127,
+   "turn:shieldCharge": 154,
+   "stagger:shieldCharge": 96,
+   "turn:shieldLift": 14,
+   "stagger:maceSlam": 20,
+   "turn:maceSlam": 40,
+   "kneel:chainSnatch": 63,
+   "kneel:chainWhirl": 21,
+   "kneel:sickleHook": 186,
+   "lift:chainWhirl": 40,
+   "lift:sickleHook": 126,
+   "lift:chainSnatch": 56,
+   "turn:twinDrop": 21,
+   "turn:crossCut": 115,
+   "stagger:twinDrop": 97,
+   "stagger:crossCut": 167,
+   "stagger:spin": 2,
+   "stagger:thrust": 1,
+   "stagger:spinRise": 27,
+   "turn:spinRise": 49,
+   "kneel:spinRise": 17,
+   "kneel:twinDrop": 75,
+   "kneel:launch": 11,
+   "lift:launch": 63,
+   "lift:twinDrop": 98,
+   "lift:spinRise": 26,
+   "kneel:smash": 3,
+   "kneel:crossCut": 235,
+   "lift:earthSplit": 28,
+   "lift:crossCut": 53,
+   "kneel:earthSplit": 13,
+   "lift:smash": 3,
+   "stagger:chainSnatch": 6,
+   "stagger:sickleHook": 1,
+   "kneel:maceSlam": 5,
+   "kneel:shieldLift": 18,
+   "lift:shieldCharge": 67,
+   "lift:shieldLift": 20,
+   "kneel:shieldCharge": 19,
+   "lift:maceSlam": 22
+  },
+  "proj": {
+   "casts": 814,
+   "out": 0,
+   "hit": 2335,
+   "seqHit": 790
+  },
+  "qte": {
+   "coop": {
+    "n": 618,
+    "perfect": 346,
+    "cells": 3904,
+    "ok": 3584,
+    "c": 0.5598705501618123,
+    "r": 0.9180327868852459
+   },
+   "spam": {
+    "n": 98,
+    "perfect": 0,
+    "cells": 514,
+    "ok": 0,
+    "c": 0,
+    "r": 0
+   },
+   "tag": {
+    "n": 217,
+    "perfect": 132,
+    "cells": 1386,
+    "ok": 1276,
+    "c": 0.6082949308755761,
+    "r": 0.9206349206349206
+   },
+   "byBoss": {
+    "1": {
+     "n": 188,
+     "perfect": 118,
+     "cells": 990,
+     "ok": 910
+    },
+    "2": {
+     "n": 260,
+     "perfect": 145,
+     "cells": 1693,
+     "ok": 1556
+    },
+    "3": {
+     "n": 170,
+     "perfect": 83,
+     "cells": 1221,
+     "ok": 1118
+    }
+   },
+   "perRun": 5.15
+  },
+  "ui": {
+   "hist": [
+    4156596,
+    2673159,
+    1592860,
+    1610975,
+    0,
+    0
+   ]
+  }
+ }
+}

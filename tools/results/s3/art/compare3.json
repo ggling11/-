@@ -1,0 +1,16 @@
+{
+ "sat": {
+  "ref": 0.433,
+  "old": 0.375,
+  "new": 0.543
+ },
+ "val": {
+  "ref": 0.567,
+  "old": 0.198,
+  "new": 0.47
+ },
+ "dist_new_ref": 0.0485,
+ "dist_old_ref": 0.0599,
+ "dist_new_old": 0.0767,
+ "gate": true
+}

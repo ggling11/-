@@ -1,0 +1,22 @@
+{
+ "runs": 20,
+ "clear": 1,
+ "freeze": 0.0346,
+ "bossActive": 0.5982,
+ "qteComplete": 0.653,
+ "qteN": 101,
+ "cellRate": 0.939,
+ "bossTmin": [
+  1.99,
+  2.28,
+  1.74,
+  2.01
+ ],
+ "uiMax": 3,
+ "errors": 0,
+ "shuttleCoop": 0.725,
+ "shuttleN": 40,
+ "markCoop": 0.778,
+ "dkUltRuns": "80%",
+ "beatRuns": "100%"
+}
