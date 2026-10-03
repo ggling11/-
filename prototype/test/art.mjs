@@ -43,8 +43,8 @@ await shot(desk, 'grid_hap_shape', { playing: false, tau: 1.78, shape: 1 });
 await shot(desk, 'grid_value', { playing: false, tau: 1.3, shape: 0, check: 1 });
 await shot(desk, 'grid_sil', { playing: false, tau: 1.3, shape: 1, check: 2 });
 results.desktopTiles = await desk.evaluate(() => [...document.querySelectorAll('.tile')].filter(t => !t.hidden).length);
-await shot(desk, 'single_anime_shape', { playing: false, tau: 1.3, shape: 1, check: 0, view: 'single', single: 1 });
-await shot(desk, 'single_ink', { playing: false, tau: 1.78, shape: 1, check: 0, view: 'single', single: 2 });
+await shot(desk, 'single_night_shape', { playing: false, tau: 1.3, shape: 1, check: 0, view: 'single', single: 1 });
+await shot(desk, 'single_ink', { playing: false, tau: 1.78, shape: 1, check: 0, view: 'single', single: 3 });
 
 // 폰 세로: 모아 보기 + 하나씩
 const phone = await open({ width: 390, height: 844 });
@@ -57,6 +57,6 @@ await phone.evaluate(() => window.__lab.set({ playing: true }));
 await phone.waitForTimeout(800);
 
 await browser.close();
-const ok = results.desktopTiles === 6 && !results.phoneOverflow && !results.phoneOverflowSingle && !errors.length;
+const ok = results.desktopTiles === 7 && !results.phoneOverflow && !results.phoneOverflowSingle && !errors.length;
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);

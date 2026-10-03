@@ -52,6 +52,12 @@ main { flex: 1; min-height: 0; display: flex; }
 .lbl span { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .single .lbl { font-size: 13px; left: 12px; bottom: 12px; }
 .single .lbl b { font-size: 19px; }
+.legend { container-type: inline-size; padding: clamp(10px, 6cqi, 22px); display: grid; align-content: center; gap: 8px; background: var(--panel); font-size: 13px; line-height: 1.45; overflow: hidden; }
+.legend h3 { margin: 0; font: 400 18px/1.1 var(--display); color: var(--gold); }
+.legend p { margin: 0; display: flex; gap: 8px; align-items: center; }
+.legend i { flex: none; width: 14px; height: 14px; border-radius: 3px; background: var(--c); }
+.legend i.st { background: repeating-linear-gradient(135deg, var(--c) 0 3px, transparent 3px 6px); border: 1px solid var(--c); }
+.legend .dim { color: var(--dim); font-size: 12px; display: block; }
 .nav { all: unset; cursor: pointer; position: absolute; top: 50%; translate: 0 -50%; width: 40px; height: 56px; display: grid; place-items: center; border-radius: 6px; background: rgba(10, 12, 18, 0.6); color: var(--ink); font-size: 22px; z-index: 2; }
 #prev { left: 8px; } #next { right: 8px; }
 
@@ -63,10 +69,12 @@ main { flex: 1; min-height: 0; display: flex; }
 .ht-base small { color: #ffd23f; }
 .ht-anime .x { font-family: var(--display); color: #fff; transform: skewX(-12deg); -webkit-text-stroke: 0.1em #1a1d3c; paint-order: stroke fill; text-shadow: 0.07em 0.07em 0 #ffcf33; }
 .ht-anime small { color: #1a1d3c; background: #ffcf33; display: inline-block; padding: 0.1em 0.5em; transform: skewX(-12deg); }
-.ht-ink .x { font-family: "Nanum Brush Script", var(--display); font-size: clamp(30px, 17cqi, 128px); color: #15130f; transform: rotate(-6deg); text-shadow: 0.03em 0.02em 0 rgba(21, 19, 15, 0.5); }
+.ht-ink .x { font-family: "Nanum Brush Script", var(--display); font-size: clamp(26px, 13cqi, 110px); color: #15130f; transform: rotate(-6deg); text-shadow: 0.03em 0.02em 0 rgba(21, 19, 15, 0.5); }
 .ht-ink small { color: #8c2a1c; font-family: "Nanum Brush Script", var(--body); font-size: clamp(14px, 6cqi, 40px); font-weight: 400; }
 .ht-neon .x { font-family: "Do Hyeon", var(--display); color: #fff7d6; text-shadow: 0 0 0.08em #fff, 0 0 0.25em #ffd84a, 0 0 0.6em #ff3fa4, 0 0 1.2em #ff3fa4; }
 .ht-neon small { color: #2ee6ff; text-shadow: 0 0 0.4em #2ee6ff; }
+.ht-night .x { font-family: "Nanum Brush Script", var(--display); font-size: clamp(26px, 13cqi, 110px); color: #fff3d6; transform: rotate(-5deg); text-shadow: 0.03em 0.03em 0 #0b0d18, 0 0 0.35em rgba(255, 154, 64, 0.85); }
+.ht-night small { color: #ffd23f; font-family: "Nanum Brush Script", var(--body); font-size: clamp(14px, 6cqi, 40px); font-weight: 400; }
 .ht-gouache .x { font-family: "Jua", var(--display); color: #fff5dd; text-shadow: 0 0.06em 0 #b0643a, 0 0 0.45em rgba(255, 201, 74, 0.8); }
 .ht-gouache small { color: #7a3f22; }
 .ht-riso .x { font-family: var(--display); color: #ffd400; text-shadow: 0.06em 0.05em 0 #ff6c2f, -0.05em -0.04em 0 #3255a4; }
@@ -113,7 +121,7 @@ kbd { font: 600 11px var(--body); border: 1px solid var(--line); border-bottom-w
 
 <div id="app">
   <header class="bar">
-    <div class="brand"><b>합</b><span>아트 스타일 랩 · 같은 7초를 여섯 가지로</span></div>
+    <div class="brand"><b>합</b><span>아트 스타일 랩 · 같은 7초를 일곱 가지로</span></div>
     <div class="group">
       <span class="k">보기</span>
       <div class="seg" id="viewSeg">
@@ -186,6 +194,24 @@ const STYLES = [
     recipe: { '셰이더': '3단 셀(경계 0.36 / 0.66), 그림자는 회색으로 어두워질 뿐 색이 안 바뀜.', '외곽선': '뒤집은 껍데기, 남보라 고정색, 굵기 일정.', '팔레트': '밤 청록 바닥 + 주황/하늘 캐릭터 + 보라 보스.', '아레나': '민무늬 원판, 돌기둥 11개, 공기 효과 없음.', '합 연출': '금색 원형 플래시 + 가산 광선.' },
     risk: '정체성이 약하고 그림자가 탁해 보여요. 보스와 바닥이 비슷한 명도라서 명도 검사에서 보스가 묻혀요.',
     refs: ['현재 프로토타입'],
+  },
+  {
+    id: 'night', name: '밤마당', sub: '목판 횃불 · E 세계관 맞춤', ht: 'ht-night',
+    pal: { bg: 0x141b33, ground: 0x0e1326, floor: 0x7a5a40, floor2: 0x2e2422, floorLine: 0xff9a40, side: 0x2a2024, mark: 0xf2e6cc, markA: 0.16,
+      p1: 0xff7a3c, p2: 0x3fc8d8, boss: 0x2e2838, bossDark: 0x2f6f8f, horn: 0xd8332a, blade: 0xf2efe6, visor: 0x0b0d18, eye: 0xf2efe6,
+      recv: 0xff4a2a, unblock: 0x9a5cff, gold: 0xffd23f, core: 0xfff3c4, shadow: 0x05060c, shadowA: 0.6, shadowHard: 0.55,
+      prop: 0x3a2a22, prop2: 0xff8a3a, far: 0x0e1326 },
+    fog: [28, 66],
+    shade: { light: [10, 9, -12], t1: 0.48, t2: 9, soft: 0.004, lv: [0.5, 1, 1.0], tint: 0x6f7cc0, rim: 0.85, rimW: 0.3, rimColor: 0xffa24a, rimSelf: false, spec: 0, pattern: 1, patScale: 6, patColor: 0x0b0d18, patAmt: 0.55 },
+    outline: { mode: 'fixed', color: 0x0b0d18, w: 3.2, wobble: 0.5 },
+    post: { grain: 0.04, vig: 0.45, paper: 0.25, misreg: 0, sat: 1, bloom: 0.5, bloomTh: 0.62, fx: 1, flash: 0xffd23f, paperCol: 0xf2e6cc, inkCol: 0x0b0d18 },
+    arena: { floorKind: 6, props: 'torch', far: 'none', particles: { kind: 1, color: 0xff9a40, count: 60, size: 2.4 } },
+    fx: { add: true, rcv: [0xf2e6cc], hap: [0xffd23f, 0xff9a40], extra: null, teleNoise: 0.05, teleA: 1.1 },
+    lead: 'E 세션의 세계관 "밤마당"(탈놀이의 밤, 횃불, 장단)에 맞춘 안이에요. 먹선의 굵고 고르지 않은 선과 해칭을 밤으로 옮기고, 빛은 횃불에서만 와요.',
+    feel: '마당 가장자리 횃불이 캐릭터 뒤를 주황으로 비춰서, 어둠 속에서도 두 사람 윤곽이 살아요(신뢰). 합 순간에는 목판을 찍은 듯 화면이 한 번 뒤집히고, 금빛만 번져요(쾌감). 보스는 탈처럼 오방색(청·적·백·흑) 포인트를 얹었어요. 황색은 금(합)과 겹쳐서 뺐어요.',
+    recipe: { '셰이더': '2단 + 그림자에 사선 해칭(목판 칼자국 느낌). 그림자는 밤 남색, 반대편에서 횃불 주황 림.', '외곽선': '먹 남색, 굵고(3.2px) 고르지 않음. E 문서의 "목판화처럼 굵고 고르지 않은 선".', '팔레트': '밤 남색 + 횃불 주황 + 마당 흙. 금색은 합에만. 보스: 흑 몸, 적 뿔, 청 주먹, 백 눈.', '아레나': '다진 흙 마당, 가장자리 횃불 11개가 바닥에 빛 웅덩이를 만듦, 떠오르는 불티.', '합 연출': '0.1초 목판 반전 프레임 → 금빛 번짐.' },
+    risk: '횃불 주황과 1P 주황, 받기 예고 주황이 한 계열이라 겹칠 수 있어요. 1P 색을 횃불과 다른 쪽(예: 붉은 적색)으로 옮기는 걸 검토해야 해요. 세계관이 바뀌면 같이 바뀌어야 하는 안이에요.',
+    refs: ['E 세션: 밤마당', '봉산탈춤·하회탈', '목판화', '오카미'],
   },
   {
     id: 'anime', name: '셀 애니', sub: '한낮의 결투장', ht: 'ht-anime',
@@ -496,6 +522,13 @@ void main(){
     float rad=sqrt(0.06+0.4*smoothstep(5.,14.5,r))*0.56;
     c=mix(uC1,uC2,(1.-smoothstep(rad-0.06,rad+0.06,length(cell)))*0.85);
   }
+  if(uKind==6){
+    float n=vnoise(p*0.6)*0.6+vnoise(p*2.3)*0.4;
+    c=mix(uC2,uC1,clamp(n*0.25+smoothstep(15.5,3.,r)*0.85-0.08,0.,1.));
+    float t=0.;
+    for(int i=0;i<11;i++){ float an=float(i)/11.*6.2832+0.3; vec2 tp=vec2(cos(an),sin(an))*15.4; vec2 dd=p-tp; t+=exp(-dot(dd,dd)*0.06); }
+    c+=uLine*t*0.5;
+  }
   float m=(1.-smoothstep(0.09,0.14,abs(r-14.)))+(1.-smoothstep(0.09,0.14,abs(r-9.5)))*0.32+(1.-smoothstep(0.09,0.14,abs(r-5.)))*0.32;
   c=mix(c,uMarkCol,clamp(m,0.,1.)*uMarkA);
   gl_FragColor=vec4(applyFog(c,vW),1.);
@@ -613,7 +646,7 @@ const GEO = {
   boss: new THREE.CapsuleGeometry(1.25, 1.5, 8, 24), horn: new THREE.ConeGeometry(0.22, 0.95, 10), eye: new THREE.SphereGeometry(0.13, 12, 8), fore: new THREE.CylinderGeometry(0.28, 0.36, 1.1, 10), fist: new THREE.SphereGeometry(0.55, 16, 12),
   xBody: new THREE.CapsuleGeometry(1.3, 1.3, 8, 24), xHead: new THREE.SphereGeometry(0.62, 18, 14), xHornBig: new THREE.ConeGeometry(0.3, 2.0, 10), xHornSmall: new THREE.ConeGeometry(0.26, 0.75, 10), xSpike: new THREE.ConeGeometry(0.18, 0.6, 8), xPlate: new THREE.BoxGeometry(0.95, 0.2, 1.55), xCore: new THREE.SphereGeometry(0.5, 18, 14), xFist: new THREE.SphereGeometry(0.68, 16, 12),
   weak: new THREE.SphereGeometry(0.36, 16, 12), halo: new THREE.SphereGeometry(0.75, 16, 12),
-  pillar: new THREE.CylinderGeometry(0.7, 0.95, 1, 7), pole: new THREE.CylinderGeometry(0.09, 0.12, 1, 6), flag: new THREE.BoxGeometry(1.1, 2.4, 0.06), lamp: new THREE.SphereGeometry(0.42, 14, 10),
+  pillar: new THREE.CylinderGeometry(0.7, 0.95, 1, 7), pole: new THREE.CylinderGeometry(0.09, 0.12, 1, 6), flag: new THREE.BoxGeometry(1.1, 2.4, 0.06), lamp: new THREE.SphereGeometry(0.42, 14, 10), flame: new THREE.ConeGeometry(0.32, 0.9, 7),
   trunk: new THREE.CylinderGeometry(0.22, 0.32, 1.6, 7), crown: new THREE.SphereGeometry(1.3, 14, 10), crown2: new THREE.SphereGeometry(0.95, 14, 10), block: new THREE.BoxGeometry(1.4, 1, 1.4), peak: new THREE.ConeGeometry(1, 1, 5),
   floor: new THREE.CylinderGeometry(15, 15.8, 1, 72), ground: flatGeo(new THREE.PlaneGeometry(200, 200)),
   plane: flatGeo(new THREE.PlaneGeometry(2, 2)), foot: flatGeo(new THREE.RingGeometry(0.55, 0.68, 32)), ring: flatGeo(new THREE.RingGeometry(0.82, 1.08, 40)), shield: new THREE.CircleGeometry(0.62, 28), mark: new THREE.ConeGeometry(0.2, 0.42, 4),
@@ -728,6 +761,11 @@ class Lab {
         const lc = [P.p1, P.p2, P.boss][i % 3];
         const lamp = new THREE.Mesh(GEO.lamp, this.basic(lc)); lamp.position.y = h - 0.7; holder.add(lamp);
         const halo = new THREE.Mesh(GEO.halo, this.basic(lc, 0.25, { add: true })); halo.position.y = h - 0.7; halo.scale.setScalar(1.4); holder.add(halo);
+      } else if (A.props === 'torch') {
+        const pole = this.part(GEO.pole, P.prop); pole.group.scale.set(1.3, h, 1.3); pole.group.position.y = h / 2 - 0.9; holder.add(pole.group);
+        const flame = new THREE.Mesh(GEO.flame, this.basic(P.prop2)); flame.position.y = h - 0.55; holder.add(flame);
+        const core = new THREE.Mesh(GEO.flame, this.basic(0xffe2a0)); core.scale.setScalar(0.55); core.position.y = h - 0.62; holder.add(core);
+        const halo = new THREE.Mesh(GEO.halo, this.basic(P.prop2, 0.22, { add: true })); halo.position.y = h - 0.5; halo.scale.setScalar(1.8); holder.add(halo);
       } else if (A.props === 'tree') {
         const t = this.part(GEO.trunk, P.prop); t.group.position.y = 0.0; holder.add(t.group);
         const c1 = this.part(GEO.crown, P.prop2); c1.group.position.y = 1.7 + (i % 3) * 0.3; c1.group.scale.setScalar(0.9 + (i % 4) * 0.15); holder.add(c1.group);
@@ -1013,6 +1051,14 @@ const tiles = STYLES.map((S, i) => {
   return { el, ht: el.querySelector('.ht'), lbl, lblHtml: lbl.innerHTML };
 });
 
+const legend = document.createElement('div');
+legend.className = 'legend';
+legend.innerHTML = `<h3>읽는 법</h3>
+  <p><i style="--c:#ff5a36"></i>주황 채움: 받을 수 있는 공격</p>
+  <p><i class="st" style="--c:#b06cff"></i>보라 사선: 받을 수 없음, 피하기</p>
+  <p><i style="--c:#ffd23f"></i>금색: 틈과 합에만</p>
+  <p class="dim">칸을 누르면 크게 보고 설명을 읽어요. 위의 순간 버튼으로 멈춰서 비교하세요.</p>`;
+tilesEl.appendChild(legend);
 function hex(c) { return '#' + c.toString(16).padStart(6, '0'); }
 function renderInfo() {
   const S = STYLES[UI.single], P = S.pal;
@@ -1035,6 +1081,7 @@ function setView(v, idx = UI.single) {
   infoEl.hidden = v !== 'single';
   document.getElementById('prev').hidden = document.getElementById('next').hidden = v !== 'single';
   tiles.forEach((t, i) => (t.el.hidden = v === 'single' && i !== UI.single));
+  legend.hidden = v === 'single';
   if (v === 'single') { renderInfo(); try { history.replaceState(null, '', '#' + STYLES[UI.single].id); } catch {} }
   else { try { history.replaceState(null, '', location.pathname + location.search); } catch {} }
   layout();
@@ -1044,9 +1091,9 @@ function layout() {
   renderer.setSize(w, h, true);
   if (UI.view === 'single') { tilesEl.style.gridTemplateColumns = '1fr'; tilesEl.style.gridTemplateRows = '1fr'; }
   else {
-    const cols = w / Math.max(1, h) > 1.15 ? 3 : 2;
+    const cols = w / Math.max(1, h) > 1.15 ? 4 : 2;
     tilesEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    tilesEl.style.gridTemplateRows = `repeat(${Math.ceil(STYLES.length / cols)}, 1fr)`;
+    tilesEl.style.gridTemplateRows = `repeat(${Math.ceil((STYLES.length + 1) / cols)}, 1fr)`;
   }
 }
 new ResizeObserver(layout).observe(stage);
@@ -1109,8 +1156,9 @@ function draw() {
   scrub.value = UI.tau.toFixed(2);
   labs.forEach((lab, i) => {
     const t = tiles[i];
-    t.lbl.innerHTML = silGrid ? `<b>${['지금 캡슐', '실루엣 제안'][i % 2]}</b><span>${SIL_MOMENTS[i >> 1][1]}</span>` : t.lblHtml;
-    if (t.el.hidden) return;
+    t.lbl.innerHTML = silGrid && i < 6 ? `<b>${['지금 캡슐', '실루엣 제안'][i % 2]}</b><span>${SIL_MOMENTS[i >> 1][1]}</span>` : t.lblHtml;
+    t.el.style.visibility = silGrid && i >= 6 ? 'hidden' : '';
+    if (t.el.hidden || (silGrid && i >= 6)) return;
     const s = silGrid ? SIL_SAMPLES[i >> 1] : base;
     const shape = silGrid ? i % 2 : UI.shape;
     const r = t.el.getBoundingClientRect();
