@@ -94,6 +94,25 @@ await waitState(() => __game.G.stats.fin === 1 || !__game.G.fin);
 results.soloFin = await ev(() => ({ fin: __game.G.stats.fin, active: __game.G.active }));
 await page.screenshot({ path: path.join(out, '1d_solo_fin.png') });
 
+// 1-5) 캐릭터: 받기 상성 + 제비가 돌진을 흘리고(잘 맞는 받기) → Q 모루 낙하로 합
+results.fit = await ev(() => { const { G, fit } = __game; const [m, j] = G.players; return [fit(m, 'slam'), fit(m, 'charge'), fit(j, 'slam'), fit(j, 'charge')].join(','); });
+await waitState(() => __game.G.boss.state === 'chase');
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.active === 1);
+await ev(() => {
+  const { G } = __game; const B = G.boss, J = G.players[1];
+  G.tagCd = 0; B.cd = 99; B.pos.set(0, 0, -2); J.pos.set(0, 0, 6); J.yaw = Math.PI; J.state = 'free';
+  B.target = J; B.begin('charge'); B.t = B.atk.windup - 0.02;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state === 'gap' || __game.G.boss.state === 'recover');
+await page.keyboard.up('KeyG');
+results.jebiCharge = await ev(() => ({ state: __game.G.boss.state, fit: __game.G.stats.fitReceive }));
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.stats.hap === 2 || __game.G.boss.state !== 'gap');
+results.moruDropHap = await ev(() => ({ hap: __game.G.stats.hap, active: __game.G.active }));
+await page.screenshot({ path: path.join(out, '1e_moru_drop.png') });
+
 // 2) 혼자 듀오 연습: A 받기 자세 유지한 채 Q → B로 틈 공격
 await page.keyboard.press('Escape');
 await page.keyboard.press('Digit3');
@@ -139,6 +158,7 @@ const hpBefore = await ev(() => __game.G.boss.hp);
 await page.keyboard.press('KeyK');
 await waitState(() => __game.G.boss.state !== 'gap');
 results.releaseDmg = await page.evaluate(h => h - __game.G.boss.hp, hpBefore);
+results.jebiDmg = await ev(() => __game.CHARS.jebi.dmg); // 2P는 제비: (제비 피해 + 충격 3칸 × 10) × 완벽한 합 배율
 results.impactAfter = await ev(() => __game.G.players[0].impact);
 results.released = await ev(() => __game.G.stats.released);
 await page.screenshot({ path: path.join(out, '4_release.png') });
@@ -251,12 +271,14 @@ results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > i
 await page.screenshot({ path: path.join(out, '5_mobile_title.png') });
 
 await browser.close();
-const alpha = results.impactFull === 3 && results.releaseDmg === (10 + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const alpha = results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.tagCoverState === 'receive' && results.tagCover[0] === 'gap' && results.tagCover[1] === 1 && results.tagCover[2] >= 1;
 const ok = alpha && results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
   && results.unison.n === 1 && results.soloReceive === 'gap' && results.soloHap === 1 && results.soloFin.fin === 1 && results.soloFin.active === 0
+  && results.fit === 'strong,weak,weak,strong' && results.jebiCharge.state === 'gap' && results.jebiCharge.fit === 2
+  && results.moruDropHap.hap === 2 && results.moruDropHap.active === 0
   && results.practiceReceive === 'gap' && results.practiceHap === 1 && results.practiceFin === 1 && results.aimHap === 1 && results.aimHapDamage >= 45 && results.aimClearedAfter === 0 && results.soloAimHap === 1
   && !results.mobileOverflow && !errors.length
   && results.demoHap >= 1 && results.demoFreeze?.cine && results.demoFreeze?.stamp && results.demoPerfect >= 2 && results.demoOldFx === '기존';
