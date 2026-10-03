@@ -1,0 +1,28 @@
+T1 warden_p1 mean abs diff 0.0 %
+T1 warden_tag mean abs diff 0.0 %
+SL1 {"steps": [["title", {"state": "title", "sel": false, "boss": 0, "name": "THE SCARLET COLOSSUS", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 0}], ["afterKey", {"state": "play", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 0}], ["afterKill", {"state": "won", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 0}], ["early", {"state": "won", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 0}], ["afterAnyKey", {"state": "play", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 0}], ["menu", {"out": ["AI PARTNER", "2P PLAYER", "ALONE (TAG SOLO)"], "rows": ["RESUME", "CONTROLS", "PLAYERS", "GAMEPAD", "RENDER SCALE", "ART THEME", "EFFECTS", "SHAKE", "2P KEYS ON HUD", "SOUND", "RESTART"]}]], "errors": [], "ok": true}
+SL1A {"steps": [["title", {"state": "title", "sel": false, "boss": 0, "name": "THE SCARLET COLOSSUS", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 1}], ["afterKey", {"state": "play", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 1}], ["afterKill", {"state": "won", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 1}], ["early", {"state": "won", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 1}], ["afterAnyKey", {"state": "play", "sel": false, "boss": 1, "name": "THE AZURE WARDEN", "chars": ["rapier", "great"], "lo": ["thrust+spin", "launch+smash"], "relic": false, "tag": true, "art": 1}], ["menu", {"out": ["AI PARTNER", "2P PLAYER", "ALONE (TAG SOLO)"], "rows": ["RESUME", "CONTROLS", "PLAYERS", "GAMEPAD", "RENDER SCALE", "ART THEME", "EFFECTS", "SHAKE", "2P KEYS ON HUD", "SOUND", "RESTART"]}]], "errors": [], "ok": true}
+T2 {"r": {"boot": 1, "t1a": {"calls": 38, "tex": 9, "geo": 39, "prog": 18}, "t0a": {"calls": 489, "tex": 13, "geo": 208, "prog": 16}, "t1x": {"calls": 33, "tex": 22, "geo": 241, "prog": 25}, "t0b": {"calls": 489, "tex": 13, "geo": 208, "prog": 16}, "t1b": {"calls": 32, "tex": 22, "geo": 240, "prog": 24}, "afterF9": 0, "afterF9b": 1, "menu1": 0, "menu2": 1}, "errors": [], "ok": true}
+Traceback (most recent call last):
+  File "/home/user/-/tools/t1/t1check.py", line 98, in <module>
+    if nm in ('title', 'battle', 'qte', 'menu', 'won'): pg.screenshot(path=f'{OUT}/R4_{w}x{h}_{nm}.png')
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/playwright/sync_api/_generated.py", line 10909, in screenshot
+    self._sync(
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_page.py", line 830, in screenshot
+    encoded_binary = await self._channel.send(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.screenshot: Timeout 30000ms exceeded.
+Call log:
+  - taking page screenshot
+  - waiting for fonts to load...
+  - fonts loaded
+

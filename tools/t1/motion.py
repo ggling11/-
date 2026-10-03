@@ -40,8 +40,14 @@ window.__T1M = (() => {
   };
   const H = { rapier: 3.0, great: 3.2, warden: 5.4 };
   /* 띠 한 칸: 새 모델을 테마 렌더 경로로 (정사각형 캔버스 영역 가운데) */
+  /* 실시간으로 0 → f까지 돌려 2차 움직임(머리카락 · 코트 스프링) · 칼 궤적을 쌓은 뒤 그림 (게임과 같은 코드 · 12fps 계단) */
   M.cell = (kind, clip, f, view, facing) => {
-    solo(kind); const Mo = M.poseT1(kind, clip, f, [0, 0, 0], facing);
+    solo(kind); let Mo = null; const ch = hidden(kind), c = ch.clips[(ch.remap && ch.remap[clip]) || clip], sm = (c.smears || []).map(x => (typeof x === 'number' ? x : x.f));
+    const T = S.trails[kind]; if (T) { T.on = 0; T.hist.length = 0; } Mo = S.models[kind]; Mo.chains = null;
+    for (let g = 0; g <= f; g += 0.25) {
+      Mo = M.poseT1(kind, clip, g, [0, 0, 0], facing); P.t1Pose.secondary(Mo, 1 / 48, Mo.root.position, facing, g / 12); Mo.root.updateMatrixWorld(true);
+      if (T && sm.some(s0 => g >= s0 - 0.01 && g < s0 + 0.01)) T.on = 0.3; if (T) S.tool.updTrail(kind, Mo, 1 / 48);
+    }
     const W = S.R.w, Hh = S.R.h; cam.aspect = W / Hh;
     placeCam(cam, [0, H[kind] * 0.36, 0], view, H[kind]); cam.aspect = W / Hh; cam.updateProjectionMatrix();
     S.R.render(0, null); return { stat: P.t1Pose.stats[kind + ':' + (hidden(kind).clip.name)] };

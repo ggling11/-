@@ -78,7 +78,7 @@ const T1T = (() => {
   }
   function onSmear(g, spec) {
     const k = g === boss ? 'warden' : (fighters.find(f => f.ch === g) ? charOf(fighters.find(f => f.ch === g)) : null); if (!k || !S.trails[k]) return;
-    const T = S.trails[k]; T.on = Math.max(0.12, (spec && spec.frames ? spec.frames : 3) / 12 + 0.06); T.hist.length = 0;
+    const T = S.trails[k]; T.on = Math.max(0.12, (spec && spec.frames ? spec.frames : 3) / 12 + 0.06);   /* 기록은 지우지 않음 (예비 자세부터 펼침) */
   }
   const isoBurst = iso(onBurst), isoSmear = iso(onSmear);
   /* 칼 끝 · 손잡이 (모델의 weapon 뼈 기준) */
@@ -89,16 +89,27 @@ const T1T = (() => {
     _a.set(0, H * M.k1, 0).applyMatrix4(w.matrixWorld); _b.set(0, L * M.k1, 0).applyMatrix4(w.matrixWorld);
     return [_a.clone(), _b.clone()];
   }
+  /* 칼 궤적 (라운드 10): 칼 자세를 늘 기록(칼끝이 움직였을 때만 — 12fps 계단 사이 같은 자세는 건너뜀 · 0.3초 지난 것은 버림)
+   *   → 스미어가 켜지면 예비 자세부터 타격 자세까지 펼쳐진 날카로운 부채꼴 판 (애니 스미어) */
   function updTrail(k, M, dt) {
     const T = S.trails[k]; if (!T) return;
-    T.on = Math.max(0, T.on - dt);
-    const m = T.mesh; if (T.on <= 0 || !M.root.visible) { m.visible = false; T.hist.length = 0; return; }
+    T.on = Math.max(0, T.on - dt); T.age = (T.age || 0) + dt;
+    const m = T.mesh; if (!M.root.visible) { m.visible = false; T.hist.length = 0; return; }
     const e = bladeEnds(M, k); if (!e) return;
-    T.hist.unshift(e); if (T.hist.length > D.fx.trailN) T.hist.length = D.fx.trailN;
-    const n = T.hist.length; if (n < 2) { m.visible = false; return; }
+    const last = T.hist[0];
+    if (!last || last[1].distanceTo(e[1]) > 0.04) {
+      /* 12fps 계단 사이 칼끝이 크게 움직이면 손잡이 기준으로 방향을 돌려 가며 중간 칸을 채움 → 휘두른 호를 따라 펼쳐진 부채꼴 */
+      if (last) { const d0 = last[1].clone().sub(last[0]), d1 = e[1].clone().sub(e[0]), L0 = d0.length(), L1 = d1.length(), n = Math.min(8, Math.floor(last[1].distanceTo(e[1]) / 0.22));
+        for (let q = 1; q <= n; q++) { const t = q / (n + 1), hd = last[0].clone().lerp(e[0], t), dir = d0.clone().normalize().lerp(d1.clone().normalize(), t); if (dir.lengthSq() < 1e-6) continue;
+          const mid = [hd, hd.clone().addScaledVector(dir.normalize(), L0 + (L1 - L0) * t)]; mid.t = T.age; T.hist.unshift(mid); } }
+      e.t = T.age; T.hist.unshift(e);
+    } else last.t = T.age;   /* 멈춘 자세(예비 유지)는 마지막으로 본 시각으로 */
+    while (T.hist.length && T.age - T.hist[T.hist.length - 1].t > 0.3) T.hist.pop();
+    if (T.hist.length > D.fx.trailN) T.hist.length = D.fx.trailN;
+    const n = T.hist.length; if (T.on <= 0 || n < 2) { m.visible = false; return; }
     const pos = m.geometry.attributes.position.array;
     for (let i = 0; i < D.fx.trailN; i++) {
-      const h = T.hist[Math.min(i, n - 1)], t = i / Math.max(1, n - 1), a = h[0].clone().lerp(h[1], Math.min(0.97, 0.35 + t * 0.65));   /* 오래된 쪽일수록 칼끝 쪽으로 좁아짐 = 끝 뾰족 */
+      const h = T.hist[Math.min(i, n - 1)], t = i / Math.max(1, n - 1), a = h[0].clone().lerp(h[1], Math.min(0.97, 0.2 + t * 0.77));   /* 오래된 쪽일수록 칼끝 쪽으로 좁아짐 = 끝 뾰족 */
       pos.set([a.x, a.y, a.z, h[1].x, h[1].y, h[1].z], i * 6);
     }
     m.geometry.attributes.position.needsUpdate = true; m.geometry.setDrawRange(0, (n - 1) * 6); m.visible = true;
@@ -220,8 +231,8 @@ const T1T = (() => {
     if (!S.built) build();
     S.t += dt; S.realDt = dt; S.fxThisFrame = 0;
     const R = S.R, gdt = (Game.hitstop > 0 || (typeof PIPE !== 'undefined' && PIPE.paused)) ? 0 : dt;
-    if (!ART.headless) R.resize(Pipe.lowW || 1920, Pipe.lowH || 1080);
-    { const lv = Math.max(0, Math.min(D.quality.dirs.length - 1, (typeof Perf3 !== 'undefined' && Perf3.level) || 0)); R.qDirs = D.quality.dirs[lv]; R.qBoil = D.quality.boil[lv]; }   /* 자동 품질 단계 → 테마 고유 값 */
+    { const lv = Math.max(0, Math.min(D.quality.dirs.length - 1, (typeof Perf3 !== 'undefined' && Perf3.level) || 0)); R.qDirs = D.quality.dirs[lv]; R.qBoil = D.quality.boil[lv]; R.qSS = D.quality.ss[lv]; }   /* 자동 품질 단계 → 테마 고유 값 */
+    if (!ART.headless) { const w = Pipe.lowW || 1920, h = Pipe.lowH || 1080, ss = Math.min(R.qSS || 1, 2880 / Math.max(w, 1)); R.resize(w * ss, h * ss); }   /* 슈퍼샘플 (선 계단 없앰) */
     /* 숨은 리그 따라가기 */
     const used = new Set();
     for (const f of fighters) {
@@ -254,6 +265,7 @@ const T1T = (() => {
     return true;
   }
   ART.themes[1] = { id: 1, name: ART.names[1], apply: iso(apply), dispose: iso(dispose), frame: iso(frame), hud };
+  S.tool = { updTrail, bladeEnds };   /* 점검 도구(동작 띠)가 궤적을 같은 코드로 그리게 */
   S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; S.eyeT = 0; S.teleN = (AI.tele && AI.tele.length) || 0; };
   return S;
 })();

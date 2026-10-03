@@ -1,0 +1,90 @@
+{
+ "p1": {
+  "note": "",
+  "calls": 37,
+  "tris": 44491,
+  "art": 1,
+  "ms": 3125,
+  "errors": []
+ },
+ "p2": {
+  "note": "phase 2",
+  "calls": 32,
+  "tris": 44481,
+  "art": 1,
+  "ms": 2453,
+  "errors": []
+ },
+ "fin": {
+  "note": "fin true DIVING FLASH THRUST",
+  "calls": 32,
+  "tris": 44481,
+  "art": 1,
+  "ms": 2351,
+  "errors": []
+ },
+ "dash": {
+  "note": "dash dodge",
+  "calls": 37,
+  "tris": 44493,
+  "art": 1,
+  "ms": 2364,
+  "errors": []
+ },
+ "qte": {
+  "note": "qte true cells 5 done 2",
+  "calls": 31,
+  "tris": 44479,
+  "art": 1,
+  "ms": 2798,
+  "errors": []
+ },
+ "tele": {
+  "note": "tele true slam",
+  "calls": 48,
+  "tris": 45352,
+  "art": 1,
+  "ms": 6585,
+  "errors": []
+ },
+ "title": {
+  "note": "",
+  "calls": 12,
+  "tris": 16846,
+  "art": 1,
+  "ms": 2304,
+  "errors": []
+ },
+ "menu": {
+  "note": "menu true",
+  "calls": 33,
+  "tris": 44483,
+  "art": 1,
+  "ms": 2426,
+  "errors": []
+ },
+ "res": {
+  "note": "res won 3.20",
+  "calls": 33,
+  "tris": 44483,
+  "art": 1,
+  "ms": 2670,
+  "errors": []
+ },
+ "air": {
+  "note": "apex y 6.15 AERIAL FLASH THRUST",
+  "calls": 31,
+  "tris": 44479,
+  "art": 1,
+  "ms": 2529,
+  "errors": []
+ },
+ "tagfin": {
+  "note": "tagfin true AERIAL FLASH THRUST",
+  "calls": 24,
+  "tris": 32367,
+  "art": 1,
+  "ms": 2470,
+  "errors": []
+ }
+}

@@ -275,19 +275,25 @@
    },
    "t0a": {
     "calls": 489,
-    "tex": 17,
+    "tex": 13,
     "geo": 208,
     "prog": 16
    },
+   "t1x": {
+    "calls": 33,
+    "tex": 22,
+    "geo": 241,
+    "prog": 25
+   },
    "t0b": {
     "calls": 489,
-    "tex": 29,
+    "tex": 13,
     "geo": 208,
     "prog": 16
    },
    "t1b": {
     "calls": 32,
-    "tex": 38,
+    "tex": 22,
     "geo": 240,
     "prog": 24
    },
@@ -297,7 +303,7 @@
    "menu2": 1
   },
   "errors": [],
-  "ok": false
+  "ok": true
  },
  "R4_strings": [
   [
@@ -1178,6 +1184,77 @@
   }
  },
  "E1_errors": [],
+ "P2": {
+  "r": {
+   "a": {
+    "lv": 0,
+    "w": 2880,
+    "h": 1620,
+    "dirs": 16,
+    "boil": true,
+    "calls": 1
+   },
+   "b": {
+    "lv": 2,
+    "w": 960,
+    "h": 540,
+    "dirs": 8,
+    "boil": false,
+    "calls": 1
+   },
+   "changes": 2
+  },
+  "errors": [],
+  "ok": true
+ },
+ "R2": {
+  "r": {
+   "tele": {
+    "cur": "slam",
+    "n": 1
+   },
+   "px": 33721,
+   "L_floor": 0.93,
+   "L_tele_mean": 0.441,
+   "L_tele_dark": 0.324,
+   "dL_mean": 0.489,
+   "dL_dark": 0.606
+  },
+  "errors": [],
+  "ok": true
+ },
+ "U2": {
+  "k1": {
+   "parry": "H",
+   "dodge": "SPC",
+   "s1": "T",
+   "s2": "Y",
+   "tag": "L",
+   "interact": "B",
+   "attack": "G"
+  },
+  "k2": {
+   "parry": "K",
+   "dodge": "/",
+   "s1": "O",
+   "s2": "I",
+   "tag": "9",
+   "interact": ".",
+   "attack": "L"
+  },
+  "only2": [
+   ".",
+   "/",
+   "9",
+   "I",
+   "K",
+   "O"
+  ],
+  "bad": [],
+  "n": 656,
+  "errors": [],
+  "ok": true
+ },
  "R4": {
   "fonts": {
    "T1 Archivo": 101,

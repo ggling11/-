@@ -1,0 +1,913 @@
+{
+ "pass": 151,
+ "total": 151,
+ "errors": 0,
+ "rows": [
+  {
+   "id": "C3",
+   "what": "A 스킬1=섬광 찌르기(휘청) · 스킬2=역회전 베기(돌아섬)",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "id": "C4",
+   "what": "B 스킬1=올려치기(뜸) · 스킬2=내려찍기(무릎)",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "id": "C7",
+   "what": "A 스킬1 적중 → 보스 'stagger' + 파트너가 마무리 가능",
+   "ok": true,
+   "note": "state=status kind=stagger"
+  },
+  {
+   "id": "C7",
+   "what": "A 스킬2 적중 → 보스 'turn' + 파트너가 마무리 가능",
+   "ok": true,
+   "note": "state=status kind=turn"
+  },
+  {
+   "id": "C7",
+   "what": "B 스킬1 적중 → 보스 'lift' + 파트너가 마무리 가능",
+   "ok": true,
+   "note": "state=status kind=lift"
+  },
+  {
+   "id": "C7",
+   "what": "B 스킬2 적중 → 보스 'kneel' + 파트너가 마무리 가능",
+   "ok": true,
+   "note": "state=status kind=kneel"
+  },
+  {
+   "id": "C8",
+   "what": "자기 시동은 자기가 못 받음 (시동 건 사람의 U = 일반 스킬)",
+   "ok": true,
+   "note": "fins=0"
+  },
+  {
+   "id": "C8",
+   "what": "상태 면역: 한 상태가 끝나면 LIFT_IMMUNE 동안 네 상태 모두 안 걸림",
+   "ok": true,
+   "note": "first=lift blocked=true then=turn"
+  },
+  {
+   "id": "C9",
+   "what": "돌아섬: 보스가 받을 사람(파트너) 쪽으로 등을 보임",
+   "ok": true,
+   "note": "back-angle err 0.00 rad"
+  },
+  {
+   "id": "C9",
+   "what": "상태별 보스 자세 클립 (뜸=lifted, 무릎=kneelDown, 휘청=staggered, 돌아섬=turned)",
+   "ok": true,
+   "note": "{\"lift\":\"lifted\",\"kneel\":\"kneelDown\",\"stagger\":\"staggered\",\"turn\":\"turned\"}"
+  },
+  {
+   "id": "F1",
+   "what": "lift+1 → skyPierce 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 1 · 피해 300 · 약점타 0 · 랠리 0 · 정지 0.11s · 그로기 게이지 최대 18"
+  },
+  {
+   "id": "F2",
+   "what": "lift+2 → skyDance 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 4 · 피해 230 · 약점타 0 · 랠리 2 · 정지 0.04s · 그로기 게이지 최대 55"
+  },
+  {
+   "id": "F3",
+   "what": "kneel+1 → crownThrust 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 1 · 피해 110 · 약점타 0 · 랠리 0 · 정지 0.13s · 그로기 게이지 최대 95"
+  },
+  {
+   "id": "F4",
+   "what": "kneel+2 → spineRide 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 3 · 피해 420 · 약점타 3 · 랠리 0 · 정지 0.07s · 그로기 게이지 최대 27"
+  },
+  {
+   "id": "F5",
+   "what": "stagger+1 → ramLink 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 1 · 피해 215 · 약점타 0 · 랠리 0 · 정지 0.14s · 그로기 게이지 최대 35"
+  },
+  {
+   "id": "F6",
+   "what": "stagger+2 → topple 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 1 · 피해 95 · 약점타 0 · 랠리 0 · 정지 0.11s · 그로기 게이지 최대 0"
+  },
+  {
+   "id": "F7",
+   "what": "turn+1 → backRiser 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 1 · 피해 518 · 약점타 1 · 랠리 0 · 정지 0.15s · 그로기 게이지 최대 18"
+  },
+  {
+   "id": "F8",
+   "what": "turn+2 → pinDown 끝까지 실행, 동작 중 무적",
+   "ok": true,
+   "note": "hits 1 · 피해 72 · 약점타 0 · 랠리 0 · 정지 0.10s · 그로기 게이지 최대 10"
+  },
+  {
+   "id": "F1",
+   "what": "공중 관통: 한 방 피해형 (타 1, 피해 ≥ 공중 난도 합)",
+   "ok": true,
+   "note": "300 vs 난도 230"
+  },
+  {
+   "id": "F2",
+   "what": "공중 난도: 4연타 + 랠리 +2",
+   "ok": true,
+   "note": "hits 4 rally 2"
+  },
+  {
+   "id": "F3",
+   "what": "정수리 찌르기: 그로기 게이지 대량 (≥ 전체의 60%) 또는 즉시 그로기",
+   "ok": true,
+   "note": "brk 95/140 groggy null"
+  },
+  {
+   "id": "F4",
+   "what": "등 타기 베기: 등 약점 3연타 (3타 모두 약점)",
+   "ok": true,
+   "note": "hits 3 weak 3"
+  },
+  {
+   "id": "F5",
+   "what": "날아가 박치기: 큰 정지 (≥ 0.2초 전체 정지 · 3단계 × stopMul)",
+   "ok": true,
+   "note": "stop 0.14 (기준 0.13)"
+  },
+  {
+   "id": "F6",
+   "what": "넘어뜨리기: 즉시 그로기, 시간은 짧게 (FINISH.topple.groggyT)",
+   "ok": true,
+   "note": "groggy t 1.6"
+  },
+  {
+   "id": "F7",
+   "what": "등 올려베기: 등 약점 적중, 8가지 중 한 방 최대 피해",
+   "ok": true,
+   "note": "타당 피해 {\"F1\":300,\"F2\":58,\"F3\":110,\"F4\":140,\"F5\":215,\"F6\":95,\"F7\":518,\"F8\":72}"
+  },
+  {
+   "id": "F8",
+   "what": "등 찍어 박기: pinT초 동안 선회 불가 (대상이 돌아가도 보스 방향 고정)",
+   "ok": true,
+   "note": "pinT 4.3 · 2초 뒤 방향 변화 0.000 rad"
+  },
+  {
+   "id": "F9",
+   "what": "효과 유형이 골고루 (피해형 3 · 그로기형 2 · 랠리형 1 · 위치형 2)",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 lift+1: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "skyPierce"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 lift+2: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "skyDance"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 kneel+1: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "crownThrust"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 kneel+2: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "spineRide"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 stagger+1: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "ramLink"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 stagger+2: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "topple"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 turn+1: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "backRiser"
+  },
+  {
+   "id": "F11",
+   "what": "태그 솔로 turn+2: 시동 건 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 마무리",
+   "ok": true,
+   "note": "pinDown"
+  },
+  {
+   "id": "F10",
+   "what": "HUD: 받을 사람 머리 위 두 키 + 마무리 이름 (finOffer)",
+   "ok": true,
+   "note": "skyPierce / skyDance"
+  },
+  {
+   "id": "S1",
+   "what": "보스가 어그로 대상에게 던짐 · 받을 사람 색의 재질/모양 (1P 팔면체 ◆ / 2P 정육면체 ■)",
+   "ok": true,
+   "note": "first recv 0"
+  },
+  {
+   "id": "S2",
+   "what": "패리 → 파트너에게, 색이 파트너 색으로 (받는 사람이 번갈아 바뀜)",
+   "ok": true,
+   "note": "recv 010101"
+  },
+  {
+   "id": "S4",
+   "what": "비행 시간 고정: 0.95에서 왕복마다 줄어 최소 0.5 (거리 무관)",
+   "ok": true,
+   "note": "T 0.95,0.86,0.77,0.68,0.59,0.5 · 먼 배치 거리 2.7,7.1,7.1,7.1,7.1,7.1 vs 2.7,4.4,4.4,4.4,4.4,4.4"
+  },
+  {
+   "id": "S5",
+   "what": "받아칠 때마다 랠리 +1",
+   "ok": true,
+   "note": "rally 0,1,2,3,4,0"
+  },
+  {
+   "id": "S6",
+   "what": "N(1페이즈 6)번 받아치면 스매시 → 큰 피해 + 그로기 (패턴이 끝나는 순간)",
+   "ok": true,
+   "note": "returns 6 smash 1 → groggy"
+  },
+  {
+   "id": "S6",
+   "what": "3페이즈는 8번",
+   "ok": true,
+   "note": "returns 8"
+  },
+  {
+   "id": "S3",
+   "what": "색 잠금: 받을 사람 대신 파트너가 패리해도 못 받음(커버 X) → 폭발",
+   "ok": true,
+   "note": "fail 1 returns 0 covers 0"
+  },
+  {
+   "id": "S7",
+   "what": "놓치면 폭발: 받을 사람 피해 + 주변 피해 + 랠리 끊김",
+   "ok": true,
+   "note": "받을 사람 100→95 · 옆 사람 100→94 · rally 0"
+  },
+  {
+   "id": "S8",
+   "what": "셔틀 도중 보스 버팀: 게이지가 차도·완벽 랠리가 나도 그로기는 셔틀이 끝난 뒤",
+   "ok": true,
+   "note": "during false end groggy"
+  },
+  {
+   "id": "S8",
+   "what": "셔틀 도중 체력이 페이즈 경계를 넘어도 페이즈 전환은 셔틀이 끝난 뒤 (셔틀이 취소되지 않음)",
+   "ok": true,
+   "note": "smash 1 · 끝난 뒤 transform phase 1"
+  },
+  {
+   "id": "S9",
+   "what": "태그 솔로: 대기 캐릭터 그림자 표식까지 갔다 돌아옴, 비행 ≥ 1.1초, 돌아오기 전 교대 = 교대 패리",
+   "ok": true,
+   "note": "solo T 1.10,1.10,1.10,1.10,1.10 · tag parries 5 · smash 1"
+  },
+  {
+   "id": "S9",
+   "what": "태그 솔로: 교대 안 하면 (색이 다른 캐릭터에 닿음) 폭발",
+   "ok": true,
+   "note": "returns 1 fail 1"
+  },
+  {
+   "id": "M1",
+   "what": "표식이 어그로 대상에게 붙음 (머리 위 문양 · 몸 깜빡임 · 발밑 링)",
+   "ok": true,
+   "note": "marked 1"
+  },
+  {
+   "id": "M3",
+   "what": "커버 성공 → 표식이 막은 사람에게, 다음 공격은 새 대상",
+   "ok": true,
+   "note": "표식 순서 1010 · covers 4"
+  },
+  {
+   "id": "M4",
+   "what": "공격 수 4 (1페이즈), 간격 1.2초",
+   "ok": true,
+   "note": "atk 4"
+  },
+  {
+   "id": "M4",
+   "what": "3페이즈 6번",
+   "ok": true,
+   "note": "atk 6"
+  },
+  {
+   "id": "M6",
+   "what": "커버마다 랠리 +2",
+   "ok": true,
+   "note": "rally 2,4,0,2"
+  },
+  {
+   "id": "M2",
+   "what": "표식 대상 본인의 패리는 안 막힘 (파트너 멀리)",
+   "ok": true,
+   "note": "fail 4 · hp 100→68"
+  },
+  {
+   "id": "M5",
+   "what": "회피 무적도 뚫음 · 못 막으면 피해 + 랠리 끊김 · 표식 유지",
+   "ok": true,
+   "note": "hp 100→68 · 표식 유지 true · 랠리 끊김 1"
+  },
+  {
+   "id": "M7",
+   "what": "태그 솔로: 표식 캐릭터가 공격 직전 교대 = 커버, 표식이 넘어감",
+   "ok": true,
+   "note": "covers 4 · 표식 1010"
+  },
+  {
+   "id": "M7",
+   "what": "태그 솔로: 교대 안 하면 맞음",
+   "ok": true,
+   "note": "fail 4"
+  },
+  {
+   "id": "K2",
+   "what": "보스 2 = THE AZURE WARDEN: 청색 스킨 · 방패 · 표식 + 방패 패턴 2종 (방패 밀치기 · 방패 뒤 돌진)",
+   "ok": true,
+   "note": "pools slam,sweep,bash,shieldRush,nova,combo,grab,mark"
+  },
+  {
+   "id": "K2",
+   "what": "방패 뒤 돌진 중 앞에서 친 공격은 막힘 (등 뒤는 그대로)",
+   "ok": true,
+   "note": "앞 15 · 뒤 450"
+  },
+  {
+   "id": "K2",
+   "what": "방패 밀치기: 앞 부채꼴 · 맞으면 밀려남",
+   "ok": true,
+   "note": "hp 100→96 · z 2.2→2.88"
+  },
+  {
+   "id": "K3",
+   "what": "보스 2 페이즈 모습 변화: 2페이즈 뿔 · 3페이즈 방패가 깨짐(사라짐) + 수정 날개, 3페이즈 패턴에서 방패 기술 빠짐",
+   "ok": true,
+   "note": "ph1 shield true · ph2 shield+horns true · ph3 no shield+wings true"
+  },
+  {
+   "id": "W1",
+   "what": "색: A 청파 · B 적파, 패리하면 자기 색만 흡수 (남의 색은 막기만)",
+   "ok": true,
+   "note": "A red→0 blue→1 · B red"
+  },
+  {
+   "id": "W2",
+   "what": "최대 3칸, 넘치면 가장 오래된 것이 밀려 사라짐 · 같은 보스 공격은 한 번만",
+   "ok": true,
+   "note": "slots 3 lost 1 absorb 4"
+  },
+  {
+   "id": "W3",
+   "what": "스킬을 쓰면 가장 오래된 칸 하나 소모 · 칸이 비면 기본 스킬로 나감",
+   "ok": true,
+   "note": "plain true · used true left 1"
+  },
+  {
+   "id": "W4",
+   "what": "청파 강화 시동: 상태 시간 ×1.6 (파트너가 받을 시간이 길어짐) · 피해 ×1.3",
+   "ok": true,
+   "note": "win 1.5 → 2.4000000000000004 · 2초 뒤 아직 상태 true · 피해 45 → 59"
+  },
+  {
+   "id": "W5",
+   "what": "적파 강화 시동: 피해 ×1.8 · 그로기 ×2.5",
+   "ok": true,
+   "note": "피해 50 → 90 · 그로기 5.0 → 12.5"
+  },
+  {
+   "id": "W6",
+   "what": "강화 시동에서 이어진 파트너 마무리 피해 ×1.3 (내 파장이 파트너를 도움)",
+   "ok": true,
+   "note": "공중 관통 300 → 390"
+  },
+  {
+   "id": "W7",
+   "what": "마무리를 넣는 사람의 청파: 피해 ×1.25 + 랠리 +1",
+   "ok": true,
+   "note": "300 → 375 · 랠리 0 → 1"
+  },
+  {
+   "id": "W8",
+   "what": "자파 = 강화 시동(적) + 강화 마무리(청): 피해 ×1.8 · 랠리 +1 · 컷인",
+   "ok": true,
+   "note": "300 → 540 · violet true · 컷인 true"
+  },
+  {
+   "id": "W9",
+   "what": "커버로 막은 공격도 막은 사람의 색이면 흡수 (남의 색이면 막기만)",
+   "ok": true,
+   "note": "red cover → B 1 · blue cover → B 1 A 0"
+  },
+  {
+   "id": "W10",
+   "what": "셔틀 수정구 받아치기 = 받는 사람 색 흡수",
+   "ok": true,
+   "note": "A blue B red"
+  },
+  {
+   "id": "W11",
+   "what": "평타가 보스에 맞으면 스킬 쿨타임이 줄어듦 (A 0.15초 · B 0.3초씩)",
+   "ok": true,
+   "note": "hits 1 · cd 4.58 → 4.43"
+  },
+  {
+   "id": "W12",
+   "what": "보스 공격 색: 두 보스 모두 적파·청파가 섞임 · 번갈아 치기는 노리는 사람 색",
+   "ok": true,
+   "note": "boss1 red,blue boss2 blue,red · combo blue,red"
+  },
+  {
+   "id": "W13",
+   "what": "태그 솔로: 캐릭터마다 칸이 따로 · 들어온 캐릭터의 색으로 흡수",
+   "ok": true,
+   "note": "B on field true · B red · A "
+  },
+  {
+   "id": "ST1",
+   "what": "연출: 시동 적중 → 빛줄(Stage.link) · 마무리 시작 → 전체 정지 + 줌인 + 첫 번째면 컷인",
+   "ok": true,
+   "note": "link true · zoom 시작 false 적중 true · 정지 0.06 · 컷인 true"
+  },
+  {
+   "id": "ST2",
+   "what": "연출: 같은 보스전에서 같은 마무리 두 번째(자파 아님)는 컷인 없음",
+   "ok": true,
+   "note": "첫 번째 true · 두 번째 false"
+  },
+  {
+   "id": "KB1",
+   "what": "한 키보드 2인: 2P가 사람이면 1P G H T Y · 2P L K O I, 혼자·AI 2P면 1P J K U I",
+   "ok": true,
+   "note": "2인 true · AI 2P true · 태그 true"
+  },
+  {
+   "id": "KB2",
+   "what": "키 겹침 없음: 한 키보드 2인 1P/2P/전역 키, 혼자일 때 1P/2P 참가 키",
+   "ok": true,
+   "note": ""
+  },
+  {
+   "id": "2C5",
+   "what": "선택 화면: 열리면 싸움 멈춤(프레임·시간·난수 그대로) · 보스 숨김 · 5명 카드 · 준비된 둘만 고를 수 있음",
+   "ok": true,
+   "note": "멈춤 true · 카드 5 · 고를 수 있음 rapier,great,chain,shield,twin"
+  },
+  {
+   "id": "2C6",
+   "what": "스킬 3개 중 2개: 먼저 고른 것 = U · 다음 = I (태그 솔로 A·B 각자), 준비 안 된 스킬은 못 고름",
+   "ok": true,
+   "note": "A spin,thrust · B launch,smash · 준비 안 된 스킬 막힘 true · 상태 play"
+  },
+  {
+   "id": "2C7",
+   "what": "듀오 규칙: 청 1 + 적 1 또는 쌍검 + 아무나, 같은 캐릭터 X (순서쌍 20개 중 16 허용 = 쌍 8) · 화면에서도 막힘",
+   "ok": true,
+   "note": "허용 16/20 · 틀림 없음 · 같은 캐릭터 막힘 true · 청 둘 막힘 true"
+  },
+  {
+   "id": "2C8",
+   "what": "태그 솔로: 한 사람이 두 캐릭터를 차례로 고름 · 교대로 들어온 캐릭터는 자기 리그·장착",
+   "ok": true,
+   "note": "A great(대검 리그) · B rapier(세검 리그) · 교대 true · B 장착 spin,thrust"
+  },
+  {
+   "id": "2C9",
+   "what": "리그 교체: 1P 대검 · 2P 세검으로 바꿔 싸워도 평타 표·스킬·초상 색·충돌 대상이 캐릭터를 따라감 · 기본 설정으로 돌아옴",
+   "ok": true,
+   "note": "리그 true · 평타/스킬 true · 초상 true · 60초 마무리 4 · 기본 복귀 true"
+  },
+  {
+   "id": "2C9b",
+   "what": "바꾼 캐릭터로 기록 → 2회 재생 해시 같음 (1P 대검 · 2P 세검)",
+   "ok": true,
+   "note": "351ee013 · 351ee013 · 351ee013 · 마무리 5"
+  },
+  {
+   "id": "2C5b",
+   "what": "AI 파트너: 1P가 고르면 AI가 규칙에 맞는 반대 색을 기본 장착으로 · 1P가 취소하면 AI도 다시",
+   "ok": true,
+   "note": "AI rapier · 취소 true · 시작 play"
+  },
+  {
+   "id": "2C5c",
+   "what": "혼자 선택 중 2P 키 → 2인 (3단계: 탭은 무시, 2P 확인 키 0.6초 꾹 = 참가 · 2P 취소 키 꾹 = 나가기) · F3 → AI 파트너 ⇄ 태그 솔로 · 끝 화면 C → 선택 화면",
+   "ok": true,
+   "note": "탭 무시 true · 꾹 참가 true · 꾹 나가기 true · F3 true/true · C true"
+  },
+  {
+   "id": "2F1",
+   "what": "lift + thrust → 공통 호응 'AERIAL FLASH THRUST': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(공중) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 300 · 약점 0 · 최고 높이 6.15 · 적중 때 y 2.82 등 뒤 false 거리 0.30 · 정지 0.17 · 1.88초 · 한 프레임 최대 이동 0.14"
+  },
+  {
+   "id": "2F1",
+   "what": "lift + spin → 공통 호응 'AERIAL REVERSE SPIN': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(공중) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 270 · 약점 1 · 최고 높이 6.15 · 적중 때 y 2.82 등 뒤 false 거리 0.30 · 정지 0.17 · 1.88초 · 한 프레임 최대 이동 0.14"
+  },
+  {
+   "id": "2F1",
+   "what": "kneel + thrust → 공통 호응 'DIVING FLASH THRUST': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(머리 위로) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 110 · 약점 0 · 최고 높이 3.14 · 적중 때 y 0.92 등 뒤 false 거리 0.52 · 정지 0.19 · 1.72초 · 한 프레임 최대 이동 0.15"
+  },
+  {
+   "id": "2F1",
+   "what": "kneel + spin → 공통 호응 'DIVING REVERSE SPIN': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(머리 위로) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 100 · 약점 0 · 최고 높이 3.14 · 적중 때 y 0.92 등 뒤 false 거리 0.52 · 정지 0.17 · 1.62초 · 한 프레임 최대 이동 0.15"
+  },
+  {
+   "id": "2F1",
+   "what": "stagger + launch → 공통 호응 'RUSHING RISING CLEAVE': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(보스에 붙음) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 215 · 약점 0 · 최고 높이 0.00 · 적중 때 y 0.00 등 뒤 false 거리 0.38 · 정지 0.14 · 0.92초 · 한 프레임 최대 이동 0.30"
+  },
+  {
+   "id": "2F1",
+   "what": "stagger + smash → 공통 호응 'RUSHING GROUND SMASH': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(보스에 붙음) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 160 · 약점 0 · 최고 높이 0.00 · 적중 때 y 0.00 등 뒤 false 거리 0.38 · 정지 0.11 · 1.05초 · 한 프레임 최대 이동 0.30"
+  },
+  {
+   "id": "2F1",
+   "what": "turn + launch → 공통 호응 'FLANKING RISING CLEAVE': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(등 뒤) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 518 · 약점 1 · 최고 높이 0.00 · 적중 때 y 0.00 등 뒤 true 거리 0.56 · 정지 0.15 · 1.27초 · 한 프레임 최대 이동 0.14"
+  },
+  {
+   "id": "2F1",
+   "what": "turn + smash → 공통 호응 'FLANKING GROUND SMASH': 타 수 = FIN2 · 상태 끝 · 동작 중 무적 · 경로(등 뒤) · 바닥으로 복귀",
+   "ok": true,
+   "note": "타 1/1 · 피해 324 · 약점 1 · 최고 높이 0.00 · 적중 때 y 0.00 등 뒤 true 거리 0.60 · 정지 0.12 · 1.42초 · 한 프레임 최대 이동 0.14"
+  },
+  {
+   "id": "2F2",
+   "what": "FIN2 효과: 휘청 한방 = 밀어내기 · 돌아섬 범위 = 선회 봉인 + 등 약점 · 뜸 범위 = 앞에서도 약점 · 무릎 한방 = 그로기 대량 · 공중 = 정지 늘림",
+   "ok": true,
+   "note": "밀림 2.65/3.14 · 봉인 2.3 · 등 약점 1 · 뜸 범위 약점 1 · 공중 정지 0.17"
+  },
+  {
+   "id": "2F3",
+   "what": "컷인 \"처음\" 기준 = (상태 × 스킬): 같은 보스전에서 뜸+찌르기 / 뜸+회전은 각자 처음",
+   "ok": true,
+   "note": "seen 0:lift:thrust · 0:lift:spin"
+  },
+  {
+   "id": "2F4",
+   "what": "장착 순서를 바꾸면 U가 바뀐 스킬의 마무리 (U = 회전 → 뜸 범위)",
+   "ok": true,
+   "note": "lift:spin"
+  },
+  {
+   "id": "2F5",
+   "what": "1P 대검 · 2P 세검으로 바꿔도 같은 규칙 (상태 = 시동 색, 마무리 = 받는 사람 스킬)",
+   "ok": true,
+   "note": "turn:smash by great · kneel:thrust by rapier"
+  },
+  {
+   "id": "2F6",
+   "what": "전용 합동기: 세검 + 대검 쌍 + 유물(exAll)일 때만 기존 전용 동작, 다른 쌍이면 공통",
+   "ok": true,
+   "note": "skyPierce · pinDown · 쌍검 쌍 null · 유물 없음 null"
+  },
+  {
+   "id": "2F7",
+   "what": "태그 솔로: 시동 캐릭터의 스킬 키 → 대기 캐릭터 교대 + 그 캐릭터의 공통 마무리",
+   "ok": true,
+   "note": "stagger:smash 타 1 · lift:thrust 타 1 · 들어온 캐릭터 필드 true"
+  },
+  {
+   "id": "2F8",
+   "what": "HUD: 받을 사람 머리 위 두 키 + 공통 마무리 이름 (앞말 + 스킬 이름)",
+   "ok": true,
+   "note": "AERIAL FLASH THRUST / AERIAL REVERSE SPIN"
+  },
+  {
+   "id": "2F9",
+   "what": "합 봇 2인 3분: 공통 마무리가 실제로 나감 (12칸 중 준비된 스킬로 가능한 칸) · 에러 0",
+   "ok": true,
+   "note": "{\"kneel:single\":2,\"lift:single\":2,\"stagger:single\":6,\"kneel:area\":2,\"stagger:area\":1,\"turn:area\":1} · 전용 유물 있음"
+  },
+  {
+   "id": "2N1",
+   "what": "바람 찌르기(세검 ③): 제자리에서 검풍 3개 → 거리 5에서 3번 맞음 → 셋째가 끝난 뒤 휘청 한 번",
+   "ok": true,
+   "note": "타 3 · 피해 48 · 상태 stagger (그때 타 3) · 동시 검풍 최대 2"
+  },
+  {
+   "id": "2N1b",
+   "what": "바람 찌르기: 사거리 밖(8)이면 빗나감 · 상태 없음 / 청파 강화면 사거리가 늘어 7.5에서도 맞음",
+   "ok": true,
+   "note": "8: 타 0 상태 null · 7.5 강화 타 3 · 7.5 기본 타 0 (사거리 7 × 청파 1.25)"
+  },
+  {
+   "id": "2N2",
+   "what": "대지 가르기(대검 ③): 균열이 보스까지 달려가 3번 터짐 → 무릎 한 번 · 사거리 밖(7.5)이면 상태 없음",
+   "ok": true,
+   "note": "타 3 · 피해 60 · 상태 kneel · 밖: 타 0 상태 null"
+  },
+  {
+   "id": "2N2b",
+   "what": "대검 평타 2타: gs1(횡베기) → gs3(내려찍기·바닥 균열), gs2 없음 · 2타가 마지막 타(약점 그로기 3타 규칙)",
+   "ok": true,
+   "note": "동작 순서 gs1 gs3 gs1"
+  },
+  {
+   "id": "2F10",
+   "what": "연타 칸 4개: 무릎+바람 찌르기 · 뜸+바람 찌르기(4타: 동작 3 + 시간 1) · 휘청+대지 가르기 · 돌아섬+대지 가르기(등 약점) — 타 수 = FIN2 · 랠리 +1",
+   "ok": true,
+   "note": "kneel:windThrust 3/3 피해 90 랠리 1 · lift:windThrust 4/4 피해 200 랠리 1 · stagger:earthSplit 3/3 피해 150 랠리 1 · turn:earthSplit 3/3 피해 420 랠리 1 약점 3"
+  },
+  {
+   "id": "2N3",
+   "what": "사슬낫: 무기(낫·사슬 마디·추) · 평타 3 (낫 2 + 사슬 던지기: 낫이 사슬 끝에 날아감) · 사슬 회오리(돌아섬·범위) · 낫 걸어 당기기(돌아섬·연타 3)",
+   "ok": true,
+   "note": "평타 cc1 cc2 cc3 cc1 cc2 cc3 · 사슬 최대 3.10 · 회오리 turn/1 · 걸어 당기기 turn 타 3 (상태 때 3)"
+  },
+  {
+   "id": "2N3b",
+   "what": "사슬 잡아채기(고유): 휘청 + 파트너를 보스 등 뒤로 0.35초에 끌어옴(그동안 무적) · 파트너가 잡혀 있으면 적중만으로 빼냄",
+   "ok": true,
+   "note": "끌림 true · 무적 true · 등 뒤 true · 상태 true · 잡힘에서 빠짐 true (move)"
+  },
+  {
+   "id": "2N4",
+   "what": "방패+철퇴: 무기(철퇴·팔 방패) · 평타 3 (철퇴 2 + 방패 밀치기) · 철퇴 내려찍기(무릎·범위) · 방패 돌진(뜸·연타 3)",
+   "ok": true,
+   "note": "평타 sc1 sc2 sc3 sc1 sc2 · 내려찍기 kneel · 돌진 lift 타 3 (상태 때 3)"
+  },
+  {
+   "id": "2N4b",
+   "what": "방패 올려치기(고유): 뜸 + 1초 동안 커버 범위 2배 (3.5 거리 커버 됨 → 1초 뒤 안 됨)",
+   "ok": true,
+   "note": "상태 lift · 커버 반경 4.4 · 3.5 거리 커버 true → 끝난 뒤 false"
+  },
+  {
+   "id": "2N5",
+   "what": "쌍검: 무기(양손 검) · 평타 4 · 교차 베기(휘청·연타 4) · 회전 올려베기(뜸·범위) · 쌍날 낙하(무릎·한방)",
+   "ok": true,
+   "note": "평타 tc1 tc2 tc3 tc4 tc1 tc2 · 교차 stagger 타 4 · 회전 lift · 낙하 kneel"
+  },
+  {
+   "id": "2N5b",
+   "what": "쌍검 양색: 청·적 모두 흡수(섞여 쌓임) · 강화 몫 ×0.8 · 자파 = 시동 색 ≠ 마무리 색",
+   "ok": true,
+   "note": "흡수 true/true 섞임 true · 강화 피해 1.64 (대검 1.8) · 적+적 자파 false · 적+청 자파 true"
+  },
+  {
+   "id": "2N6",
+   "what": "듀오 8쌍: 합 봇 90초씩 — 에러 0 · 마무리가 나옴 · 각 캐릭터 리그가 자기 무기",
+   "ok": true,
+   "note": "rapier+great 6 · rapier+shield 7 · chain+great 6 · chain+shield 6 · twin+rapier 7 · twin+great 7 · twin+chain 7 · twin+shield 6"
+  },
+  {
+   "id": "2E1",
+   "what": "유물 3장: 같은 시드 = 같은 3장 · 캐릭터마다 따로 · 전용 합동기는 세검+대검일 때만 · 이미 가진 것은 안 나옴",
+   "ok": true,
+   "note": "1P quick,exKneel,longBeat · 2P exLift,ward,exStag · 다른 쌍 전용 없음 true · 중복 없음 true · 세검+대검 전용 나옴 true"
+  },
+  {
+   "id": "2E2",
+   "what": "유물 훅: 넷째 칸 · 넘겨주기 · 긴 장단 · 랠리 불씨 · 자파 증폭 · 날쌘 손 · 수호 반경 · 전용 합동기",
+   "ok": true,
+   "note": "slot4 true · handoff true · longBeat true · ember true · violet true · quick true · ward true · ex true"
+  },
+  {
+   "id": "2E3",
+   "what": "메아리 탈: 파트너 마무리가 들어가고 0.5초 뒤 내 그림자 한 번 (그 마무리 피해의 30%)",
+   "ok": true,
+   "note": "마무리 0.22초 · 메아리 0.88초 · 메아리 피해 65 (기준 64.5 × 앞/뒤 배율)"
+  },
+  {
+   "id": "2E4",
+   "what": "휴식: 보스가 사라지면 카드 화면 · 그동안 싸움 입력 멈춤 · 1P 키로 카드 + 장착 변경 · AI 2P는 자동 · 고르기 전엔 다음 보스 안 나옴",
+   "ok": true,
+   "note": "열림 true · 입력 멈춤 true · AI true · 기다림 true · 가짐 quick · 장착 thrust,spin → thrust,windThrust · fight"
+  },
+  {
+   "id": "2E5",
+   "what": "태그 솔로 휴식: 한 사람이 A → B 차례로 고름 · 기록한 입력(유물 고르기 포함)을 재생하면 같은 상태",
+   "ok": true,
+   "note": "A 먼저 true · 둘 다 true · 기록 9555fac5/handoff|longBeat · 재생 9555fac5/handoff|longBeat · 9555fac5/handoff|longBeat"
+  },
+  {
+   "id": "2B1",
+   "what": "에밀레종 모델: 새 리그(틀 · 종 · 당목 · 울음 결정) · 동작 8+ (울림·흔들기·내려찍기·당목·들림·그로기·떨림·죽음) · 러시 보스 3에서만 종 리그",
+   "ok": true,
+   "note": "종 리그 true · 동작 true · 관절 true · 보스 1로 돌아옴 true"
+  },
+  {
+   "id": "2B2",
+   "what": "맥놀이: 청 고리·적 고리가 반대쪽에서 · 같은 색 패리만 막음(흡수 + 랠리 +1) · 막은 사람 뒤 부채꼴 보호 · 다른 색은 패리해도 맞음 · 회피 무적 관통",
+   "ok": true,
+   "note": "제 자리: 막음 2 보호 2 피해 0,0 흡수 1,1 랠리 +2 · 자리 바꿈: 맞음 2 막음 2 · 회피: 맞음 4"
+  },
+  {
+   "id": "2B3",
+   "what": "맥놀이 횟수 3/3/5 · 3페이즈는 가운데를 지나면 색이 바뀜 · HUD 화살표가 1초 전부터 · 피격은 Game.hurtPlayer(beat)",
+   "ok": true,
+   "note": "쌍 3,3,4 · 3페이즈 색 바뀜 true · 화살표 1.00초 전 · hurtPlayer(beat) true"
+  },
+  {
+   "id": "2B4",
+   "what": "당목 치기 = 색 있는 부채꼴(패리 가능) · 종 내려찍기 = 둥근 충격(패리 불가) · 약점 = 들림·무릎·그로기일 때 아래 울음 결정(등 대신) · 70%·35% 금",
+   "ok": true,
+   "note": "당목 색 blue · 부채꼴 true · (같은 색이면 패리 true) · 내려찍기 중립 true · 약점 평소 null 그로기 CRYSTAL 들림 CRYSTAL · 금 false/true/true"
+  },
+  {
+   "id": "2B5",
+   "what": "쌍둥이 도깨비: 두 마리(플레이어 리그 1.7배 + 뿔·방망이·도깨비불) · 체력 따로 · 한 마리만 쓰러지면 안 끝남, 둘 다 = 처치 · 동작 13+ · 보스 4에서만",
+   "ok": true,
+   "note": "리그 true · 동작 true · 체력 따로 true · 한 마리 쓰러짐(진행 중) true · 둘 다 = 승리 true · 보스 1로 돌아옴 true"
+  },
+  {
+   "id": "2B6",
+   "what": "각자 자기 색 공격만: 청 도깨비 = 청파 · 적 도깨비 = 적파 (내려찍기·휩쓸기·연타 불기둥) · 두 AI가 따로 움직임 · 첫 어그로는 같은 색 사람",
+   "ok": true,
+   "note": "내려찍기 blue · 휩쓸기 red · 동시에 공격 true · 적 연타 red/red · 청 연타 blue/blue · 첫 어그로 청→rapier 적→great"
+  },
+  {
+   "id": "2B7",
+   "what": "되살리기: 한 마리가 쓰러지면 남은 하나가 N초 뒤 살리러 가서 무릎 꿇고 살림(체력 35%) · 살리는 중 피해가 쌓이면 끊김(기다림 처음부터)",
+   "ok": true,
+   "note": "살리러 감 7.20초 (기준 7) · 무릎 7.92초 · 살아남 true 체력 35% · 끊김 true"
+  },
+  {
+   "id": "2B8",
+   "what": "도깨비 연계: 청이 띄우고(회피 가능) 적이 날아와 받아침 · 파트너가 커버하면 합 끊기(두 도깨비 휘청 + 랠리 +2) · 못 막으면 큰 피해(Game.hurtPlayer) · 70%부터 빨라짐",
+   "ok": true,
+   "note": "커버: 합 끊기 1 · 도깨비 groggy,groggy · 랠리 +2 · 띄운 높이 2.3 / 안 막음: 맞음 1 피해 11 (hurtPlayer 11) / 공중 1.2초 → 2페이즈 0.95초"
+  },
+  {
+   "id": "2B9",
+   "what": "자리 바꾸기(자리·어그로 맞바꿈) · 씨름 던지기(잡아 던짐 → 받는 도깨비 앞 패리 = 역받아치기, 아니면 피해) · 뚝딱(금화: 내 색은 흡수, 다른 색은 피해 · 발밑 금화는 다른 색)",
+   "ok": true,
+   "note": "자리 바꿈 true · 던지기+패리: 역받아치기 1 받는 도깨비 피해 420 · 안 막음: 피해 10 · 금화 내 색 흡수/다른 색 피해 true · 발밑 = 다른 색 true"
+  },
+  {
+   "id": "2B10",
+   "what": "합동 필살(3페이즈): 각자 자기 색 도깨비 일격을 0.3초 안에 동시 패리 → 합 대 합 컷인 + 둘 다 그로기 · 한 사람만/다른 색 = 큰 피해 · 태그 솔로 = 패리 → 교대 패리",
+   "ok": true,
+   "note": "둘 다: 합 대 합 1 컷인 true 도깨비 groggy,groggy · 한 사람: 막음 1 피해 0,12 · 다른 색: 막음 0 피해 12,12 · 태그: 교대 true 합 대 합 1"
+  },
+  {
+   "id": "2B11",
+   "what": "두 마리 HUD·카메라: 체력바 2개(나란히) · 어그로 선 각자 색 · 카메라가 두 마리를 함께 잡음 · 3페이즈 분노 색 · 입력 기록 재생 2회 일치(2인·태그)",
+   "ok": true,
+   "note": "HUD true · 카메라 범위 true · 분노 색 true · 어그로 둘 true · 재생 2인/태그 true,true"
+  },
+  {
+   "id": "2H1",
+   "what": "4체 러시: 에밀레종 처치 → 휴식(회복 · 쓰러진 사람 부활 · 유물 · 장착 변경) → 쌍둥이 도깨비 둘이 떨어져 등장 → 둘 다 쓰러뜨리면 승리 · 보스별 시간 기록",
+   "ok": true,
+   "note": "휴식 true · 회복/부활 true · 카드 true 고름 true · 둘 등장(공중) true · 착지 true · 떨어져 섬 true · 승리 true · 시간 ,,1,1.22"
+  },
+  {
+   "id": "2H2",
+   "what": "HUD: BOSS n/4 · 캐릭터 이름(RAPIER · CHAIN · GREATSWORD · SHIELD · TWIN) · U/I 칸 그림 = 장착한 스킬 · 유물 아이콘 · 도깨비 체력바 2 · 종 화살표 — 그리는 함수가 다 돎",
+   "ok": true,
+   "note": "이름 RAPIER · CHAIN · GREATSWORD · SHIELD · TWIN · 보스 4 true · 스킬 그림 15/15 · HUD 그리기 true"
+  },
+  {
+   "id": "3A1",
+   "what": "3단계 아트 켜짐: 픽셀화 · 32색 양자화 · 디더 끔 · 팔레트 = STYLE.pal · 세그먼트 아레나 · 보스마다 테마",
+   "ok": true,
+   "note": "pixel false palette false dither false · 테마 CROSSING / DOCKS / SHORE / NEON"
+  },
+  {
+   "id": "3A2",
+   "what": "외곽선 종류: 캐릭터 = 자기 색(청 1 · 적 2 · 쌍검 3) · 보스 4 · 에밀레종 8 · 도깨비 6/7",
+   "ok": true,
+   "note": "캐릭터 1,2,1,2,3 · 종 8 · 도깨비 6,7 · 거상 4"
+  },
+  {
+   "id": "3B1",
+   "what": "보스 체력 절반: 0.425 · 0.39 · 0.25 · 0.17(한 마리)",
+   "ok": true,
+   "note": "0.425 · 0.39 · 0.25 · 0.17"
+  },
+  {
+   "id": "3U1",
+   "what": "시작 화면: 아무 키 → 캐릭터 선택 · Esc는 메뉴(시작 안 함)",
+   "ok": true,
+   "note": "시작 true · Esc 메뉴 true · 키 → 선택 true"
+  },
+  {
+   "id": "3U2",
+   "what": "Esc 메뉴 = 일시정지 (게임 시간 · 프레임 안 감) · 닫으면 이어짐 · 메뉴 열고 닫은 기록도 2회 재생 일치",
+   "ok": true,
+   "note": "열림 true · 멈춤 true · 이어짐 true · 기록 1140프레임 688a861b · 688a861b · 688a861b"
+  },
+  {
+   "id": "3U3",
+   "what": "혼자일 때 2P 키를 눌러도 참가 0번 · ENTER 0.6초 꾹 = 2P 참가 · F4 = 다시 혼자 · 메뉴 PLAYERS = 바꿈",
+   "ok": true,
+   "note": "탭 10개 뒤 혼자 true · 꾹 참가 true · F4 혼자 true · 메뉴 AI true → 2P true"
+  },
+  {
+   "id": "3U4",
+   "what": "HUD: 시작 화면 · 선택 · 싸움(2인 · 태그) · 메뉴 3쪽 그리기 에러 0 · 2P 키 표시 기본 끔 · 기술명 한 자리",
+   "ok": true,
+   "note": "그리기 true · 2P 키 false · 20초 기술명 7번"
+  },
+  {
+   "id": "3P1",
+   "what": "가짜 패드: 표준 A → 1P 배정 · 빈 칸 섞인 배열 · 2번째 패드 → 2P · 1P 패드 끊김 → 2P 그대로 · 같은 패드 다시 연결 → 1P · START = 메뉴",
+   "ok": true,
+   "note": "누르기 전 없음 true · 1P true · 2P true · 끊김 유지 true · 재연결 true · START 메뉴 true"
+  },
+  {
+   "id": "3P2",
+   "what": "가짜 패드: 막힘(SecurityError) → 에러 없이 재시도 · 트리거 0.3 무시 / 0.7 = 스킬 I · 스틱 떨림 0.15 무시 / 0.8 = 이동 · 비표준 매핑 = 대체 표",
+   "ok": true,
+   "note": "막힘 true · 재시도 true · 트리거 true/true · 떨림 true · 이동 true · 비표준 true"
+  },
+  {
+   "id": "3Q1",
+   "what": "QTE: 첫 보스엔 없음 (데이터 null · 가중치 0 · 페이즈 전환에도 안 생김) · 보스 2/3/4 칸 수 = 표",
+   "ok": true,
+   "note": "보스 1 없음 true · 보스 2 페이즈 2 = 5칸 · 보스 3 페이즈 3 = 7칸"
+  },
+  {
+   "id": "3Q2",
+   "what": "QTE 칸 = 시드: 같은 시드 → 같은 줄 · 같은 색 최대 2연속 · 키 = 공격/패리/U/I · 적·청 둘 다 나옴",
+   "ok": true,
+   "note": "b:skill2 r:skill2 b:skill1 r:skill2 b:skill2 b:attack · 최대 연속 2 · 두 색 true · 키 true"
+  },
+  {
+   "id": "3Q3",
+   "what": "QTE 판정: 창 안 맞는 키 = 깨짐 · 틀린 키 = 실패 + 그 사람 피해 · 창 전 한 박자 안 = 너무 이름 · 안 누름 = 실패",
+   "ok": true,
+   "note": "ok · fail:wrong · fail:early · fail:miss · 피해 5/5"
+  },
+  {
+   "id": "3Q4",
+   "what": "QTE 끝: 전부 성공 = 보스 그로기 + 랠리 +2 + PERFECT CHAIN · 3칸 이상 실패 = 보스 강공격(워든 bash)",
+   "ok": true,
+   "note": "전부 성공 → groggy 랠리 2 기술명 PERFECT CHAIN · 전부 실패 → attack bash"
+  },
+  {
+   "id": "3Q5",
+   "what": "QTE 태그 솔로: 색이 바뀌는 칸 = 교대 키(성공하면 실제로 교대) · 같은 색 = 표시된 키 · 끝까지 = PERFECT",
+   "ok": true,
+   "note": "교대 칸 2 (교대됨 2) · 일반 칸 3 · 전부 성공 true · 보스 groggy"
+  },
+  {
+   "id": "3Q6",
+   "what": "QTE 쌍검 = 파트너와 반대 색 칸 · 칸 주인은 한 명",
+   "ok": true,
+   "note": "쌍검+대검 → 쌍검 blue · 세검+쌍검 → 쌍검 red"
+  },
+  {
+   "id": "3Q7",
+   "what": "QTE 페이즈 전환: 워든 70% 전환 뒤 QTE 시작 · 콜로서스는 안 함",
+   "ok": true,
+   "note": "워든 true SHIELD CLASH 2.7초 · 콜로서스 false"
+  },
+  {
+   "id": "3Q8",
+   "what": "QTE 입력 기록 재생 2회 일치 (2인 합 봇 · 태그 봇, QTE 진행 중 메뉴 열고 닫기 포함)",
+   "ok": true,
+   "note": "2인: QTE 2번 10칸 8dd012cb·8dd012cb·8dd012cb 메뉴 true · 태그: QTE 1번 5칸 79394394·79394394·79394394"
+  },
+  {
+   "id": "3Q9",
+   "what": "QTE 도깨비(SSIREUM): 두 마리 다 QTE 자세 · 전부 성공 = 둘 다 그로기 · 합동기 쿨타임 같이 씀",
+   "ok": true,
+   "note": "시작 true 둘 다 QTE true SSIREUM · 끝 groggy,groggy · 합동기 쿨 3.57"
+  },
+  {
+   "id": "3M1",
+   "what": "움직임 과장: 공중 마무리 최고 높이 ≥ 2단계(3.05) × 2 · 대시 거리 = 3.36 × MOTION.dashDist · 컷인 슬로모션 없음(기술명만)",
+   "ok": true,
+   "note": "최고 높이 6.15 · 대시 4.37/4.37 · 컷인 표시 true 슬로 0"
+  }
+ ]
+}

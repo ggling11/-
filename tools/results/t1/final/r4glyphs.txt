@@ -1,0 +1,10 @@
+{
+ "fonts": {
+  "T1 Archivo": 101,
+  "T1 Noto KR": 529,
+  "T1 Noto KR Black": 529
+ },
+ "strings": 214,
+ "missing": {},
+ "ok": true
+}

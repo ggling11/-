@@ -75,10 +75,10 @@ const T1A = (() => {
         K.sheet('ink', [0, 1, 2, 3].map(j => [0, 1].map(q => [c0[0] + n[0] * (0.1 + q * 1.1) + (j === 3 && q ? n[0] * -0.3 : 0), c0[1] - j * 0.6 - (q && j === 3 ? 0.22 : 0), c0[2] + n[2] * (0.1 + q * 1.1)])), () => w);
         K.ell('red', [c0[0] + n[0] * 0.65 - Math.cos(a) * 0.02, c0[1] - 0.9, c0[2] + n[2] * 0.65 - Math.sin(a) * 0.02], [0.34 * Math.abs(n[0]) + 0.02, 0.34, 0.34 * Math.abs(n[2]) + 0.02], w, { rings: 4, seg: 14 });
       } else {   /* 검정 부서진 기둥 */
-        const h = 0.45 + r() * 1.0, rad = 0.26 + r() * 0.16, tw = r() * 2;   /* 라운드 5: 낮게 (1.6~5 → 0.45~1.45) */
-        K.tube('ink', [{ p: [x, 0, z], r: rad * 1.15, w }, { p: [x, 0.3, z], r: rad, w }, { p: [x, h, z], r: rad * 0.9, w }], { seg: 6, up: [Math.cos(tw), 0, Math.sin(tw)] });
-        K.spike('ink', [x + (r() - 0.5) * 0.2, h - 0.05, z + (r() - 0.5) * 0.2], [x + (r() - 0.5) * 0.5, h + 0.5 + r() * 0.8, z + (r() - 0.5) * 0.5], rad * 0.8, w, { seg: 6 });
-        if (r() < 0.6) K.box('ink', [x + (r() - 0.5) * 1.6, 0.18, z + (r() - 0.5) * 1.6], [0.35, 0.18, 0.25], w, { ry: r() * 3, top: 0.6 });   /* 무너진 조각 */
+        /* 라운드 9: 뾰족한 검정 기둥(화면을 어지럽힘 — 패널) → 낮고 평평한 검정 석판 하나 */
+        const h = 0.18 + r() * 0.35, tw = r() * 3;
+        K.box('ink', [x, h, z], [0.5 + r() * 0.4, h, 0.32 + r() * 0.2], w, { ry: tw, top: 0.85 });
+
       }
     }
     const mats = { ink: R.mat(P.ink, P.ink, { flat: true, side: THREE.DoubleSide, line: 1.2 }), white: R.mat(P.paper, P.shadeW, { line: 1.2 }), red: R.mat(P.red, P.red, { flat: true, side: THREE.DoubleSide }) };

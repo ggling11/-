@@ -1,0 +1,18 @@
+{
+ "fin": {
+  "note": "fin true DIVING FLASH THRUST",
+  "calls": 32,
+  "tris": 44573,
+  "art": 1,
+  "ms": 5256,
+  "errors": []
+ },
+ "tele": {
+  "note": "tele true slam",
+  "calls": 49,
+  "tris": 45438,
+  "art": 1,
+  "ms": 10443,
+  "errors": []
+ }
+}

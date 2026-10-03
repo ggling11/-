@@ -25,14 +25,17 @@ T1H.game = (ctx, S) => {
 
   /* ---------------- 전투 HUD */
   const slide = k => Math.min(1, ui.panelT / U.slideT) < 1 ? (1 - Math.min(1, ui.panelT / U.slideT)) * k : 0;
-  bossBlock(ctx);
-  topRight(ctx);
-  rally(ctx);
-  playersPanel(ctx);
-  qte(ctx);
-  worldMarks(ctx);
-  techName(ctx);
-  banners(ctx);
+  const endAt = Game.state === 'won' ? 2.2 : Game.state === 'lost' ? 1.6 : -1, resShow = endAt >= 0 && Game.endT > endAt;
+  if (!resShow) {   /* 라운드 9: 결과 화면 뒤로 전투 HUD가 비치지 않게 */
+    bossBlock(ctx);
+    topRight(ctx);
+    rally(ctx);
+    playersPanel(ctx);
+    qte(ctx);
+    worldMarks(ctx);
+    techName(ctx);
+    banners(ctx);
+  }
   results(ctx);
   wipeDraw(ctx);
   if (Menu3.on) menu(ctx);

@@ -1,0 +1,207 @@
+{
+ "M2": [
+  {
+   "kind": "rapier",
+   "clip": "combo1",
+   "strike": 4,
+   "anticipation": 0.281,
+   "overshoot": 0.067,
+   "ok": true
+  },
+  {
+   "kind": "rapier",
+   "clip": "combo2",
+   "strike": 4,
+   "anticipation": 1.152,
+   "overshoot": 0.108,
+   "ok": true
+  },
+  {
+   "kind": "rapier",
+   "clip": "combo3",
+   "strike": 7,
+   "anticipation": 0.254,
+   "overshoot": 0.096,
+   "ok": true
+  },
+  {
+   "kind": "great",
+   "clip": "gs1",
+   "strike": 5,
+   "anticipation": 0.92,
+   "overshoot": 0.078,
+   "ok": true
+  },
+  {
+   "kind": "great",
+   "clip": "gs3",
+   "strike": 8,
+   "anticipation": 0.832,
+   "overshoot": 0.022,
+   "ok": true
+  }
+ ],
+ "L1": [
+  {
+   "kind": "rapier",
+   "clip": "combo1",
+   "frames": [
+    4,
+    5
+   ],
+   "reach": 2.6,
+   "dist": 0,
+   "lim": 0.65,
+   "ok": true
+  },
+  {
+   "kind": "rapier",
+   "clip": "combo2",
+   "frames": [
+    4,
+    5
+   ],
+   "reach": 2.6,
+   "dist": 0,
+   "lim": 0.65,
+   "ok": true
+  },
+  {
+   "kind": "rapier",
+   "clip": "combo3",
+   "frames": [
+    7,
+    8
+   ],
+   "reach": 4,
+   "dist": 0,
+   "lim": 1,
+   "ok": true
+  },
+  {
+   "kind": "great",
+   "clip": "gs1",
+   "frames": [
+    5,
+    6
+   ],
+   "reach": 3,
+   "dist": 0,
+   "lim": 0.75,
+   "ok": true
+  },
+  {
+   "kind": "great",
+   "clip": "gs3",
+   "frames": [
+    8,
+    9
+   ],
+   "reach": 3.4,
+   "dist": 0,
+   "lim": 0.85,
+   "ok": true
+  },
+  {
+   "kind": "warden",
+   "clip": "slam",
+   "frames": [
+    12
+   ],
+   "reach": 1.9,
+   "claw": [
+    -0.87,
+    0.29,
+    2.55
+   ],
+   "at": [
+    -0.82,
+    0.28,
+    2.35
+   ],
+   "dist": 0.21,
+   "lim": 0.475,
+   "ok": true
+  },
+  {
+   "kind": "warden",
+   "clip": "shot",
+   "frames": [
+    9
+   ],
+   "reach": 0.6,
+   "claw": [
+    0.25,
+    2.26,
+    3.47
+   ],
+   "at": [
+    0.25,
+    2.26,
+    3.47
+   ],
+   "dist": 0.005,
+   "lim": 0.15,
+   "ok": true
+  },
+  {
+   "kind": "warden",
+   "clip": "shot",
+   "frames": [
+    13
+   ],
+   "reach": 0.6,
+   "claw": [
+    0.31,
+    2.17,
+    3.42
+   ],
+   "at": [
+    0.25,
+    2.26,
+    3.47
+   ],
+   "dist": 0.079,
+   "lim": 0.15,
+   "ok": true
+  }
+ ],
+ "meta": {
+  "hiddenRoots": 3,
+  "onLayer31": 3,
+  "visibleKept": 3
+ },
+ "M1": [
+  {
+   "kind": "rapier",
+   "tris": 14831,
+   "width": 0.67,
+   "judgeWidth": 0.6,
+   "wRatio": 1.11,
+   "height": 2.28,
+   "judgeHeight": 2.41,
+   "hRatio": 0.95
+  },
+  {
+   "kind": "great",
+   "tris": 12086,
+   "width": 0.66,
+   "judgeWidth": 0.6,
+   "wRatio": 1.09,
+   "height": 2.41,
+   "judgeHeight": 2.52,
+   "hRatio": 0.96
+  },
+  {
+   "kind": "warden",
+   "tris": 16556,
+   "width": 2.16,
+   "judgeWidth": 1.95,
+   "wRatio": 1.11,
+   "height": 3.76,
+   "judgeHeight": 3.81,
+   "hRatio": 0.99
+  }
+ ]
+}
+M2 true L1 true M1 true

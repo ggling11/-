@@ -656,7 +656,7 @@ const T1 = {
   id: 1, name: 'ANIME CEL',
   /* 팔레트: 레퍼런스 대표색 (흰 · 검정 · 회보라 그림자 · 분홍 피부 · 적/청 강조 · 금 보조) */
   pal: {
-    ink: '#141112', paper: '#fdfbfb', shadeW: '#b0a3a5', shadeW2: '#cdc5c7', skin: '#f6e6e3', skinSh: '#dcafb2',
+    ink: '#141112', paper: '#fdfbfb', shadeW: '#c4babd', shadeW2: '#cdc5c7', skin: '#f6e6e3', skinSh: '#dcafb2',
     blue: '#2350b8', blueSh: '#183a86', red: '#c8102e', redSh: '#8c0b20', gold: '#b8995a', goldSh: '#7a6538',
     floor: '#f2eaea', floorSh: '#d8ced2', floor2: '#e8e0e0', sky: '#f7f3f3', hatch: '#cfc6c8', purple: '#3d1a5c', pink: '#e8a3ad',
     eye: '#d01530', steel: '#f4f2f4', steelSh: '#b9b0b8',
@@ -664,29 +664,29 @@ const T1 = {
   /* 렌더 규칙 하나: 셀 1단(문턱) · 검정 외곽선(부품 ID · 깊이 경계만) · 굵기 흔들림 · 획 끓임 */
   render: {
     outlinePx: 2.4,        /* 외곽선 굵기 (1080p 기준 px) — 라운드 1은 레퍼런스보다 세게 */
-    outlineJit: 0.22,      /* 굵기 흔들림 ±비율 (노이즈) — 라운드 5: 0.3은 게임 거리에서 톱니로 읽힘 */
-    boilFps: 8,            /* 획 끓임: 노이즈가 바뀌는 횟수/초 (0 = 고정) */
+    outlineJit: 0.08,      /* 굵기 흔들림 ±비율 (노이즈) — 라운드 5: 0.3 → 0.22, 라운드 11: 0.08 (패널: 지글거리는 선 → 깔끔한 펜 선) */
+    boilFps: 4,            /* 획 끓임: 노이즈가 바뀌는 횟수/초 (0 = 고정) · 라운드 11: 8 → 4 */
     farThin: 0.55,         /* 먼 곳 선 굵기 배율 */
     depthEdge: 0.035,      /* 깊이 경계 문턱 (거리 대비 비율) — 같은 부품끼리 겹친 실루엣 */
     shadeCut: 0.06,        /* 셀 문턱 (N·L + 정점 경향) — 이보다 작으면 그림자 색 */
-    light: [-0.55, 0.62, 0.56],   /* 빛 방향 (카메라 기준 고정 → 카메라가 움직여도 그림자 모양 안정) */
+    light: [-0.38, 0.58, 0.72],   /* 빛 방향 (카메라 기준 고정 → 카메라가 움직여도 그림자 모양 안정) · 라운드 9: 더 앞에서 (보이는 면의 그림자 조각을 줄여 큰 흰 면) */
     impactFrame: true,     /* 임팩트 프레임 (1프레임 흑백 반전) — 마무리 첫 적중 · QTE 완벽 때만 */
   },
-  /* 카메라: 원근 · 내려다봄 41° · 화각 26 · 서 있는 키 = 화면 20% */
-  cam: { fov: 26, pitch: 41, standFrac: 0.2, standH: 2.38, near: 1, far: 120, follow: 7.0, widenMax: 1.45, shakeMul: 1.0 },   /* 라운드 5: 47° · 15% → 41° · 20% (작고 위에서 검정 덩어리로 읽힘) */
+  /* 카메라: 원근 · 내려다봄 38° · 화각 26 · 서 있는 키 = 화면 23% */
+  cam: { fov: 26, pitch: 38, standFrac: 0.23, standH: 2.38, near: 1, far: 120, follow: 7.0, widenMax: 1.45, shakeMul: 1.0 },   /* 라운드 5: 47° · 15% → 41° · 20%, 라운드 11: 38° · 23% (패널: 캐릭터가 작음) */
   /* 자동 품질 (3단계 Perf3 배관 재사용 · 이 테마 고유: 외곽선 고리 수 · 끓임 끔) */
-  quality: { maxH: 1080, dirs: [16, 12, 8, 8], boil: [true, true, false, false] },   /* 3단계 Perf3.level(0~)별: 외곽선 방향 수 · 획 끓임 (해상도 배율은 3단계 배관이 정함) */
+  quality: { maxH: 1080, ss: [1.6, 1.3, 1, 1], dirs: [16, 12, 8, 8], boil: [true, true, false, false] },   /* ss = 내부 해상도 배율(슈퍼샘플 → 선 계단 없앰, 라운드 9) */   /* 3단계 Perf3.level(0~)별: 외곽선 방향 수 · 획 끓임 (해상도 배율은 3단계 배관이 정함) */
   /* 모델 (E): 비율 · 크기 — 판정 크기 ±15% 안 (숨은 리그 키: 세검 2.43 · 대검 2.57 · 워든 3.91) */
   model: {
-    rapier: { H: 2.38, heads: 7.6, shoulder: 0.165, seed: 11, det: 1.5, sub: 2 },   /* det · sub = 둘레 칸 배율 · 고리 나눔 (M1 삼각형 8천~1.5만) */
-    great: { H: 2.5, heads: 7.8, shoulder: 0.18, seed: 23, det: 1.6, sub: 2 },
+    rapier: { H: 2.38, heads: 7.6, shoulder: 0.165, seed: 11, det: 1.75, sub: 2 },   /* det · sub = 둘레 칸 배율 · 고리 나눔 (M1 삼각형 8천~1.5만) */
+    great: { H: 2.5, heads: 7.8, shoulder: 0.18, seed: 23, det: 2.0, sub: 2 },
     warden: { H: 4.2, seed: 37, det: 2, sub: 2 },   /* 보스 1.5만~3만 · 라운드 6: 3.9 → 4.2 (키 = 숨은 리그 ±15%) */
     line: { rapier: 1.7, great: 1.7, warden: 1.7 },   /* 실루엣 선 굵기 배율 (라운드 5: 게임 거리에서 선이 끊겨 보임 → 굵게) */
   },
   /* 자세 (F): 모델 → 동작 이름 → 키 자세 표 (t1_poses.js가 채움 · 형식은 t1_pose.js 머리말) */
   poses: { rapier: {}, great: {}, warden: {} },
   /* 아레나 (G): 워든 = 연회색 바닥 + 사선 빗금 많이(띠 · 구역) */
-  arena: { R: 9.5, ring: 0.7, hatchW: 0.22, hatchGap: 0.22, bands: 2, props: 20, seed: 5 },
+  arena: { R: 9.5, ring: 0.7, hatchW: 0.22, hatchGap: 0.22, bands: 2, props: 14, seed: 5 },
   /* 이펙트 */
   fx: { smearLife: 0.16, inkN: 10, inkLife: 0.45, accentN: 4, speedLines: 18, teleBorder: 0.16, teleStep: 0.36, trailN: 14 },
   /* UI (U) */
@@ -724,11 +724,11 @@ const T1 = {
   /* 평타 1: 런지 찌르기 — 예비(f2~3: 칼을 뺨 옆으로 감아 뒤로) → 찌름(f4 · 히트 4~5 유지) → 오버슈트(f6) → 회복 */
   R.combo1 = { step8: [[0, 2], [6, 10]], keys: [
     [0, rEG],
-    [2, { $b: [0.03, -0.2, -0.2], body: [-4, 52, 0], spine: [-8, 6, 0], chest: [-4, 6, 0], head: [2, -40, 0], $fR: [-0.05, 0, 0.22], $fL: [0.22, 0, -0.26],
+    [2, { $b: [0.03, -0.22, -0.22], $s: [0.04, -0.07, -0.03], body: [-6, 55, 0], spine: [-10, 6, 0], chest: [-6, 6, 0], head: [2, -40, 0], $fR: [-0.05, 0, 0.22], $fL: [0.22, 0, -0.26],
       $hR: [-0.2, 1.62, -0.22], $wR: [0.05, 0.05, 1], $pR: [-1, -0.2, -0.4], $hL: [0.25, 1.5, 0.35], $wL: [0, 0.3, 1] }, 'hold'],
-    [4, { $b: [0.0, -0.34, 0.45], body: [14, 75, 0], spine: [6, 6, 0], chest: [4, 4, 0], neck: [0, -40, 0], head: [-4, -40, 0], $fR: [-0.06, 0, 0.95], ftR: [-5, 0, 0], $fL: [0.22, 0, -0.3], ftL: [0, 80, 0],
-      $hR: [-0.08, 1.36, 1.2], $wR: [0, -0.02, 1], $hL: [0.32, 1.45, -0.55], $wL: [0.3, 0.6, -1] }, 'hold'],
-    [6, { $b: [0, -0.37, 0.52], body: [17, 78, 0], $hR: [-0.07, 1.3, 1.34], $wR: [0, -0.06, 1] }],
+    [4, { $b: [0.0, -0.24, 0.52], $s: [-0.03, 0.03, 0.1], body: [22, 75, 0], spine: [6, 6, 0], chest: [4, 4, 0], neck: [0, -40, 0], head: [-8, -40, 0], $fR: [-0.06, 0, 1.15], ftR: [-5, 0, 0], $fL: [0.24, 0, -0.5], ftL: [0, 80, 0],
+      $hR: [-0.08, 1.32, 1.32], $wR: [0, -0.02, 1], $hL: [0.34, 1.4, -0.7], $wL: [0.3, 0.5, -1] }, 'hold'],   /* 라운드 10: 긴 펜싱 런지(주저앉음 X) · 앞으로 늘어남 */
+    [6, { $b: [0, -0.27, 0.6], $s: [0, 0, 0.04], body: [25, 78, 0], $hR: [-0.07, 1.27, 1.46], $wR: [0, -0.06, 1] }],
     [8, { $b: [0.02, -0.22, 0.22], body: [8, 55, 0], $fR: [-0.05, 0, 0.55], $hR: [-0.1, 1.3, 0.85], $wR: [0.04, 0.12, 1] }, 'snap'],
     [10, rEG],
   ] };
@@ -784,14 +784,15 @@ const T1 = {
     [8, { thR: [-25, 0, 0], knR: [45, 0, 0], thL: [12, 0, 0], knL: [20, 0, 0], head: [-20, 0, 0] }],
   ] };
   /* 달리기 (8f 반복 · 발 디딤 0 · 4): 앞으로 크게 기울인 애니 질주 — 두 팔은 뒤로, 칼은 뒤로 끌림 */
+  /* 라운드 10: 보폭 · 무릎 높이 · 몸 비틀림 · 오르내림을 키움 (띠에서 프레임이 다 같아 보인다는 패널 지적) */
   const run = (o) => ({ keys: [
-    [0, mix({ $b: [0, -0.12, 0], body: [24, 6, 0], spine: [8, -8, 0], chest: [4, -6, 0], head: [-22, 4, 0], $fR: [-0.1, 0, 0.42], ftR: [-15, 0, 0], $fL: [0.1, 0.14, -0.46], ftL: [55, 0, 0] }, o.a)],
-    [2, mix({ $b: [0, 0.0, 0], $fR: [-0.1, 0, 0.0], ftR: [0, 0, 0], $fL: [0.1, 0.42, 0.04], ftL: [25, 0, 0] }, o.b)],
-    [4, mix({ $b: [0, -0.12, 0], body: [24, -6, 0], spine: [8, 8, 0], chest: [4, 6, 0], $fL: [0.1, 0, 0.42], ftL: [-15, 0, 0], $fR: [-0.1, 0.14, -0.46], ftR: [55, 0, 0] }, o.c)],
-    [6, mix({ $b: [0, 0.0, 0], $fL: [0.1, 0, 0.0], ftL: [0, 0, 0], $fR: [-0.1, 0.42, 0.04], ftR: [25, 0, 0] }, o.d)],
-    [8, mix({ $b: [0, -0.12, 0], body: [24, 6, 0], spine: [8, -8, 0], chest: [4, -6, 0], $fR: [-0.1, 0, 0.42], ftR: [-15, 0, 0], $fL: [0.1, 0.14, -0.46], ftL: [55, 0, 0] }, o.a)],
+    [0, mix({ $b: [0, -0.16, 0.06], $s: [0.03, -0.06, 0.03], body: [30, 12, 0], spine: [8, -14, 0], chest: [4, -10, 0], head: [-26, 8, 0], $fR: [-0.1, 0, 0.5], ftR: [-20, 0, 0], $fL: [0.1, 0.22, -0.55], ftL: [70, 0, 0] }, o.a)],
+    [2, mix({ $b: [0, 0.06, 0.06], $s: [-0.02, 0.05, 0], body: [28, 0, 0], spine: [8, 0, 0], chest: [4, 0, 0], $fR: [-0.1, 0, -0.08], ftR: [10, 0, 0], $fL: [0.1, 0.58, 0.12], ftL: [30, 0, 0] }, o.b)],
+    [4, mix({ $b: [0, -0.16, 0.06], $s: [0.03, -0.06, 0.03], body: [30, -12, 0], spine: [8, 14, 0], chest: [4, 10, 0], head: [-26, -8, 0], $fL: [0.1, 0, 0.5], ftL: [-20, 0, 0], $fR: [-0.1, 0.22, -0.55], ftR: [70, 0, 0] }, o.c)],
+    [6, mix({ $b: [0, 0.06, 0.06], $s: [-0.02, 0.05, 0], body: [28, 0, 0], spine: [8, 0, 0], chest: [4, 0, 0], $fL: [0.1, 0, -0.08], ftL: [10, 0, 0], $fR: [-0.1, 0.58, 0.12], ftR: [30, 0, 0] }, o.d)],
+    [8, mix({ $b: [0, -0.16, 0.06], $s: [0.03, -0.06, 0.03], body: [30, 12, 0], spine: [8, -14, 0], chest: [4, -10, 0], head: [-26, 8, 0], $fR: [-0.1, 0, 0.5], ftR: [-20, 0, 0], $fL: [0.1, 0.22, -0.55], ftL: [70, 0, 0] }, o.a)],
   ] });
-  R.run = run({ a: { $hR: [-0.32, 1.02, -0.4], $wR: [-0.15, -0.25, -1], $hL: [0.3, 1.1, -0.36], $wL: [0.2, -0.3, -1] }, b: {}, c: { $hR: [-0.3, 1.06, -0.32], $hL: [0.3, 1.04, -0.42] }, d: {} });
+  R.run = run({ a: { $hR: [-0.34, 1.08, -0.46], $wR: [-0.15, -0.2, -1], $hL: [0.28, 1.3, 0.22], $wL: [0, 0.4, 1] }, b: {}, c: { $hR: [-0.3, 1.2, -0.2], $hL: [0.32, 1.02, -0.48], $wL: [0.2, -0.3, -1] }, d: {} });   /* 왼팔은 다리와 반대로 크게 흔듦 · 칼은 뒤로 */
   /* 대시 (4f · 먼지 0 · 착지 3): 낮게 박차고(찌그러짐) → 앞으로 길게 늘어남 → 착지 찌그러짐 */
   const dash = (arms) => ({ keys: [
     [0, mix({ $b: [0, -0.32, 0.1], $s: [0.06, -0.14, 0.06], body: [36, 0, 0], spine: [8, 0, 0], head: [-26, 0, 0], $fR: [-0.1, 0, 0.18], $fL: [0.1, 0, -0.28], ftL: [40, 0, 0] }, arms)],
@@ -12934,8 +12935,8 @@ const T1R = (() => {
       vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
       float d = dot(n, uL) + vBias;
       vec3 c = (uFlat > 0.5 || d > uCut) ? uLit : uShade;
-      if (uFlash > 0.5) { float sat = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));   /* 피격 순간 (라운드 5): 2톤 반전 — 흰 → 먹 · 먹 → 흰 · 강조색 그대로 */
-        c = sat > 0.3 ? c : (dot(c, vec3(0.299, 0.587, 0.114)) > 0.5 ? vec3(0.078, 0.067, 0.071) : vec3(0.992, 0.984, 0.984)); }
+      if (uFlash > 0.5 && uFlat < 0.5) {   /* 피격 순간 (라운드 9): 하드 2톤 — 빛 받는 면 = 흰 · 그림자 면 = 먹 (실루엣은 흰 채로 남아 검정 덩어리로 뭉치지 않음) */
+        c = d > uCut + 0.12 ? vec3(0.992, 0.984, 0.984) : vec3(0.078, 0.067, 0.071); }
       pc_fragColor = vec4(c, uAlpha);
       float id = mod(uId + vPart, 255.0) + 1.0;                  /* 0 = 배경 */
       gInfo = vec4(id / 255.0, uLine, 1.0, 1.0);
@@ -12976,7 +12977,7 @@ const T1R = (() => {
       float z0 = lin(texture(tDepth, vUv).x);
       float id0 = floor(i0.r * 255.0 + 0.5);
       /* 굵기: 기준 px × 흔들림(노이즈, boilFps마다 바뀜) × 먼 곳 얇게 × 부품 선 굵기 */
-      float n = vnoise(vUv * uSize / 38.0 + uSeed * 17.0);
+      float n = vnoise(vUv * uSize / 140.0 + uSeed * 17.0);   /* 라운드 11: 느린 굵기 변화 (펜 선) */
       float far = mix(1.0, uFarThin, clamp((z0 - 20.0) / 40.0, 0.0, 1.0));
       float w0 = max(i0.g, 0.0);
       float R = uPx * (1.0 + uJit * (n * 2.0 - 1.0)) * far;
@@ -13075,7 +13076,9 @@ const T1R = (() => {
     }`;
   SH.blitFrag = `
     precision highp float; uniform sampler2D tSrc; in vec2 vUv; out vec4 outColor;
-    void main() { outColor = vec4(texture(tSrc, vUv).rgb, 1.0); }`;
+    uniform vec2 uTexel;   /* 원본(슈퍼샘플) 한 텍셀 — 4점 · 쌍선형 = 약 3×3 상자로 줄임 (선 계단 없앰) */
+    void main() { vec3 c = texture(tSrc, vUv + uTexel * vec2(-0.5, -0.5)).rgb + texture(tSrc, vUv + uTexel * vec2(0.5, -0.5)).rgb
+      + texture(tSrc, vUv + uTexel * vec2(-0.5, 0.5)).rgb + texture(tSrc, vUv + uTexel * vec2(0.5, 0.5)).rgb; outColor = vec4(c * 0.25, 1.0); }`;
 
   /* 색은 sRGB 숫자 그대로 (조명 계산이 없는 셀 경로라 선형 변환 불필요 · 전역 색 관리 설정은 건드리지 않음 — 테마 0과 공유) */
   function hex(THREE, h) { return new THREE.Color().setStyle(h, THREE.LinearSRGBColorSpace); }
@@ -13092,7 +13095,7 @@ const T1R = (() => {
       uniforms: { tColor: { value: null }, tInfo: { value: null }, tDepth: { value: null }, uSize: { value: new THREE.Vector2() }, uPx: { value: 2 }, uJit: { value: 0.3 },
         uSeed: { value: 0 }, uNear: { value: 1 }, uFar: { value: 100 }, uDepthEdge: { value: 0.02 }, uInk: { value: hex(THREE, D.pal.ink) }, uFarThin: { value: 0.6 },
         uBg: { value: hex(THREE, D.pal.sky) }, uImpact: { value: 0 }, uDirs: { value: 16 } } });
-    R.blit = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: SH.compVert, fragmentShader: SH.blitFrag, depthTest: false, depthWrite: false, uniforms: { tSrc: { value: null } } });
+    R.blit = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: SH.compVert, fragmentShader: SH.blitFrag, depthTest: false, depthWrite: false, uniforms: { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() } } });
     /* 재질: kind = 팔레트 이름 쌍 [밝은 색, 그림자 색] · flat = 그림자 없음(검정 · 강조) · line = 선 굵기 배율(0 = 선 없음) */
     R.mat = (lit, shade, o = {}) => {
       const m = new THREE.ShaderMaterial({ vertexShader: SH.vert, fragmentShader: SH.frag, side: o.side ?? THREE.FrontSide,
@@ -13141,7 +13144,7 @@ const T1R = (() => {
       U.uSize.value.set(R.w, R.h); U.uPx.value = Math.max(1.2, Dr.outlinePx * R.h / 1080); U.uJit.value = Dr.outlineJit;
       U.uSeed.value = (R.boil % 7) * 0.37; U.uNear.value = R.camera.near; U.uFar.value = R.camera.far; U.uDepthEdge.value = Dr.depthEdge; U.uFarThin.value = Dr.farThin;
       R.quad.material = R.comp; r.setRenderTarget(R.final); r.render(R.qScene, R.qCam);
-      R.blit.uniforms.tSrc.value = R.final.texture; R.quad.material = R.blit;
+      R.blit.uniforms.tSrc.value = R.final.texture; R.blit.uniforms.uTexel.value.set(1 / R.w, 1 / R.h); R.quad.material = R.blit;
       r.setRenderTarget(target); if (viewport) r.setViewport(...viewport);
       r.render(R.qScene, R.qCam);
     };
@@ -13595,17 +13598,18 @@ const T1C = (() => {
     B('cape', 'chest', [0, 2.5, -0.2]);
     const tl = []; let tp = 'body'; [[0, 0.85, -0.55], [0, 0.5, -1.0], [0, 0.32, -1.5], [0.25, 0.4, -1.95], [0.55, 0.65, -2.25], [0.72, 1.0, -2.4]].forEach((q, i) => { B('tl' + i, tp, q); tp = 'tl' + i; tl.push('tl' + i); });
     const K = Kit(S, D.model.warden), r = rng(D.model.warden.seed);
-    const fur = (amp) => () => (r() - 0.5) * amp;   /* 털뭉치 모양 그림자 경계: 정점마다 그림자 경향을 흔듦 */
+    /* 털뭉치 모양 그림자 경계 (라운드 9): 정점마다 무작위로 흔들면 회색 얼룩(필터 같은 인상)이 됨 → 몇 개의 큰 뭉치로 끊긴 매끈한 무늬 */
+    const fur = (amp) => (a, b, c) => { const v = Array.isArray(a) ? Math.sin(c[0] * 4.2 + c[1] * 2.6 + c[2] * 1.3) : Math.sin(a * 3 + b * 0.55); return v > 0.62 ? amp * 0.45 : v < -0.78 ? -amp * 0.25 : 0; };
     /* 몸통: 엉덩이 → 배 → 가슴 → 목 → 머리 (하나의 S곡선 관) */
     K.tube('white', [   /* 길쭉한 몸: 엉덩이 → 배 → 가슴 → 굵고 긴 목 (S는 자세로) */
-      { p: [0, 0.62 * k, -0.28 * k], r: [0.34 * k, 0.34 * k], w: [['body', 1]] }, { p: [0, 0.95 * k, -0.15 * k], r: [0.5 * k, 0.47 * k], w: [['body', 1]] },
-      { p: [0, 1.4 * k, 0.0], r: [0.5 * k, 0.47 * k], w: [['body', 0.4], ['spine', 0.6]] }, { p: [0, 1.85 * k, -0.02 * k], r: [0.44 * k, 0.42 * k], w: [['spine', 0.5], ['chest', 0.5]] },
-      { p: [0, 2.25 * k, -0.03 * k], r: [0.38 * k, 0.36 * k], w: [['chest', 1]] }, { p: [0, 2.55 * k, 0.02 * k], r: [0.3 * k, 0.3 * k], w: [['chest', 0.4], ['neck', 0.6]] },
+      { p: [0, 0.62 * k, -0.28 * k], r: [0.3 * k, 0.32 * k], w: [['body', 1]] }, { p: [0, 0.95 * k, -0.15 * k], r: [0.41 * k, 0.45 * k], w: [['body', 1]] },   /* 라운드 11: 폭을 줄여 길고 유연한 족제비 (곰 같다는 패널 지적) */
+      { p: [0, 1.4 * k, 0.0], r: [0.39 * k, 0.44 * k], w: [['body', 0.4], ['spine', 0.6]] }, { p: [0, 1.85 * k, -0.02 * k], r: [0.34 * k, 0.38 * k], w: [['spine', 0.5], ['chest', 0.5]] },
+      { p: [0, 2.25 * k, -0.03 * k], r: [0.3 * k, 0.32 * k], w: [['chest', 1]] }, { p: [0, 2.55 * k, 0.02 * k], r: [0.3 * k, 0.3 * k], w: [['chest', 0.4], ['neck', 0.6]] },
       { p: [0, 2.85 * k, 0.12 * k], r: [0.26 * k, 0.26 * k], w: [['neck', 1]] }, { p: [0, 3.1 * k, 0.26 * k], r: [0.23 * k, 0.23 * k], w: [['neck', 0.5], ['head', 0.5]] },
     ], { seg: 22, biasFn: fur(0.45) });
     /* 털 끝 뾰족 실루엣: 큰 뭉치 몇 개 (어깨 · 가슴 털깃 · 엉덩이 · 팔꿈치) */
     for (let i = 0; i < 14; i++) {   /* 털 끝: 옆 실루엣에만 (앞면 조각 없음) */
-      const a = (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9, y = [0.95, 1.3, 2.2, 2.45][i % 4] * k, rr = (y > 2.0 * k ? 0.36 : 0.5) * k;
+      const a = (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9, y = [0.95, 1.3, 2.2, 2.45][i % 4] * k, rr = (y > 2.0 * k ? 0.29 : 0.4) * k;
       const base = [Math.cos(a) * rr * 0.92, y + (r() - 0.5) * 0.15 * k, Math.sin(a) * rr * 0.86 + (y > 2.2 * k ? 0.02 * k : 0)];
       const tip = add(base, [Math.cos(a) * (0.16 + r() * 0.16) * k, -(0.1 + r() * 0.16) * k, Math.sin(a) * (0.16 + r() * 0.14) * k]);
       K.spike('white', base, tip, (0.07 + r() * 0.05) * k, [[y > 2.2 * k ? 'chest' : y > 1.3 * k ? 'spine' : 'body', 1]], { seg: 5 });
@@ -13642,7 +13646,7 @@ const T1C = (() => {
     /* 뒷다리: 큰 엉덩이 덩어리 + 역관절 + 큰 발 · 검정 발톱 */
     for (const s of ['L', 'R']) {
       const th = S.pos['th' + s], kn = S.pos['kn' + s], ft = S.pos['ft' + s], sx = s === 'L' ? 1 : -1;
-      K.ell('white', add(th, [sx * 0.02 * k, -0.06 * k, 0.08 * k]), [0.24 * k, 0.3 * k, 0.3 * k], [['body', 0.4], ['th' + s, 0.6]], { rings: 8, seg: 14, biasFn: fur(0.5) });
+      K.ell('white', add(th, [sx * 0.02 * k, -0.06 * k, 0.08 * k]), [0.2 * k, 0.3 * k, 0.3 * k], [['body', 0.4], ['th' + s, 0.6]], { rings: 8, seg: 14, biasFn: fur(0.5) });
       K.tube('white', [{ p: lerp(th, kn, 0.4), r: 0.2 * k, w: [['th' + s, 1]] }, { p: kn, r: 0.15 * k, w: [['th' + s, 0.5], ['kn' + s, 0.5]] }, { p: lerp(kn, ft, 0.5), r: 0.11 * k, w: [['kn' + s, 1]] }, { p: ft, r: 0.1 * k, w: [['kn' + s, 0.3], ['ft' + s, 0.7]] }], { seg: 12, biasFn: fur(0.4) });
       K.ell('white', add(ft, [0, -0.07 * k, 0.16 * k]), [0.14 * k, 0.08 * k, 0.24 * k], [['ft' + s, 1]], { rings: 6, seg: 12 });
       for (let f = 0; f < 4; f++) { const b = add(ft, [(f - 1.5) * 0.06 * k, -0.1 * k, 0.36 * k]); K.spike('ink', b, add(b, [0, -0.04 * k, 0.12 * k]), 0.022 * k, [['ft' + s, 1]], { seg: 5 }); }
@@ -13653,11 +13657,10 @@ const T1C = (() => {
     K.tube('white', tpts.slice(0, 5).map((p, i) => ({ p, r: tr[i] * k, w: [[i ? tl[i - 1] : 'body', 1]] })), { seg: 14, biasFn: fur(0.5) });
     K.tube('ink', tpts.slice(4).map((p, i) => ({ p, r: tr[4 + i] * k, w: [[tl[3 + i] || tl[tl.length - 1], 1]] })).concat([{ p: add(tpts[tpts.length - 1], [0.08 * k, 0.25 * k, -0.02 * k]), r: 0.002, w: [[tl[tl.length - 1], 1]] }]), { seg: 14, cap0: false });
     /* 검정 망토: 어깨를 덮는 한 덩어리 (찢긴 끝 3개) */
-    coat(K, 'ink', [{ y: 2.62 * k, rx: 0.33 * k, rz: 0.33 * k, cz: 0.04 * k, gap: 0.9 }, { y: 2.38 * k, rx: 0.48 * k, rz: 0.46 * k, cz: 0.0, gap: 0.7 }, { y: 2.0 * k, rx: 0.56 * k, rz: 0.53 * k, cz: -0.02 * k, gap: 0.5 }],
-      (i, a) => (i === 0 ? [['chest', 0.5], ['neck', 0.5]] : [['chest', 1]]), { cols: 24, hem: (a, t) => { let m = 0; for (const q of [0.2, 0.5, 0.8]) m = Math.max(m, 1 - Math.abs(t - q) / 0.12); return -m * 0.38 * k; } });
+    /* (라운드 11: 검정 망토 뺌 — 레퍼런스 흰 짐승엔 망토가 없고, 위에서 볼 때 검정 덩어리가 사람 캐릭터와 뭉쳐 보였음) */
     /* 붓글씨 문신 획 (배 · 왼쪽 옆구리) */
     for (let i = 0; i < 6; i++) {
-      const y = (1.25 + i * 0.13) * k, a = Math.PI * 0.62 + (r() - 0.5) * 0.1, rr = 0.645 * k - Math.abs(y - 1.45 * k) * 0.15;
+      const y = (1.25 + i * 0.13) * k, a = Math.PI * 0.62 + (r() - 0.5) * 0.1, ex = 0.39 * k, ez = 0.44 * k, rr = 1.01 / Math.sqrt((Math.cos(a) / ex) ** 2 + (Math.sin(a) / ez) ** 2) - Math.abs(y - 1.45 * k) * 0.12;   /* 타원 몸 표면 위 */
       const p0 = [Math.cos(a) * rr, y, Math.sin(a) * rr], p1 = [Math.cos(a + 0.12) * rr, y - 0.05 * k, Math.sin(a + 0.12) * rr], p2 = [Math.cos(a + 0.05) * rr, y - 0.1 * k, Math.sin(a + 0.05) * rr];
       K.strand('ink', [p0, p1, p2], [0.02 * k, 0.03 * k, 0.004], [['spine', 1]], { thick: 0.6, up: norm([Math.cos(a), 0, Math.sin(a)]) });
     }
@@ -13756,10 +13759,10 @@ const T1A = (() => {
         K.sheet('ink', [0, 1, 2, 3].map(j => [0, 1].map(q => [c0[0] + n[0] * (0.1 + q * 1.1) + (j === 3 && q ? n[0] * -0.3 : 0), c0[1] - j * 0.6 - (q && j === 3 ? 0.22 : 0), c0[2] + n[2] * (0.1 + q * 1.1)])), () => w);
         K.ell('red', [c0[0] + n[0] * 0.65 - Math.cos(a) * 0.02, c0[1] - 0.9, c0[2] + n[2] * 0.65 - Math.sin(a) * 0.02], [0.34 * Math.abs(n[0]) + 0.02, 0.34, 0.34 * Math.abs(n[2]) + 0.02], w, { rings: 4, seg: 14 });
       } else {   /* 검정 부서진 기둥 */
-        const h = 0.45 + r() * 1.0, rad = 0.26 + r() * 0.16, tw = r() * 2;   /* 라운드 5: 낮게 (1.6~5 → 0.45~1.45) */
-        K.tube('ink', [{ p: [x, 0, z], r: rad * 1.15, w }, { p: [x, 0.3, z], r: rad, w }, { p: [x, h, z], r: rad * 0.9, w }], { seg: 6, up: [Math.cos(tw), 0, Math.sin(tw)] });
-        K.spike('ink', [x + (r() - 0.5) * 0.2, h - 0.05, z + (r() - 0.5) * 0.2], [x + (r() - 0.5) * 0.5, h + 0.5 + r() * 0.8, z + (r() - 0.5) * 0.5], rad * 0.8, w, { seg: 6 });
-        if (r() < 0.6) K.box('ink', [x + (r() - 0.5) * 1.6, 0.18, z + (r() - 0.5) * 1.6], [0.35, 0.18, 0.25], w, { ry: r() * 3, top: 0.6 });   /* 무너진 조각 */
+        /* 라운드 9: 뾰족한 검정 기둥(화면을 어지럽힘 — 패널) → 낮고 평평한 검정 석판 하나 */
+        const h = 0.18 + r() * 0.35, tw = r() * 3;
+        K.box('ink', [x, h, z], [0.5 + r() * 0.4, h, 0.32 + r() * 0.2], w, { ry: tw, top: 0.85 });
+
       }
     }
     const mats = { ink: R.mat(P.ink, P.ink, { flat: true, side: THREE.DoubleSide, line: 1.2 }), white: R.mat(P.paper, P.shadeW, { line: 1.2 }), red: R.mat(P.red, P.red, { flat: true, side: THREE.DoubleSide }) };
@@ -14216,7 +14219,7 @@ const T1T = (() => {
   }
   function onSmear(g, spec) {
     const k = g === boss ? 'warden' : (fighters.find(f => f.ch === g) ? charOf(fighters.find(f => f.ch === g)) : null); if (!k || !S.trails[k]) return;
-    const T = S.trails[k]; T.on = Math.max(0.12, (spec && spec.frames ? spec.frames : 3) / 12 + 0.06); T.hist.length = 0;
+    const T = S.trails[k]; T.on = Math.max(0.12, (spec && spec.frames ? spec.frames : 3) / 12 + 0.06);   /* 기록은 지우지 않음 (예비 자세부터 펼침) */
   }
   const isoBurst = iso(onBurst), isoSmear = iso(onSmear);
   /* 칼 끝 · 손잡이 (모델의 weapon 뼈 기준) */
@@ -14227,16 +14230,27 @@ const T1T = (() => {
     _a.set(0, H * M.k1, 0).applyMatrix4(w.matrixWorld); _b.set(0, L * M.k1, 0).applyMatrix4(w.matrixWorld);
     return [_a.clone(), _b.clone()];
   }
+  /* 칼 궤적 (라운드 10): 칼 자세를 늘 기록(칼끝이 움직였을 때만 — 12fps 계단 사이 같은 자세는 건너뜀 · 0.3초 지난 것은 버림)
+   *   → 스미어가 켜지면 예비 자세부터 타격 자세까지 펼쳐진 날카로운 부채꼴 판 (애니 스미어) */
   function updTrail(k, M, dt) {
     const T = S.trails[k]; if (!T) return;
-    T.on = Math.max(0, T.on - dt);
-    const m = T.mesh; if (T.on <= 0 || !M.root.visible) { m.visible = false; T.hist.length = 0; return; }
+    T.on = Math.max(0, T.on - dt); T.age = (T.age || 0) + dt;
+    const m = T.mesh; if (!M.root.visible) { m.visible = false; T.hist.length = 0; return; }
     const e = bladeEnds(M, k); if (!e) return;
-    T.hist.unshift(e); if (T.hist.length > D.fx.trailN) T.hist.length = D.fx.trailN;
-    const n = T.hist.length; if (n < 2) { m.visible = false; return; }
+    const last = T.hist[0];
+    if (!last || last[1].distanceTo(e[1]) > 0.04) {
+      /* 12fps 계단 사이 칼끝이 크게 움직이면 손잡이 기준으로 방향을 돌려 가며 중간 칸을 채움 → 휘두른 호를 따라 펼쳐진 부채꼴 */
+      if (last) { const d0 = last[1].clone().sub(last[0]), d1 = e[1].clone().sub(e[0]), L0 = d0.length(), L1 = d1.length(), n = Math.min(8, Math.floor(last[1].distanceTo(e[1]) / 0.22));
+        for (let q = 1; q <= n; q++) { const t = q / (n + 1), hd = last[0].clone().lerp(e[0], t), dir = d0.clone().normalize().lerp(d1.clone().normalize(), t); if (dir.lengthSq() < 1e-6) continue;
+          const mid = [hd, hd.clone().addScaledVector(dir.normalize(), L0 + (L1 - L0) * t)]; mid.t = T.age; T.hist.unshift(mid); } }
+      e.t = T.age; T.hist.unshift(e);
+    } else last.t = T.age;   /* 멈춘 자세(예비 유지)는 마지막으로 본 시각으로 */
+    while (T.hist.length && T.age - T.hist[T.hist.length - 1].t > 0.3) T.hist.pop();
+    if (T.hist.length > D.fx.trailN) T.hist.length = D.fx.trailN;
+    const n = T.hist.length; if (T.on <= 0 || n < 2) { m.visible = false; return; }
     const pos = m.geometry.attributes.position.array;
     for (let i = 0; i < D.fx.trailN; i++) {
-      const h = T.hist[Math.min(i, n - 1)], t = i / Math.max(1, n - 1), a = h[0].clone().lerp(h[1], Math.min(0.97, 0.35 + t * 0.65));   /* 오래된 쪽일수록 칼끝 쪽으로 좁아짐 = 끝 뾰족 */
+      const h = T.hist[Math.min(i, n - 1)], t = i / Math.max(1, n - 1), a = h[0].clone().lerp(h[1], Math.min(0.97, 0.2 + t * 0.77));   /* 오래된 쪽일수록 칼끝 쪽으로 좁아짐 = 끝 뾰족 */
       pos.set([a.x, a.y, a.z, h[1].x, h[1].y, h[1].z], i * 6);
     }
     m.geometry.attributes.position.needsUpdate = true; m.geometry.setDrawRange(0, (n - 1) * 6); m.visible = true;
@@ -14358,8 +14372,8 @@ const T1T = (() => {
     if (!S.built) build();
     S.t += dt; S.realDt = dt; S.fxThisFrame = 0;
     const R = S.R, gdt = (Game.hitstop > 0 || (typeof PIPE !== 'undefined' && PIPE.paused)) ? 0 : dt;
-    if (!ART.headless) R.resize(Pipe.lowW || 1920, Pipe.lowH || 1080);
-    { const lv = Math.max(0, Math.min(D.quality.dirs.length - 1, (typeof Perf3 !== 'undefined' && Perf3.level) || 0)); R.qDirs = D.quality.dirs[lv]; R.qBoil = D.quality.boil[lv]; }   /* 자동 품질 단계 → 테마 고유 값 */
+    { const lv = Math.max(0, Math.min(D.quality.dirs.length - 1, (typeof Perf3 !== 'undefined' && Perf3.level) || 0)); R.qDirs = D.quality.dirs[lv]; R.qBoil = D.quality.boil[lv]; R.qSS = D.quality.ss[lv]; }   /* 자동 품질 단계 → 테마 고유 값 */
+    if (!ART.headless) { const w = Pipe.lowW || 1920, h = Pipe.lowH || 1080, ss = Math.min(R.qSS || 1, 2880 / Math.max(w, 1)); R.resize(w * ss, h * ss); }   /* 슈퍼샘플 (선 계단 없앰) */
     /* 숨은 리그 따라가기 */
     const used = new Set();
     for (const f of fighters) {
@@ -14392,6 +14406,7 @@ const T1T = (() => {
     return true;
   }
   ART.themes[1] = { id: 1, name: ART.names[1], apply: iso(apply), dispose: iso(dispose), frame: iso(frame), hud };
+  S.tool = { updTrail, bladeEnds };   /* 점검 도구(동작 띠)가 궤적을 같은 코드로 그리게 */
   S.resetFx = () => { if (S.FX) S.FX.clear(); for (const k in S.trails) { S.trails[k].on = 0; S.trails[k].mesh.visible = false; } S.impact = 0; S.lastZp = CamRig.zp; S.eyeT = 0; S.teleN = (AI.tele && AI.tele.length) || 0; };
   return S;
 })();
@@ -14422,14 +14437,17 @@ T1H.game = (ctx, S) => {
 
   /* ---------------- 전투 HUD */
   const slide = k => Math.min(1, ui.panelT / U.slideT) < 1 ? (1 - Math.min(1, ui.panelT / U.slideT)) * k : 0;
-  bossBlock(ctx);
-  topRight(ctx);
-  rally(ctx);
-  playersPanel(ctx);
-  qte(ctx);
-  worldMarks(ctx);
-  techName(ctx);
-  banners(ctx);
+  const endAt = Game.state === 'won' ? 2.2 : Game.state === 'lost' ? 1.6 : -1, resShow = endAt >= 0 && Game.endT > endAt;
+  if (!resShow) {   /* 라운드 9: 결과 화면 뒤로 전투 HUD가 비치지 않게 */
+    bossBlock(ctx);
+    topRight(ctx);
+    rally(ctx);
+    playersPanel(ctx);
+    qte(ctx);
+    worldMarks(ctx);
+    techName(ctx);
+    banners(ctx);
+  }
   results(ctx);
   wipeDraw(ctx);
   if (Menu3.on) menu(ctx);

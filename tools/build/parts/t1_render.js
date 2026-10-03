@@ -33,8 +33,8 @@ const T1R = (() => {
       vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
       float d = dot(n, uL) + vBias;
       vec3 c = (uFlat > 0.5 || d > uCut) ? uLit : uShade;
-      if (uFlash > 0.5) { float sat = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));   /* 피격 순간 (라운드 5): 2톤 반전 — 흰 → 먹 · 먹 → 흰 · 강조색 그대로 */
-        c = sat > 0.3 ? c : (dot(c, vec3(0.299, 0.587, 0.114)) > 0.5 ? vec3(0.078, 0.067, 0.071) : vec3(0.992, 0.984, 0.984)); }
+      if (uFlash > 0.5 && uFlat < 0.5) {   /* 피격 순간 (라운드 9): 하드 2톤 — 빛 받는 면 = 흰 · 그림자 면 = 먹 (실루엣은 흰 채로 남아 검정 덩어리로 뭉치지 않음) */
+        c = d > uCut + 0.12 ? vec3(0.992, 0.984, 0.984) : vec3(0.078, 0.067, 0.071); }
       pc_fragColor = vec4(c, uAlpha);
       float id = mod(uId + vPart, 255.0) + 1.0;                  /* 0 = 배경 */
       gInfo = vec4(id / 255.0, uLine, 1.0, 1.0);
@@ -75,7 +75,7 @@ const T1R = (() => {
       float z0 = lin(texture(tDepth, vUv).x);
       float id0 = floor(i0.r * 255.0 + 0.5);
       /* 굵기: 기준 px × 흔들림(노이즈, boilFps마다 바뀜) × 먼 곳 얇게 × 부품 선 굵기 */
-      float n = vnoise(vUv * uSize / 38.0 + uSeed * 17.0);
+      float n = vnoise(vUv * uSize / 140.0 + uSeed * 17.0);   /* 라운드 11: 느린 굵기 변화 (펜 선) */
       float far = mix(1.0, uFarThin, clamp((z0 - 20.0) / 40.0, 0.0, 1.0));
       float w0 = max(i0.g, 0.0);
       float R = uPx * (1.0 + uJit * (n * 2.0 - 1.0)) * far;
@@ -174,7 +174,9 @@ const T1R = (() => {
     }`;
   SH.blitFrag = `
     precision highp float; uniform sampler2D tSrc; in vec2 vUv; out vec4 outColor;
-    void main() { outColor = vec4(texture(tSrc, vUv).rgb, 1.0); }`;
+    uniform vec2 uTexel;   /* 원본(슈퍼샘플) 한 텍셀 — 4점 · 쌍선형 = 약 3×3 상자로 줄임 (선 계단 없앰) */
+    void main() { vec3 c = texture(tSrc, vUv + uTexel * vec2(-0.5, -0.5)).rgb + texture(tSrc, vUv + uTexel * vec2(0.5, -0.5)).rgb
+      + texture(tSrc, vUv + uTexel * vec2(-0.5, 0.5)).rgb + texture(tSrc, vUv + uTexel * vec2(0.5, 0.5)).rgb; outColor = vec4(c * 0.25, 1.0); }`;
 
   /* 색은 sRGB 숫자 그대로 (조명 계산이 없는 셀 경로라 선형 변환 불필요 · 전역 색 관리 설정은 건드리지 않음 — 테마 0과 공유) */
   function hex(THREE, h) { return new THREE.Color().setStyle(h, THREE.LinearSRGBColorSpace); }
@@ -191,7 +193,7 @@ const T1R = (() => {
       uniforms: { tColor: { value: null }, tInfo: { value: null }, tDepth: { value: null }, uSize: { value: new THREE.Vector2() }, uPx: { value: 2 }, uJit: { value: 0.3 },
         uSeed: { value: 0 }, uNear: { value: 1 }, uFar: { value: 100 }, uDepthEdge: { value: 0.02 }, uInk: { value: hex(THREE, D.pal.ink) }, uFarThin: { value: 0.6 },
         uBg: { value: hex(THREE, D.pal.sky) }, uImpact: { value: 0 }, uDirs: { value: 16 } } });
-    R.blit = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: SH.compVert, fragmentShader: SH.blitFrag, depthTest: false, depthWrite: false, uniforms: { tSrc: { value: null } } });
+    R.blit = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: SH.compVert, fragmentShader: SH.blitFrag, depthTest: false, depthWrite: false, uniforms: { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() } } });
     /* 재질: kind = 팔레트 이름 쌍 [밝은 색, 그림자 색] · flat = 그림자 없음(검정 · 강조) · line = 선 굵기 배율(0 = 선 없음) */
     R.mat = (lit, shade, o = {}) => {
       const m = new THREE.ShaderMaterial({ vertexShader: SH.vert, fragmentShader: SH.frag, side: o.side ?? THREE.FrontSide,
@@ -240,7 +242,7 @@ const T1R = (() => {
       U.uSize.value.set(R.w, R.h); U.uPx.value = Math.max(1.2, Dr.outlinePx * R.h / 1080); U.uJit.value = Dr.outlineJit;
       U.uSeed.value = (R.boil % 7) * 0.37; U.uNear.value = R.camera.near; U.uFar.value = R.camera.far; U.uDepthEdge.value = Dr.depthEdge; U.uFarThin.value = Dr.farThin;
       R.quad.material = R.comp; r.setRenderTarget(R.final); r.render(R.qScene, R.qCam);
-      R.blit.uniforms.tSrc.value = R.final.texture; R.quad.material = R.blit;
+      R.blit.uniforms.tSrc.value = R.final.texture; R.blit.uniforms.uTexel.value.set(1 / R.w, 1 / R.h); R.quad.material = R.blit;
       r.setRenderTarget(target); if (viewport) r.setViewport(...viewport);
       r.render(R.qScene, R.qCam);
     };

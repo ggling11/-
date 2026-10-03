@@ -1,0 +1,24 @@
+{
+ "R1": {
+  "palette_dE": 0.334,
+  "screen_dE": 0.332,
+  "blue_px": 586,
+  "red_px": 16113,
+  "ok": true
+ },
+ "R3": {
+  "text_dL": {
+   "ok": 0.459,
+   "now": 0.808,
+   "wait": 0.808,
+   "fail": 0.262
+  },
+  "cell_dE": {
+   "ok-now": 0.403,
+   "ok-wait": 0.503,
+   "now-wait": 0.808
+  },
+  "note": "\ud310\uc815 \uce78 \uc0c9 \u00b7 \ud0a4 \uae00\uc790 \ub300\ube44 (\uc2e4\ud328 \uce78\uc740 \uae00\uc790 \ub300\uc2e0 \uac80\uc815 X\uac00 \ud310\ub3c5 \uae30\ud638). \ucea1\ucc98: R4_*_qte.png (3\ud574\uc0c1\ub3c4) \u00b7 \ubc18\ucbe4 \uae68\uc9c4 \uc21c\uac04 = 5\uce78 \uc911 2\uce78 \uc644\ub8cc",
+  "ok": true
+ }
+}

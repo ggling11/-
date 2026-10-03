@@ -267,17 +267,18 @@ const T1C = (() => {
     B('cape', 'chest', [0, 2.5, -0.2]);
     const tl = []; let tp = 'body'; [[0, 0.85, -0.55], [0, 0.5, -1.0], [0, 0.32, -1.5], [0.25, 0.4, -1.95], [0.55, 0.65, -2.25], [0.72, 1.0, -2.4]].forEach((q, i) => { B('tl' + i, tp, q); tp = 'tl' + i; tl.push('tl' + i); });
     const K = Kit(S, D.model.warden), r = rng(D.model.warden.seed);
-    const fur = (amp) => () => (r() - 0.5) * amp;   /* 털뭉치 모양 그림자 경계: 정점마다 그림자 경향을 흔듦 */
+    /* 털뭉치 모양 그림자 경계 (라운드 9): 정점마다 무작위로 흔들면 회색 얼룩(필터 같은 인상)이 됨 → 몇 개의 큰 뭉치로 끊긴 매끈한 무늬 */
+    const fur = (amp) => (a, b, c) => { const v = Array.isArray(a) ? Math.sin(c[0] * 4.2 + c[1] * 2.6 + c[2] * 1.3) : Math.sin(a * 3 + b * 0.55); return v > 0.62 ? amp * 0.45 : v < -0.78 ? -amp * 0.25 : 0; };
     /* 몸통: 엉덩이 → 배 → 가슴 → 목 → 머리 (하나의 S곡선 관) */
     K.tube('white', [   /* 길쭉한 몸: 엉덩이 → 배 → 가슴 → 굵고 긴 목 (S는 자세로) */
-      { p: [0, 0.62 * k, -0.28 * k], r: [0.34 * k, 0.34 * k], w: [['body', 1]] }, { p: [0, 0.95 * k, -0.15 * k], r: [0.5 * k, 0.47 * k], w: [['body', 1]] },
-      { p: [0, 1.4 * k, 0.0], r: [0.5 * k, 0.47 * k], w: [['body', 0.4], ['spine', 0.6]] }, { p: [0, 1.85 * k, -0.02 * k], r: [0.44 * k, 0.42 * k], w: [['spine', 0.5], ['chest', 0.5]] },
-      { p: [0, 2.25 * k, -0.03 * k], r: [0.38 * k, 0.36 * k], w: [['chest', 1]] }, { p: [0, 2.55 * k, 0.02 * k], r: [0.3 * k, 0.3 * k], w: [['chest', 0.4], ['neck', 0.6]] },
+      { p: [0, 0.62 * k, -0.28 * k], r: [0.3 * k, 0.32 * k], w: [['body', 1]] }, { p: [0, 0.95 * k, -0.15 * k], r: [0.41 * k, 0.45 * k], w: [['body', 1]] },   /* 라운드 11: 폭을 줄여 길고 유연한 족제비 (곰 같다는 패널 지적) */
+      { p: [0, 1.4 * k, 0.0], r: [0.39 * k, 0.44 * k], w: [['body', 0.4], ['spine', 0.6]] }, { p: [0, 1.85 * k, -0.02 * k], r: [0.34 * k, 0.38 * k], w: [['spine', 0.5], ['chest', 0.5]] },
+      { p: [0, 2.25 * k, -0.03 * k], r: [0.3 * k, 0.32 * k], w: [['chest', 1]] }, { p: [0, 2.55 * k, 0.02 * k], r: [0.3 * k, 0.3 * k], w: [['chest', 0.4], ['neck', 0.6]] },
       { p: [0, 2.85 * k, 0.12 * k], r: [0.26 * k, 0.26 * k], w: [['neck', 1]] }, { p: [0, 3.1 * k, 0.26 * k], r: [0.23 * k, 0.23 * k], w: [['neck', 0.5], ['head', 0.5]] },
     ], { seg: 22, biasFn: fur(0.45) });
     /* 털 끝 뾰족 실루엣: 큰 뭉치 몇 개 (어깨 · 가슴 털깃 · 엉덩이 · 팔꿈치) */
     for (let i = 0; i < 14; i++) {   /* 털 끝: 옆 실루엣에만 (앞면 조각 없음) */
-      const a = (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9, y = [0.95, 1.3, 2.2, 2.45][i % 4] * k, rr = (y > 2.0 * k ? 0.36 : 0.5) * k;
+      const a = (r() < 0.5 ? 0 : Math.PI) + (r() - 0.5) * 0.9, y = [0.95, 1.3, 2.2, 2.45][i % 4] * k, rr = (y > 2.0 * k ? 0.29 : 0.4) * k;
       const base = [Math.cos(a) * rr * 0.92, y + (r() - 0.5) * 0.15 * k, Math.sin(a) * rr * 0.86 + (y > 2.2 * k ? 0.02 * k : 0)];
       const tip = add(base, [Math.cos(a) * (0.16 + r() * 0.16) * k, -(0.1 + r() * 0.16) * k, Math.sin(a) * (0.16 + r() * 0.14) * k]);
       K.spike('white', base, tip, (0.07 + r() * 0.05) * k, [[y > 2.2 * k ? 'chest' : y > 1.3 * k ? 'spine' : 'body', 1]], { seg: 5 });
@@ -314,7 +315,7 @@ const T1C = (() => {
     /* 뒷다리: 큰 엉덩이 덩어리 + 역관절 + 큰 발 · 검정 발톱 */
     for (const s of ['L', 'R']) {
       const th = S.pos['th' + s], kn = S.pos['kn' + s], ft = S.pos['ft' + s], sx = s === 'L' ? 1 : -1;
-      K.ell('white', add(th, [sx * 0.02 * k, -0.06 * k, 0.08 * k]), [0.24 * k, 0.3 * k, 0.3 * k], [['body', 0.4], ['th' + s, 0.6]], { rings: 8, seg: 14, biasFn: fur(0.5) });
+      K.ell('white', add(th, [sx * 0.02 * k, -0.06 * k, 0.08 * k]), [0.2 * k, 0.3 * k, 0.3 * k], [['body', 0.4], ['th' + s, 0.6]], { rings: 8, seg: 14, biasFn: fur(0.5) });
       K.tube('white', [{ p: lerp(th, kn, 0.4), r: 0.2 * k, w: [['th' + s, 1]] }, { p: kn, r: 0.15 * k, w: [['th' + s, 0.5], ['kn' + s, 0.5]] }, { p: lerp(kn, ft, 0.5), r: 0.11 * k, w: [['kn' + s, 1]] }, { p: ft, r: 0.1 * k, w: [['kn' + s, 0.3], ['ft' + s, 0.7]] }], { seg: 12, biasFn: fur(0.4) });
       K.ell('white', add(ft, [0, -0.07 * k, 0.16 * k]), [0.14 * k, 0.08 * k, 0.24 * k], [['ft' + s, 1]], { rings: 6, seg: 12 });
       for (let f = 0; f < 4; f++) { const b = add(ft, [(f - 1.5) * 0.06 * k, -0.1 * k, 0.36 * k]); K.spike('ink', b, add(b, [0, -0.04 * k, 0.12 * k]), 0.022 * k, [['ft' + s, 1]], { seg: 5 }); }
@@ -325,11 +326,10 @@ const T1C = (() => {
     K.tube('white', tpts.slice(0, 5).map((p, i) => ({ p, r: tr[i] * k, w: [[i ? tl[i - 1] : 'body', 1]] })), { seg: 14, biasFn: fur(0.5) });
     K.tube('ink', tpts.slice(4).map((p, i) => ({ p, r: tr[4 + i] * k, w: [[tl[3 + i] || tl[tl.length - 1], 1]] })).concat([{ p: add(tpts[tpts.length - 1], [0.08 * k, 0.25 * k, -0.02 * k]), r: 0.002, w: [[tl[tl.length - 1], 1]] }]), { seg: 14, cap0: false });
     /* 검정 망토: 어깨를 덮는 한 덩어리 (찢긴 끝 3개) */
-    coat(K, 'ink', [{ y: 2.62 * k, rx: 0.33 * k, rz: 0.33 * k, cz: 0.04 * k, gap: 0.9 }, { y: 2.38 * k, rx: 0.48 * k, rz: 0.46 * k, cz: 0.0, gap: 0.7 }, { y: 2.0 * k, rx: 0.56 * k, rz: 0.53 * k, cz: -0.02 * k, gap: 0.5 }],
-      (i, a) => (i === 0 ? [['chest', 0.5], ['neck', 0.5]] : [['chest', 1]]), { cols: 24, hem: (a, t) => { let m = 0; for (const q of [0.2, 0.5, 0.8]) m = Math.max(m, 1 - Math.abs(t - q) / 0.12); return -m * 0.38 * k; } });
+    /* (라운드 11: 검정 망토 뺌 — 레퍼런스 흰 짐승엔 망토가 없고, 위에서 볼 때 검정 덩어리가 사람 캐릭터와 뭉쳐 보였음) */
     /* 붓글씨 문신 획 (배 · 왼쪽 옆구리) */
     for (let i = 0; i < 6; i++) {
-      const y = (1.25 + i * 0.13) * k, a = Math.PI * 0.62 + (r() - 0.5) * 0.1, rr = 0.645 * k - Math.abs(y - 1.45 * k) * 0.15;
+      const y = (1.25 + i * 0.13) * k, a = Math.PI * 0.62 + (r() - 0.5) * 0.1, ex = 0.39 * k, ez = 0.44 * k, rr = 1.01 / Math.sqrt((Math.cos(a) / ex) ** 2 + (Math.sin(a) / ez) ** 2) - Math.abs(y - 1.45 * k) * 0.12;   /* 타원 몸 표면 위 */
       const p0 = [Math.cos(a) * rr, y, Math.sin(a) * rr], p1 = [Math.cos(a + 0.12) * rr, y - 0.05 * k, Math.sin(a + 0.12) * rr], p2 = [Math.cos(a + 0.05) * rr, y - 0.1 * k, Math.sin(a + 0.05) * rr];
       K.strand('ink', [p0, p1, p2], [0.02 * k, 0.03 * k, 0.004], [['spine', 1]], { thick: 0.6, up: norm([Math.cos(a), 0, Math.sin(a)]) });
     }
