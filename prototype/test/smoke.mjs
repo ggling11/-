@@ -72,6 +72,45 @@ await waitState(() => __game.G.boss.state !== 'gap');
 results.practiceHap = await ev(() => __game.G.stats.hap);
 await page.screenshot({ path: path.join(out, '2_practice_hap.png') });
 
+// 4) 알파-2 시선과 노림 (듀오): 1P가 보스 정면에서 버티고 2P는 등 뒤에서 기다림 → 노림 가득 → 받기 → 노림 합
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, 0); B.yaw = Math.PI; P1.pos.set(0, 0, -3); P2.pos.set(0, 0, 3.2); P2.yaw = Math.PI; B.target = P1;
+});
+await waitState(() => __game.G.players[1].aim >= 1, 30000);
+results.aimFrontDot = await ev(() => { const { G } = __game; return +G.boss.forward().dot({ x: 0, y: 0, z: -1 }).toFixed(2); });
+await page.screenshot({ path: path.join(out, '4_aim_full.png') });
+const hp0 = await ev(() => __game.G.boss.hp);
+await ev(() => { const { G } = __game; G.boss.begin('slam'); G.boss.t = G.boss.atk.windup - 0.12; });
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.boss.state !== 'gap');
+results.aimHap = await ev(() => __game.G.stats.aimHap);
+results.aimHapDamage = hp0 - await ev(() => __game.G.boss.hp);
+results.aimClearedAfter = await ev(() => __game.G.players[1].aim);
+await page.screenshot({ path: path.join(out, '4_aim_hap.png') });
+
+// 5) 혼자 하기: A가 보스 코앞에서 버티는 동안 B 노림이 참 → 받기 → 태그 진입 노림 합. 틈 밖 태그는 노림을 날린다
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit1');
+await waitState(() => __game.G.mode === 'solo' && __game.G.running);
+await ev(() => { const { G } = __game; const B = G.boss, A = G.players[0]; B.cd = 99; B.pos.set(0, 0, 0); B.yaw = 0; A.pos.set(0, 0, 2.6); });
+await waitState(() => __game.G.players[1].aim >= 1, 30000);
+await ev(() => { const { G } = __game; G.boss.begin('slam'); G.boss.t = G.boss.atk.windup - 0.12; });
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.boss.state !== 'gap');
+results.soloAimHap = await ev(() => __game.G.stats.aimHap);
+results.soloBenchAimAfter = await ev(() => __game.G.players[0].aim);
+await page.screenshot({ path: path.join(out, '5_solo_aim_hap.png') });
+
 // 3) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -79,6 +118,8 @@ results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > i
 await page.screenshot({ path: path.join(out, '3_mobile_title.png') });
 
 await browser.close();
-const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1 && !results.mobileOverflow && !errors.length;
+const ok = results.duoReceive === 'gap' && results.duoHap === 1 && results.practiceReceive === 'gap' && results.practiceHap === 1
+  && results.aimHap === 1 && results.aimHapDamage >= 45 && results.aimClearedAfter === 0 && results.soloAimHap === 1
+  && !results.mobileOverflow && !errors.length;
 console.log(JSON.stringify({ ok, results, errors }, null, 2));
 process.exit(ok ? 0 : 1);
