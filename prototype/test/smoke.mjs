@@ -163,16 +163,67 @@ results.impactAfter = await ev(() => __game.G.players[0].impact);
 results.released = await ev(() => __game.G.stats.released);
 await page.screenshot({ path: path.join(out, '4_release.png') });
 
-// 5) [알파] 충격 한계에서 받으면 자세가 무너지고 틈이 안 열린다
+// 5) [알파] 충격 한계에서 버티기로 받으면 자세가 무너지고 틈이 안 열린다
 await ev(() => {
   const { G } = __game; const B = G.boss, [P1] = G.players;
   B.state = 'chase'; B.pos.set(0, 0, 0); P1.state = 'free'; P1.pos.set(0, 0, 3); P1.impact = 3; P1.rcvCd = 0;
-  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.12;
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.6;
 });
 await page.keyboard.down('KeyG');
 await waitState(() => __game.G.boss.state !== 'windup');
 await page.keyboard.up('KeyG');
 results.breakState = await ev(() => [__game.G.boss.state, __game.G.players[0].state, __game.G.stats.broken]);
+
+// 5b) [알파] 충격 한계여도 정확한 받기는 버틴다 (세키로처럼)
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.state = 'chase'; B.cd = 99; B.pos.set(0, 0, 0); P1.state = 'free'; P1.pos.set(0, 0, 3); P1.impact = 3; P1.rcvCd = 0;
+  P2.state = 'free'; P2.pos.set(-9, 0, -6);
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.05;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+results.perfectAtFull = await ev(() => [__game.G.boss.state, __game.G.players[0].impact, __game.G.stats.broken]);
+
+// 5c) [알파] 광역 공유 받기: 휩쓸기를 1P만 받아도 범위 안 2P는 안 맞는다
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.state = 'chase'; B.cd = 99; B.pos.set(0, 0, 0);
+  for (const p of G.players) { p.state = 'free'; p.t = 0; p.rcvCd = 0; p.impact = 0; }
+  P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3);
+  B.target = P1; B.begin('sweep'); B.t = B.atk.windup - 0.05;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+results.shared = await ev(() => [__game.G.boss.state, __game.G.players[1].state, __game.G.stats.shield]);
+
+// 5d) [알파] 끼어들기: 나도 범위 안이어도, 8m 떨어져 있어도 된다
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.state = 'chase'; B.cd = 99; B.pos.set(0, 0, 0);
+  for (const p of G.players) { p.state = 'free'; p.t = 0; p.rcvCd = 0; p.impact = 0; }
+  P1.pos.set(0, 0, 3.2); P2.pos.set(-7, 0, -1);
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.45;
+});
+results.helpRing = await ev(() => __game.G.players[1].canCover());
+await page.keyboard.down('KeyL');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyL');
+results.coverFar = await ev(() => [__game.G.boss.state, __game.G.players[0].state, __game.G.stats.save]);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.state = 'chase'; B.cd = 99; B.pos.set(0, 0, 0);
+  for (const p of G.players) { p.state = 'free'; p.t = 0; p.rcvCd = 0; p.impact = 0; }
+  P1.pos.set(0, 0, 3.2); P2.pos.set(1.3, 0, 3.4);
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.45;
+});
+await page.keyboard.down('KeyL');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyL');
+results.coverNear = await ev(() => [__game.G.boss.state, __game.G.players[0].state, __game.G.stats.save]);
+await ev(() => { __game.G.stats.save = 0; });
 
 // 6) [알파] 끼어들기: 1P가 내려찍기 범위에 서 있고 받기 안 함 → 2P가 받기 → 뛰어들어 대신 받기 → 틈, 1P 무사
 await ev(() => {
@@ -274,6 +325,10 @@ await browser.close();
 const alpha = results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
+  && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1
+  && results.shared[0] === 'gap' && results.shared[1] !== 'hurt' && results.shared[2] === 1
+  && results.helpRing === true && results.coverFar[0] === 'gap' && results.coverFar[1] !== 'hurt' && results.coverFar[2] === 1
+  && results.coverNear[0] === 'gap' && results.coverNear[1] !== 'hurt' && results.coverNear[2] === 2
   && results.tagCoverState === 'receive' && results.tagCover[0] === 'gap' && results.tagCover[1] === 1 && results.tagCover[2] >= 1;
 const ok = alpha && results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
   && results.unison.n === 1 && results.soloReceive === 'gap' && results.soloHap === 1 && results.soloFin.fin === 1 && results.soloFin.active === 0
