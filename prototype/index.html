@@ -99,6 +99,11 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 .lb.top { top: 0; } .lb.bot { bottom: 0; }
 body.cine .lb { height: 11vh; }
 #hud { transition: opacity 0.15s; }
+/* [알파] 최고의 합 다시 보기 */
+#replayCap { position: fixed; left: 50%; bottom: calc(11vh + 14px); transform: translateX(-50%); z-index: 3; display: grid; justify-items: center; gap: 2px; pointer-events: none; text-align: center; max-width: calc(100% - 32px); background: rgba(7, 8, 13, 0.72); border-radius: 4px; padding: 6px 16px 8px; }
+#replayCap b { font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 4vw, 34px); color: var(--gold); letter-spacing: 0.04em; text-shadow: 0 3px 0 rgba(0,0,0,0.6); }
+#replayCap span { font-size: 14px; color: var(--ink); }
+#replayCap small { font-size: 12px; color: var(--ink-dim); }
 body.cine #hud { opacity: 0; }
 #stamp { position: fixed; left: 50%; top: 27%; z-index: 3; pointer-events: none; display: grid; justify-items: center; gap: 4px; opacity: 0; transform: translate(-50%, -50%); }
 #stamp .w { position: relative; font-family: var(--font-display); font-size: clamp(56px, 13vw, 132px); line-height: 1; color: #fff; letter-spacing: 0.02em; white-space: nowrap;
@@ -196,6 +201,7 @@ td:first-child { color: var(--ink-dim); }
 <div id="texts"></div>
 <canvas id="lines"></canvas>
 <div class="lb top"></div><div class="lb bot"></div>
+<div id="replayCap" hidden><b>오늘의 합</b><span id="replayLabel"></span><small>아무 키나 누르면 넘어가요</small></div>
 <div id="stamp"><div class="w" id="stampWord">완벽한 합</div><div class="s" id="stampSub"></div></div>
 <div id="caption" hidden></div>
 <div id="demoBar" hidden>
@@ -307,7 +313,7 @@ td:first-child { color: var(--ink-dim); }
       <span>원정 <kbd>U</kbd></span>
       <button class="pick" type="button" id="draftBtn" aria-pressed="true">유물 고르기<small>마당마다 3개 중 1개</small></button>
     </div>
-    <p class="note">원정: 두 마당(고른 상대 → 다른 상대)을 이어서 싸워요. 마당에 들어가기 전에 <strong>유물</strong>을 하나씩 골라요. 유물은 숫자를 올리지 않고 <strong>규칙</strong>을 바꿔요.</p>
+    <p class="note">원정: 두 마당(고른 상대 → 다른 상대)을 이어서 싸워요. 마당에 들어가기 전에 <strong>유물</strong>을 하나씩 골라요. 유물은 숫자를 올리지 않고 <strong>규칙</strong>을 바꿔요. 마당이 끝나면 그 마당에서 가장 좋았던 합을 <strong>다시 보여 줘요</strong>.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>조작</th><th>1P 키보드</th><th>2P 키보드</th><th>게임패드</th></tr></thead>
@@ -348,6 +354,7 @@ td:first-child { color: var(--ink-dim); }
     <div class="actions">
       <button class="btn primary" id="nextBtn" type="button" hidden>다음 마당 (N)</button>
       <button class="btn primary" id="againBtn" type="button">다시 하기 (R)</button>
+      <button class="btn" id="replayBtn" type="button" hidden>최고의 합 다시 보기 (V)</button>
       <button class="btn" id="menuBtn" type="button">모드 선택 (Esc)</button>
     </div>
   </div>
@@ -472,6 +479,11 @@ const CFG = {
   sharedAll: false,      // 유물 "맞댄 등"
   coverPerfect: false,   // 유물 "긴 팔"
   releaseBoth: false,    // 유물 "한 몸"
+  // [알파] 최고의 합 다시 보기: 싸움이 끝나면 결과 화면 전에 가장 좋았던 합을 슬로모션으로
+  replayOn: true,
+  replayPre: 2.2,        // 합 이전 몇 초부터
+  replayPost: 1.3,       // 합 이후 몇 초까지
+  replaySlow: 0.25,      // 합 앞뒤 슬로모션 배속
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -853,6 +865,7 @@ const padPrev = {};
 addEventListener('keydown', e => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   if (GAME_KEYS.has(e.code) && G.running) e.preventDefault();
+  if (G.replay) { if (!e.repeat) endReplay(); return; }
   if (!e.repeat) keysPressed.add(e.code);
   keysDown.add(e.code);
   if (e.code === 'Backquote') toggleGui();
@@ -862,6 +875,7 @@ addEventListener('keydown', e => {
     if (e.code === 'Digit0' || e.code === 'Numpad0') return pickRelic(null);
   }
   if (!G.running && !resultEl.hidden && e.code === 'KeyN' && !$('nextBtn').hidden) return nextStage();
+  if (!G.running && !resultEl.hidden && e.code === 'KeyV' && !$('replayBtn').hidden) return $('replayBtn').click();
   if (!titleEl.hidden && e.code === 'KeyU') $('draftBtn').click();
   if (!G.running && !resultEl.hidden && e.code === 'KeyR') start(G.mode);
   if (e.code === 'Escape') showTitle();
@@ -872,6 +886,7 @@ addEventListener('keydown', e => {
   if (!titleEl.hidden && (e.code === 'Digit4' || e.code === 'Numpad4')) start('demo');
 });
 addEventListener('keyup', e => keysDown.delete(e.code));
+addEventListener('pointerdown', () => { if (G.replay) endReplay(); }); // [알파] 다시 보기는 눌러서도 넘긴다
 addEventListener('blur', () => keysDown.clear());
 
 function pads() { return [...(navigator.getGamepads?.() || [])].filter(Boolean); }
@@ -1611,6 +1626,7 @@ const G = {
   timeScale: 1, freezeFx: false, release: null, impact: 0, cine: null, lines: 0, linesPos: V(), dim: 0, cineBody: 0, afterglow: 0, glowList: [], ghostT: 0, demo: null,
   players: [], boss: null, active: 0, tagCd: 0, autoTag: 0,
   recentHits: [], stats: null, mom: 0, fin: null,
+  rec: [], best: null, clipPending: null, replay: null, replayed: false,
 };
 G.players = [new Player(0, CHARS.moru), new Player(1, CHARS.jebi)];
 G.boss = new Boss();
@@ -1906,6 +1922,7 @@ function doHap(p, grade, dtr, dmg, rel = 0, aim = 0) {
   if (aim > 0.05) { SFX.aimHap(aim); fxRing(p.pos, p.color, 0.4, 2.5 + aim * 2, 0.4, 0.8); }
   if (full) popText(above(B, 5.8), '등 뒤에서', 'aim big', 1.3);
   if (rel > 0) { popText(above(B, 3.1), `충격 해방 ${'◆'.repeat(rel)}`, 'release', 1.2); SFX.release(rel); G.stats.released += rel; }
+  noteBestHap(p, perfect, unison, weakPos, dmg, rel);
   // 솔로: 합 직후 바로 되돌려 태그(맺기)할 수 있게. 제비는 합을 친 칼이 두 번 더 이어진다
   if (G.mode === 'solo') G.tagCd = 0;
   if (p.ch.flurry) p.combo = p.ch.flurry;
@@ -2297,6 +2314,7 @@ function step(dt) {
   resolveCollisions();
   updateAim(dt);
   G.recentHits = G.recentHits.filter(h => G.now - h.time < 0.6);
+  recordFrame();
   if (!G.ended && G.boss.dead) endGame(true);
   if (G.ended) { G.endT -= dt; if (G.endT <= 0) showResult(); }
 }
@@ -2305,6 +2323,123 @@ function step(dt) {
 const titleEl = document.getElementById('title'), resultEl = document.getElementById('result'), hudEl = document.getElementById('hud');
 const guiEl = document.getElementById('gui'), tuneBtn = document.getElementById('tuneBtn');
 const $ = id => document.getElementById(id);
+
+// ───────────────────────── [알파] 최고의 합 다시 보기 ─────────────────────────
+// 싸우는 동안 몇 초치 자세를 계속 기록해 두고, 가장 좋은 합(합기 > 완벽한 합 > 합, 같으면 피해 큰 쪽)의 앞뒤를 잘라 둔다
+const qTmp = new THREE.Quaternion(), qTmp2 = new THREE.Quaternion();
+function snapPlayer(p) {
+  const q = p.tilt.quaternion, r = p.root.position;
+  return [r.x, r.y, r.z, p.spin.rotation.y, q.x, q.y, q.z, q.w, p.arm.rotation.y, p.root.visible ? 1 : 0];
+}
+function snapBoss(B) {
+  const q = B.tilt.quaternion, r = B.root.position, w = B.weak.position;
+  return [r.x, r.y, r.z, B.spin.rotation.y, q.x, q.y, q.z, q.w, B.arms[0].rotation.x, B.arms[1].rotation.x, B.weak.visible ? 1 : 0, w.x, w.y, w.z, B.spin.scale.x, B.spin.scale.y, B.tilt.position.y];
+}
+function recordFrame() {
+  if (!CFG.replayOn || G.mode === 'demo') return;
+  G.rec.push({ t: G.now, P: G.players.map(snapPlayer), B: snapBoss(G.boss) });
+  const keep = CFG.replayPre + CFG.replayPost + 0.5;
+  while (G.rec.length && G.rec[0].t < G.now - keep) G.rec.shift();
+  if (G.clipPending && G.now >= G.clipPending.hapT + CFG.replayPost) finalizeClip();
+}
+const iga = w => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c < 11172 && c % 28 ? '이' : '가'); };
+function noteBestHap(p, perfect, unison, weakPos, dmg, rel) {
+  if (!CFG.replayOn || G.mode === 'demo') return;
+  const score = (unison ? 3 : perfect ? 2 : 1) * 100000 + dmg;
+  const cur = G.clipPending || G.best;
+  if (cur && cur.score >= score) return;
+  if (G.clipPending) finalizeClip();
+  const who = G.mode === 'duo' ? `${p.idx + 1}P ${p.char.name}` : p.char.name;
+  const rcv = G.boss.gapReceivers.filter(q => q !== p).map(q => q.char.name).join('·');
+  G.clipPending = {
+    score, hapT: G.now, weak: weakPos.clone(), perfect, unison, dmg: Math.round(dmg),
+    label: `${unison ? '합기' : perfect ? '완벽한 합' : '합'} · ${rcv ? `${iga(rcv)} 받고 ` : ''}${iga(who)} 쳤다 · ${Math.round(dmg)}` + (rel ? ` · 충격 ${rel}칸` : ''),
+  };
+}
+function finalizeClip() {
+  const c = G.clipPending; if (!c) return;
+  G.clipPending = null;
+  const frames = G.rec.filter(f => f.t >= c.hapT - CFG.replayPre).map(f => ({ t: f.t, P: f.P.map(a => a.slice()), B: f.B.slice() }));
+  if (frames.length > 2) G.best = { ...c, frames };
+}
+function applyPlayerSnap(p, a, b, k) {
+  const L = i => lerp(a[i], b[i], k);
+  p.root.position.set(L(0), L(1), L(2)); p.spin.rotation.y = L(3);
+  qTmp.set(a[4], a[5], a[6], a[7]); qTmp2.set(b[4], b[5], b[6], b[7]); p.tilt.quaternion.slerpQuaternions(qTmp, qTmp2, k);
+  p.arm.rotation.y = L(8); p.root.visible = (k < 0.5 ? a : b)[9] === 1;
+}
+function applyBossSnap(B, a, b, k) {
+  const L = i => lerp(a[i], b[i], k);
+  B.root.position.set(L(0), L(1), L(2)); B.spin.rotation.y = L(3);
+  qTmp.set(a[4], a[5], a[6], a[7]); qTmp2.set(b[4], b[5], b[6], b[7]); B.tilt.quaternion.slerpQuaternions(qTmp, qTmp2, k);
+  B.arms[0].rotation.x = L(8); B.arms[1].rotation.x = L(9);
+  B.weak.visible = (k < 0.5 ? a : b)[10] === 1; B.weak.position.set(L(11), L(12), L(13));
+  B.spin.scale.set(L(14), L(15), L(14)); B.tilt.position.y = L(16);
+}
+function hideExtras(hide) {
+  for (const p of G.players) {
+    for (const o of [p.ring, p.shield, p.mark, p.foot, p.helpRing, p.cue, p.aimRing, p.aimLine, p.echoRing, ...p.pips]) if (o) o.visible = hide ? false : o.visible;
+  }
+  if (hide) { G.boss.gaze.visible = false; if (G.boss.arc) { disposeTree(G.boss.arc); G.boss.arc = null; } G.boss.tele?.dispose(); G.boss.tele = null; }
+}
+function startReplay(then) {
+  const c = G.best; if (!c) return then?.();
+  G.replay = { c, rt: c.frames[0].t, hold: 0, fired: false, then, orbit: 0 };
+  G.running = false;
+  resetCine(); G.slow = null; G.hitstop = 0;
+  lctx.clearRect(0, 0, linesEl.width, linesEl.height); linesFrame = 0; // 실제 싸움에서 남은 집중선 지우기
+  hudEl.hidden = true; resultEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
+  $('replayLabel').textContent = c.label;
+  $('replayCap').hidden = false;
+  document.body.classList.add('cine');
+  texts.forEach(t => t.el.remove()); texts.length = 0;
+  hideExtras(true);
+}
+function endReplay() {
+  const R = G.replay; if (!R) return;
+  G.replay = null;
+  $('replayCap').hidden = true;
+  document.body.classList.remove('cine');
+  R.then?.();
+}
+function replayFrame(raw) {
+  const R = G.replay, c = R.c, F = c.frames;
+  if (R.hold > 0) R.hold -= raw;
+  else {
+    const d = Math.abs(R.rt - c.hapT);
+    const speed = d < 0.45 ? CFG.replaySlow : d < 0.9 ? lerp(CFG.replaySlow, 1, (d - 0.45) / 0.45) : 1;
+    R.rt += raw * speed;
+  }
+  R.orbit += raw;
+  if (!R.fired && R.rt >= c.hapT) {
+    R.fired = true; R.rt = c.hapT; R.hold = c.perfect || c.unison ? 0.4 : 0.2;
+    const w = c.weak;
+    burst(w, COLOR.gold, c.unison ? 40 : c.perfect ? 28 : 16, c.perfect ? 9 : 7);
+    fxRing(V(w.x, 0, w.z), COLOR.gold, 1, c.perfect ? 10 : 6, 0.7);
+    popText(w.clone().setY(w.y + 2.2), c.unison ? '합기!' : c.perfect ? '완벽한 합!' : '합!', c.perfect || c.unison ? 'perfect' : 'hap', 1.6);
+    (c.perfect || c.unison ? SFX.perfectHap : SFX.hap)();
+    G.flash = c.perfect ? 0.9 : 0.5; G.shake = Math.max(G.shake, c.perfect ? 0.6 : 0.35);
+  }
+  let i = F.findIndex(f => f.t >= R.rt);
+  if (i < 0) { applyFrameAt(F, F.length - 1, F.length - 1, 0); return endReplay(); }
+  if (i === 0) i = 1;
+  const a = F[i - 1], b = F[i], k = clamp((R.rt - a.t) / Math.max(1e-6, b.t - a.t), 0, 1);
+  applyFrameAt(F, i - 1, i, k);
+}
+function applyFrameAt(F, ia, ib, k) {
+  G.players.forEach((p, j) => applyPlayerSnap(p, F[ia].P[j], F[ib].P[j], k));
+  applyBossSnap(G.boss, F[ia].B, F[ib].B, k);
+}
+function replayCamera() {
+  const R = G.replay, w = R.c.weak;
+  const a0 = Math.atan2(CAM_OFFSET.x, CAM_OFFSET.z) - 0.35 + R.orbit * (REDUCED ? 0 : 0.09);
+  const horiz = Math.hypot(CAM_OFFSET.x, CAM_OFFSET.z) * 0.78, fit = camera.aspect < 1.1 ? Math.pow(1.1 / camera.aspect, 0.7) : 1;
+  camera.position.set(w.x + Math.sin(a0) * horiz * fit, CAM_OFFSET.y * 0.62 * fit, w.z + Math.cos(a0) * horiz * fit);
+  const sh = G.shake * G.shake * (REDUCED ? 0.25 : 1) * 0.5;
+  if (sh > 0) camera.position.add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh));
+  camera.up.set(0, 1, 0);
+  camera.lookAt(w.x, 1.3, w.z);
+}
 
 // ───────────────────────── [알파] 원정과 유물 ─────────────────────────
 // 유물은 숫자를 키우지 않고 받기와 틈의 규칙을 바꾼다. 감정 우선순위 중 무엇을 건드리는지 같이 적는다
@@ -2372,6 +2507,7 @@ function nextStage() {
 }
 function fight(mode) {
   if (G.run) applyRelics();
+  G.rec = []; G.best = null; G.clipPending = null; G.replayed = false;
   audio();
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
@@ -2405,7 +2541,13 @@ function endGame(win) {
   G.ended = true; G.win = win; G.endT = win ? 1.6 : 1.2;
 }
 function showResult() {
+  finalizeClip();
+  if (CFG.replayOn && G.best && !G.replayed) { G.replayed = true; return startReplay(showResultNow); }
+  showResultNow();
+}
+function showResultNow() {
   G.running = false;
+  $('replayBtn').hidden = !G.best;
   const s = G.stats, sec = Math.round(G.now);
   const R = G.run, more = R && G.win && R.stage < R.order.length - 1;
   $('resultTitle').textContent = !G.win ? '전멸' : R && !more ? '원정 완료' : '격파';
@@ -2428,6 +2570,7 @@ function showResult() {
   (more ? $('nextBtn') : $('againBtn')).focus();
 }
 function showTitle() {
+  if (G.replay) { G.replay = null; $('replayCap').hidden = true; document.body.classList.remove('cine'); }
   G.running = false;
   restoreBase(); G.run = null; draftEl.hidden = true;
   gui?.controllersRecursive().forEach(c => c.updateDisplay());
@@ -2457,6 +2600,7 @@ $('speedBtn').addEventListener('click', () => { G.timeScale = SPEEDS[(SPEEDS.ind
 $('demoExit').addEventListener('click', showTitle);
 $('againBtn').addEventListener('click', () => start(G.mode));
 $('nextBtn').addEventListener('click', nextStage);
+$('replayBtn').addEventListener('click', () => startReplay(() => { resultEl.hidden = false; $('replayBtn').focus(); }));
 $('draftBtn').addEventListener('click', () => { CFG.relicDraft = !CFG.relicDraft; $('draftBtn').setAttribute('aria-pressed', String(CFG.relicDraft)); });
 $('menuBtn').addEventListener('click', showTitle);
 
@@ -2476,6 +2620,11 @@ fBo.add(CFG, 'chainBeat', 0.3, 1.5, 0.05).name('박자 간격 (초)');
 fBo.add(CFG, 'chainRecoil', 0.3, 1.5, 0.05).name('번갈아 받기 반동 (초)');
 fBo.add({ go: () => { if (G.running && !G.boss.dead) { G.boss.state = 'chase'; G.boss.begin('chain'); } } }, 'go').name('지금 번갈아 치기 (테스트)');
 fBo.close();
+const fRp = gui.addFolder('알파: 최고의 합 다시 보기');
+fRp.add(CFG, 'replayOn').name('끝나면 다시 보기');
+fRp.add(CFG, 'replaySlow', 0.1, 1, 0.05).name('합 앞뒤 배속');
+fRp.add(CFG, 'replayPre', 0.5, 4, 0.1).name('합 몇 초 전부터');
+fRp.close();
 const fGr = gui.addFolder('알파: 그로기');
 fGr.add(CFG, 'groggyOn').name('그로기 켜기 (끄면 받기 한 번에 틈)');
 fGr.add(CFG, 'grogPerfect', 5, 100, 1).name('정확한 받기 → 그로기');
@@ -2729,10 +2878,10 @@ function frame(ms) {
     drawHud();
   } else clearInputEdges();
   const fdt = G.freezeFx ? 0 : raw; // 완벽한 합 정지 중에는 모양과 파티클도 멈춘다
-  G.players.forEach(p => p.draw(fdt));
-  G.boss.draw(fdt);
+  if (G.replay) replayFrame(raw);
+  else { G.players.forEach(p => p.draw(fdt)); G.boss.draw(fdt); }
   fxUpdate(raw, fdt);
-  drawCamera(raw);
+  if (G.replay) replayCamera(); else drawCamera(raw);
   if (G.impact > 0) { renderImpact(G.impact > 2 ? 0 : 1); G.impact--; }
   else renderer.render(scene, camera);
 }
@@ -2745,5 +2894,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
+window.__game = { startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
 </script>

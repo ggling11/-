@@ -414,6 +414,33 @@ await page.keyboard.press('Escape');
 results.restored = await page.evaluate(b => JSON.stringify(__game.CFG) === b, base);
 await ev(() => { __game.CFG.relicDraft = false; });
 
+// 15) [알파] 최고의 합 다시 보기: 합을 낸 뒤 보스를 쓰러뜨리면 결과 전에 다시 보기 → 키로 넘기면 결과 → V로 다시 보기
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.pos.set(0, 0, 0); P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3.2); P2.yaw = 0; P1.yaw = Math.PI;
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.12;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.stats.hap >= 1);
+await ev(() => __game.G.boss.damage(99999));
+await waitState(() => !!__game.G.replay, 60000);
+results.replay = await ev(() => [__game.G.replay.c.frames.length, __game.G.replay.c.label, !document.getElementById('replayCap').hidden]);
+await waitState(() => __game.G.replay.fired, 60000);
+await page.screenshot({ path: path.join(out, '6_replay.png') });
+await page.keyboard.press('Space');
+await waitState(() => !document.getElementById('result').hidden);
+results.replayAgain = await ev(() => !document.getElementById('replayBtn').hidden);
+await page.keyboard.press('KeyV');
+results.replayAgainOn = await ev(() => !!__game.G.replay);
+await page.mouse.click(300, 300);
+await waitState(() => !document.getElementById('result').hidden);
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -427,7 +454,8 @@ const monk = results.monkName.includes('늙은 중') && results.chain[0] === 'ga
 const relic = results.draftShown && results.relic1[0] === 'heavy' && results.relic1[1] === 4 && results.relic1[2].includes('무거운 어깨')
   && results.nextShown && results.relic2[0] === 'heavy,thin' && results.relic2[1] === 'monk' && results.relic2[2] === 4 && results.relic2[3]
   && results.runDone[0] === '원정 완료' && results.runDone[1] && results.restored;
-const alpha = grog && monk && relic && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const replay = results.replay[0] > 5 && results.replay[1].includes('합') && results.replay[2] && results.replayAgain && results.replayAgainOn;
+const alpha = grog && monk && relic && replay && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1
