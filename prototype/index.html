@@ -251,6 +251,8 @@ td:first-child { color: var(--ink-dim); }
     <p class="rule">한 명이 보스 공격을 <strong>받아내면</strong>, 보스의 틈은 <strong>파트너 쪽</strong>으로 열려요.
       그 틈을 치면 <strong>합</strong>. 받기와 거의 동시에 치면 <strong>완벽한 합</strong>이에요.
       혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
+    <p class="rule"><strong>색 공격</strong>: 보스가 <strong>1P·2P 색</strong>(혼자 할 때는 캐릭터 색)으로 빛나며 치면, 그 색 주인만 받을 수 있어요. 다른 사람에게는 받기 불가.
+      밤의 문지기는 색을 맞춰 <strong>한 번만 받아도 기절</strong>하고 사방이 열려요. 혼자 할 때는 그 색 캐릭터로 태그하거나, 잔상이 받아 줘요.</p>
     <p class="rule"><strong>스위치</strong>: 틈을 연 사람이 반동 중에 <strong>뒤로 회피</strong>하면 반동을 끊고 빠지며 "스위치!". 그 틈을 파트너가 치면 합이 더 세져요. (혼자 할 때는 받은 직후 태그가 스위치)<br>
       <strong>교차 베기</strong>: 두 사람의 타격이 <strong>거의 동시에 반대쪽</strong>에서 들어가면 두 타격 합계가 <strong>3배</strong>.</p>
     <p class="rule"><strong>그로기</strong>: 받기 한 번으로는 틈이 안 열려요. 받아낼 때마다 보스 <strong>그로기</strong>가 차고(정확한 받기가 더 많이),
@@ -336,6 +338,7 @@ td:first-child { color: var(--ink-dim); }
       <span><i style="background: var(--gold)"></i>발밑 금색 호: 노림 (가득 차면 칼이 빛나요)</span>
       <span><i style="background: rgba(244,239,230,0.35)"></i>바닥 부채꼴: 보스 시선 (노려진 사람 색)</span>
       <span><i style="background: var(--impact)"></i>머리 위 마름모: 쌓인 충격 (빨강이면 한계)</span>
+      <span><i style="background: linear-gradient(90deg, var(--p1) 50%, var(--p2) 50%)"></i>1P·2P 색 예고: 그 색 주인만 받기 가능</span>
     </div>
     <p class="note">키보드나 게임패드가 필요해요. 패드는 연결한 뒤 버튼을 한 번 눌러 주세요. 게임 중 <kbd>`</kbd> 키로 판정 시간과 배율, 아트 스타일을 바꿀 수 있어요. <kbd>Esc</kbd>는 이 화면으로 돌아와요.</p>
   </div>
@@ -503,6 +506,10 @@ const CFG = {
   chargeGrog: 20,        // 가로채기 → 보스 그로기 +
   guardIntercept: false, // 유물 "방패 망치": 파트너를 노린 공격을 가로채면 그로기 +60, 피해 ×2
   chargeStun: 1.0,       // 가로채기 → 보스가 휘청이는 시간
+  // [알파] 색 공격: 1P/2P(솔로는 캐릭터) 색으로 오는 공격은 그 색 주인만 받을 수 있다. 다른 사람에게는 받기 불가
+  colorOn: true,
+  colorChance: 0.3,      // 밤의 문지기가 색 내려찍기를 고를 확률
+  colorStunGap: 1.3,     // 색을 맞춰 받으면 기절: 틈 길이 배율 (사방이 열린다)
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -1181,6 +1188,7 @@ class Player {
     const B = G.boss, A = B.atk, mate = G.players[1 - this.idx];
     if (B.state !== 'windup' || !A?.receivable || !mate.alive) return false;
     if (!inThreat(mate, A)) return false;
+    if (A.color != null && A.color !== this.idx) return false; // 내 색이 아니면 대신 받아 줄 수도 없다
     if (CFG.sharedGuard && A.shared && inThreat(this, A)) return false;
     if (mate.state === 'dodge' || mate.state === 'cover' || (mate.state === 'receive' && mate.impact < CFG.impactMax)) return false;
     if (!['free', 'attack', 'dodge'].includes(this.state)) return false;
@@ -1478,6 +1486,11 @@ class Boss {
   choose(d) {
     const alive = activePlayers();
     if (CFG.boss === 'monk' && d < 7 && Math.random() < CFG.chainChance) return this.begin('chain');
+    if (CFG.boss === 'gate' && CFG.colorOn && d < 4.0 && Math.random() < CFG.colorChance) {
+      // 듀오: 노린 사람의 색. 솔로: 두 캐릭터 중 하나 (필드에 없는 쪽이면 태그해서 받거나 잔상으로)
+      const owner = G.mode === 'solo' ? (Math.random() < 0.5 ? 0 : 1) : this.target.idx;
+      this.begin('slam'); return this.colorize(owner);
+    }
     if (isDuo() && alive.length === 2 && distXZ(alive[0].pos, alive[1].pos) < 6.5 && Math.random() < 0.35) return this.begin('midSlam');
     // [알파] 휩쓸기: 둘 다 보스 가까이 붙어 있을 때 (솔로는 가끔)
     const near = alive.filter(p => distXZ(p.pos, this.pos) < ATTACKS.sweep.radius + 0.3).length;
@@ -1517,6 +1530,20 @@ class Boss {
       this.tele = shockTele(this);
     }
     SFX.windup(kind);
+  }
+  // [알파] 색 공격으로 바꾸기: 예고 원과 기둥을 주인 색으로, 주인 머리 위에 알림
+  colorize(owner) {
+    const A = this.atk, q = G.players[owner], col = q.color;
+    A.color = owner;
+    this.tele?.dispose();
+    const base = circleTele(A.center, A.radius, col);
+    const mark = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 7, 12, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending }));
+    mark.position.set(A.center.x, 3.5, A.center.z); scene.add(mark);
+    this.tele = { set(k) { base.set(k); mark.scale.set(1 + k * 1.5, 1, 1 + k * 1.5); mark.material.opacity = 0.3 + 0.4 * k; }, dispose() { base.dispose(); disposeTree(mark); } };
+    A.windup += 0.25; // 전조를 넉넉히
+    const who = G.mode === 'duo' ? `${owner + 1}P` : q.char.name;
+    popText(above(G.mode === 'solo' ? G.players[G.active] : q, 3.3), `${who} 색!`, 'warn', 1.1);
+    tone(owner ? 784 : 523, 0.25, { type: 'triangle', vol: 0.12 }); tone(owner ? 1175 : 784, 0.3, { type: 'triangle', vol: 0.08, delay: 0.12 });
   }
   // [알파] 번갈아 치기: 한 박자마다 두 사람(솔로는 필드 캐릭터) 쪽 바닥을 친다
   chainZone(A) {
@@ -1663,6 +1690,7 @@ class Boss {
     if (!this.dead && this.state !== 'windup' && this.state !== 'active') this.tilt.position.y = Math.sin(G.time * 2.2) * 0.06;
     const e = this.bodyMat.emissive;
     if (this.hitFlash > 0) e.setRGB(0.7, 0.7, 0.7);
+    else if (this.state === 'windup' && A.color != null) { const v = 0.35 + 0.25 * Math.sin(G.time * 20); e.copy(tmpC.set(G.players[A.color].color)).multiplyScalar(v); }
     else if (this.state === 'windup' && A.kind === 'shock') { const v = 0.3 + 0.3 * Math.sin(G.time * 30); e.setRGB(0.45 * v * 2, 0.2 * v, 0.9 * v * 2); }
     else if (this.state === 'gap') e.setRGB(0.12, 0.09, 0.0);
     else e.setRGB(0, 0, 0);
@@ -1729,6 +1757,7 @@ function inThreat(p, A) {
 }
 function inOpenSide(p) {
   const B = G.boss;
+  if (B.openAll) return true; // 기절: 사방이 열린다
   return dirTo(B.pos, p.pos).dot(B.openDir) >= Math.cos((CFG.openHalfAngle * Math.PI) / 180);
 }
 
@@ -1795,7 +1824,9 @@ function updateAim(dt) {
 function bossHitsPlayer(p, A, src) {
   if (!p.alive) return 'none';
   if (p.state === 'dodge' && p.iframe > 0) { popText(above(p), '회피', 'small', 0.6); return 'dodge'; }
-  if (p.state === 'receive' || p.state === 'cover') {
+  const wrongColor = A.color != null && p.idx !== A.color;
+  if ((p.state === 'receive' || p.state === 'cover') && wrongColor) popText(above(p, 3.1), '내 색이 아니다!', 'warn');
+  else if (p.state === 'receive' || p.state === 'cover') {
     if (!A.receivable) popText(above(p, 3.1), '받기 불가!', 'warn');
     else {
       const f = fit(p, A.kind);
@@ -1860,6 +1891,7 @@ function addGroggy(n) {
 }
 function onReceived(list) {
   const B = G.boss;
+  if (B.atk?.color != null && list.some(x => x.p.idx === B.atk.color)) return colorStun(list);
   if (!groggyActive()) return openGap(list);
   const kind = B.atk?.kind;
   let add = 0;
@@ -1878,6 +1910,19 @@ function onReceived(list) {
   B.bounceDir = dirTo(avg, B.pos);
   B.state = 'recover'; B.t = CFG.parryRecover; B.cd = CFG.parryNextCd;
   popText(above(B, 4.4), `그로기 ${Math.round((B.groggy / CFG.groggyMax) * 100)}%`, 'small', 0.7);
+}
+
+// [알파] 색을 맞춰 받았다: 그로기와 상관없이 기절. 사방이 열려서 둘이 같이 달려들 수 있다
+function colorStun(list) {
+  const B = G.boss;
+  B.groggy = 0;
+  openGap(list);
+  B.openAll = true;
+  B.gapT *= CFG.colorStunGap; B.gapLen = B.gapT;
+  B.showOpen(B.openDir, COLOR.gold, 180);
+  G.stats.colorStun++;
+  popText(above(B, 5.2), '기절!', 'perfect', 1.2);
+  G.shake = Math.max(G.shake, 0.5); G.flash = Math.max(G.flash, 0.4);
 }
 
 // 받기 성공의 공통 반응: 반동, 기록, 소리와 글자, 끼어들기 성공
@@ -1927,7 +1972,7 @@ function openGap(list) {
   const B = G.boss;
   const { receivers, perfect, best } = receiveFeedback(list);
   B.tele?.dispose(); B.tele = null;
-  Object.assign(B, { state: 'gap', gapT: (perfect ? CFG.gapPerfect : CFG.gapGuard) * FIT.gap(best), gapStart: G.now, gapReceivers: receivers, hapDone: false, bounceDir: null });
+  Object.assign(B, { state: 'gap', gapT: (perfect ? CFG.gapPerfect : CFG.gapGuard) * FIT.gap(best), gapStart: G.now, gapReceivers: receivers, hapDone: false, bounceDir: null, openAll: false });
   B.gapLen = B.gapT;
   const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
   B.openDir = distXZ(avg, B.pos) > 0.05 ? dirTo(avg, B.pos) : B.forward().negate();
@@ -2651,7 +2696,7 @@ function fight(mode) {
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
   resetCine();
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, intercept: 0, shieldIntercept: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, intercept: 0, shieldIntercept: 0, colorStun: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
@@ -2702,6 +2747,7 @@ function showResultNow() {
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>번갈아 받기</dt><dd>${s.chain}번</dd>
+    <dt>색 맞춰 기절</dt><dd>${s.colorStun}번</dd>
     <dt>가로채기</dt><dd>${s.intercept}번${s.shieldIntercept ? ` (파트너 지켜 냄 ${s.shieldIntercept})` : ''}</dd>
     <dt>스위치 / 교차 베기</dt><dd>${s.switchHap}번 (부름 ${s.switchCall}) / ${s.cross}번</dd>
     ${R ? `<dt>유물</dt><dd>${R.relics.map(id => RELICS.find(r => r.id === id).name).join(', ') || '없음'}</dd>` : ''}
@@ -2776,6 +2822,9 @@ fSw.add(CFG, 'chargeOn').name('모루 차지 공격');
 fSw.add(CFG, 'chargeTime', 0.2, 1.5, 0.05).name('차지 시간 (초)');
 fSw.add(CFG, 'chargeMul', 1, 5, 0.25).name('차지 피해 배율');
 fSw.add(CFG, 'chargeGrog', 0, 100, 5).name('가로채기 → 그로기 +');
+fSw.add(CFG, 'colorOn').name('색 공격 (문지기)');
+fSw.add(CFG, 'colorChance', 0, 1, 0.05).name('색 내려찍기 확률');
+fSw.add({ go: () => { const B = G.boss; if (G.running && !B.dead && B.target) { B.state = 'chase'; B.begin('slam'); B.colorize(G.mode === 'solo' ? 1 - G.active : B.target.idx); } } }, 'go').name('지금 색 공격 (테스트)');
 fSw.close();
 const fGr = gui.addFolder('알파: 그로기');
 fGr.add(CFG, 'groggyOn').name('그로기 켜기 (끄면 받기 한 번에 틈)');

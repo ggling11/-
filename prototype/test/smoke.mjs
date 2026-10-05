@@ -494,6 +494,33 @@ for (const relicOn of [false, true]) {
 }
 await ev(() => { __game.CFG.groggyOn = false; __game.CFG.guardIntercept = false; });
 
+// 18) [알파] 색 공격: 1P 색 내려찍기를 2P가 받으려 하면 받기 불가(맞음). 1P가 받으면 그로기가 0이어도 바로 기절, 사방이 열림
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.groggyOn = true; __game.CFG.boss = 'gate'; });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, 0); P1.pos.set(0, 0, 3.6); P2.pos.set(0.6, 0, 3.0);
+  B.target = P1; B.begin('slam'); B.colorize(0); B.t = B.atk.windup - 0.05;
+  P2.state = 'receive'; P2.receiveStart = G.now; P2.forceRcv = 0.3;
+});
+await waitState(() => __game.G.boss.state !== 'windup');
+results.wrongColor = await ev(() => [__game.G.boss.state, __game.G.players[1].state]);
+await waitState(() => __game.G.boss.state === 'chase');
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, 0); B.groggy = 0; P1.state = 'free'; P1.pos.set(0, 0, 3); P2.state = 'free'; P2.pos.set(3.2, 0, 0.3); P2.yaw = -Math.PI / 2;
+  B.target = P1; B.begin('slam'); B.colorize(0); B.t = B.atk.windup - 0.05;
+  P1.state = 'receive'; P1.receiveStart = G.now; P1.forceRcv = 0.3;
+});
+await waitState(() => __game.G.boss.state !== 'windup');
+results.colorStun = await ev(() => [__game.G.boss.state, __game.G.boss.openAll, __game.G.stats.colorStun]);
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.stats.hap >= 1 || __game.G.boss.state !== 'gap');
+results.colorHap = await ev(() => __game.G.stats.hap);
+await ev(() => { __game.CFG.groggyOn = false; });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -511,7 +538,9 @@ const replay = results.replay[0] > 5 && results.replay[1].includes('합') && res
 const sw = results.switchCall[0] && results.switchCall[1] === 'dodge' && results.switchHap === 1
   && results.cross[0] === 1 && results.cross[1] === results.cross[2] * 3 && results.cross[3] === 1;
 const icpt = results.intercept[0].join() === '1,recover,20,true' && results.intercept[1].join() === '2,recover,80,true';
-const alpha = grog && monk && relic && replay && sw && icpt && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const color = results.wrongColor[0] !== 'gap' && results.wrongColor[1] === 'hurt'
+  && results.colorStun.join() === 'gap,true,1' && results.colorHap === 1;
+const alpha = grog && monk && relic && replay && sw && icpt && color && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1
