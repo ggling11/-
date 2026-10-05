@@ -29,7 +29,7 @@ await page.route('http://local.test/', r => r.fulfill({ contentType: 'text/html'
 await page.goto('http://local.test/');
 await page.waitForFunction(() => window.__game, null, { timeout: 15000 });
 // 이전 시나리오들은 '받기 한 번 = 틈' 규칙을 전제로 한다. [알파] 그로기 시나리오에서만 켠다
-await page.evaluate(() => { __game.CFG.groggyOn = false; });
+await page.evaluate(() => { __game.CFG.groggyOn = false; __game.CFG.relicDraft = false; });
 await page.screenshot({ path: path.join(out, '0_title.png') });
 
 const ev = f => page.evaluate(f);
@@ -388,6 +388,32 @@ for (let i = 0; i < 2; i++) {
 }
 await ev(() => { __game.CFG.boss = 'gate'; });
 
+// 14) [알파] 원정과 유물: 마당 1 유물 고르기 → 규칙이 바뀐 채 싸움 → 격파 → 다음 마당 → 유물 하나 더 → 상대가 바뀜 → 나가면 원래 설정
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.relicDraft = true; __game.CFG.boss = 'gate'; });
+const base = await ev(() => JSON.stringify(__game.CFG));
+await page.keyboard.press('Digit2');
+results.draftShown = await ev(() => !document.getElementById('draft').hidden && !__game.G.running && __game.G.run.offer.length === 3);
+await ev(() => { __game.G.run.offer[0] = 'heavy'; });
+await page.keyboard.press('Digit1');
+await waitState(() => __game.G.running);
+results.relic1 = await ev(() => [__game.G.run.relics.join(), __game.CFG.impactMax, document.getElementById('relicRow').textContent]);
+await ev(() => __game.G.boss.damage(99999));
+await waitState(() => !document.getElementById('result').hidden, 60000);
+results.nextShown = await ev(() => !document.getElementById('nextBtn').hidden);
+await page.keyboard.press('KeyN');
+await waitState(() => !document.getElementById('draft').hidden);
+await ev(() => { __game.G.run.offer[1] = 'thin'; });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.running);
+results.relic2 = await ev(() => [__game.G.run.relics.join(), __game.CFG.boss, __game.CFG.impactMax, document.getElementById('bossName').textContent.includes('늙은 중')]);
+await ev(() => __game.G.boss.damage(99999));
+await waitState(() => !document.getElementById('result').hidden, 60000);
+results.runDone = await ev(() => [document.getElementById('resultTitle').textContent, document.getElementById('nextBtn').hidden]);
+await page.keyboard.press('Escape');
+results.restored = await page.evaluate(b => JSON.stringify(__game.CFG) === b, base);
+await ev(() => { __game.CFG.relicDraft = false; });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -398,7 +424,10 @@ await browser.close();
 const grog = results.groggy.map(g => g[0]).join() === 'recover,recover,gap' && results.groggy[1][1] > results.groggy[0][1] && results.groggy[2][1] === 0;
 const monk = results.monkName.includes('늙은 중') && results.chain[0] === 'gap' && results.chain[1] === 1
   && results.chainSame[0][0] === 'windup' && results.chainSame[1][0] === 'recover';
-const alpha = grog && monk && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const relic = results.draftShown && results.relic1[0] === 'heavy' && results.relic1[1] === 4 && results.relic1[2].includes('무거운 어깨')
+  && results.nextShown && results.relic2[0] === 'heavy,thin' && results.relic2[1] === 'monk' && results.relic2[2] === 4 && results.relic2[3]
+  && results.runDone[0] === '원정 완료' && results.runDone[1] && results.restored;
+const alpha = grog && monk && relic && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1

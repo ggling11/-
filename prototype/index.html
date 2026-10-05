@@ -165,6 +165,15 @@ td:first-child { color: var(--ink-dim); }
 .result dt { color: var(--ink-dim); }
 .result dd { margin: 0; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* [알파] 유물 */
+.relics { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; font-size: 11px; }
+.relics span { border: 1px solid rgba(255,210,63,0.45); color: var(--gold); border-radius: 3px; padding: 0 6px; background: rgba(255,210,63,0.08); }
+.draft h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 40px; color: var(--gold); }
+.draft .sub { margin: 0; color: var(--ink-dim); font-size: 14px; }
+.relic-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.relic-opts .mode .big { font-size: 22px; color: var(--gold); }
+.relic-opts .emo { font-size: 11px; letter-spacing: 0.06em; color: var(--ink-dim); }
+.relic-opts .owned { font-size: 12px; color: var(--ink-dim); }
 .btn { all: unset; cursor: pointer; padding: 10px 16px; border-radius: 4px; border: 1px solid var(--line); font-weight: 600; font-size: 14px; }
 .btn.primary { background: var(--gold); color: #1b1530; border-color: var(--gold); }
 .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -199,6 +208,7 @@ td:first-child { color: var(--ink-dim); }
   <div class="top">
     <div class="boss">
       <div class="boss-name" id="bossName">시험용 보스 · 밤의 문지기</div>
+      <div class="relics" id="relicRow"></div>
       <div class="bar"><i id="bossHp"></i></div>
       <div class="mom grog" id="grogWrap"><span>그로기</span><div class="bar"><i id="grog"></i></div></div>
       <div class="mom" id="momWrap"><span id="momLabel">기세</span><div class="bar"><i id="mom"></i></div></div>
@@ -291,10 +301,13 @@ td:first-child { color: var(--ink-dim); }
       </button>
     </div>
     <div class="picks" id="bossPicks">
-      <span>상대 <kbd>B</kbd></span>
+      <span>첫 상대 <kbd>B</kbd></span>
       <button class="pick" type="button" data-boss="gate" aria-pressed="true">밤의 문지기<small>기본</small></button>
       <button class="pick" type="button" data-boss="monk" aria-pressed="false">늙은 중 탈<small>번갈아 받기</small></button>
+      <span>원정 <kbd>U</kbd></span>
+      <button class="pick" type="button" id="draftBtn" aria-pressed="true">유물 고르기<small>마당마다 3개 중 1개</small></button>
     </div>
+    <p class="note">원정: 두 마당(고른 상대 → 다른 상대)을 이어서 싸워요. 마당에 들어가기 전에 <strong>유물</strong>을 하나씩 골라요. 유물은 숫자를 올리지 않고 <strong>규칙</strong>을 바꿔요.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>조작</th><th>1P 키보드</th><th>2P 키보드</th><th>게임패드</th></tr></thead>
@@ -319,11 +332,21 @@ td:first-child { color: var(--ink-dim); }
   </div>
 </div>
 
+<div id="draft" class="overlay" hidden>
+  <div class="card draft">
+    <h2 id="draftTitle">마당 1 · 유물 고르기</h2>
+    <p class="sub" id="draftSub"></p>
+    <div class="relic-opts" id="relicOpts"></div>
+    <div class="actions"><button class="btn" id="draftSkip" type="button">고르지 않고 들어가기 (0)</button></div>
+  </div>
+</div>
+
 <div id="result" class="overlay" hidden>
   <div class="card result">
     <h2 id="resultTitle">격파</h2>
     <dl id="resultStats"></dl>
     <div class="actions">
+      <button class="btn primary" id="nextBtn" type="button" hidden>다음 마당 (N)</button>
       <button class="btn primary" id="againBtn" type="button">다시 하기 (R)</button>
       <button class="btn" id="menuBtn" type="button">모드 선택 (Esc)</button>
     </div>
@@ -444,6 +467,11 @@ const CFG = {
   chainBeat: 0.7,
   chainRecoil: 0.85,
   chainGapMul: 1.3,      // 끝까지 번갈아 받으면 틈이 이만큼 길다
+  // [알파] 유물: 원정에서 마당마다 3개 중 1개. 규칙을 바꾼다
+  relicDraft: true,
+  sharedAll: false,      // 유물 "맞댄 등"
+  coverPerfect: false,   // 유물 "긴 팔"
+  releaseBoth: false,    // 유물 "한 몸"
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -828,6 +856,13 @@ addEventListener('keydown', e => {
   if (!e.repeat) keysPressed.add(e.code);
   keysDown.add(e.code);
   if (e.code === 'Backquote') toggleGui();
+  if (!draftEl.hidden) {
+    const k = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[e.code];
+    if (k !== undefined && G.run?.offer[k]) return pickRelic(G.run.offer[k]);
+    if (e.code === 'Digit0' || e.code === 'Numpad0') return pickRelic(null);
+  }
+  if (!G.running && !resultEl.hidden && e.code === 'KeyN' && !$('nextBtn').hidden) return nextStage();
+  if (!titleEl.hidden && e.code === 'KeyU') $('draftBtn').click();
   if (!G.running && !resultEl.hidden && e.code === 'KeyR') start(G.mode);
   if (e.code === 'Escape') showTitle();
   if (!titleEl.hidden && e.code === 'KeyB') setBoss(CFG.boss === 'gate' ? 'monk' : 'gate');
@@ -1461,7 +1496,7 @@ class Boss {
     for (const p of inZone.filter(q => !guarding(q))) {
       if (p.coveredBy && receivers.some(x => x.p === p.coveredBy)) continue;
       // [알파] 광역 공유 받기: 누가 하나라도 받아냈으면 범위 안 모두가 지켜진다
-      if (((CFG.sharedGuard && A.shared) || A.kind === 'chain') && receivers.length && p.state !== 'dodge') {
+      if (((CFG.sharedGuard && (A.shared || CFG.sharedAll)) || A.kind === 'chain') && receivers.length && p.state !== 'dodge') {
         G.stats.shield++;
         popText(above(p, 3.0), '막아 줬다', 'save', 0.9);
         beam(receivers[0].p.pos.clone().setY(1.1), p.pos.clone().setY(1.1), COLOR.save, 0.4);
@@ -1690,7 +1725,8 @@ function bossHitsPlayer(p, A, src) {
     if (!A.receivable) popText(above(p, 3.1), '받기 불가!', 'warn');
     else {
       const f = fit(p, A.kind);
-      const perfect = p.state === 'receive' && (G.now - p.receiveStart <= CFG.perfectWindow * FIT.window(f) || (p.echo && CFG.echoPerfect));
+      const perfect = (p.state === 'receive' && (G.now - p.receiveStart <= CFG.perfectWindow * FIT.window(f) || (p.echo && CFG.echoPerfect)))
+        || (CFG.coverPerfect && p.coverTarget?.coveredBy === p);
       if (CFG.impact) {
         const add = perfect ? CFG.impactPerfect : CFG.impactGuard;
         // 정확한 받기는 한계에서도 버틴다 (세키로처럼). 버티기만 넘치면 무너진다
@@ -1728,7 +1764,7 @@ function breakGuard(p, A, src) {
 // [알파] 합이 터지면 받은 사람들 몸에 쌓인 충격이 전부 풀려 피해가 된다
 function releaseImpact() {
   let n = 0;
-  for (const r of G.boss.gapReceivers) { n += r.impact; r.impact = 0; r.restT = 0; }
+  for (const r of CFG.releaseBoth ? G.players : G.boss.gapReceivers) { n += r.impact; r.impact = 0; r.restT = 0; }
   return n;
 }
 
@@ -2270,7 +2306,72 @@ const titleEl = document.getElementById('title'), resultEl = document.getElement
 const guiEl = document.getElementById('gui'), tuneBtn = document.getElementById('tuneBtn');
 const $ = id => document.getElementById(id);
 
+// ───────────────────────── [알파] 원정과 유물 ─────────────────────────
+// 유물은 숫자를 키우지 않고 받기와 틈의 규칙을 바꾼다. 감정 우선순위 중 무엇을 건드리는지 같이 적는다
+const RELICS = [
+  { id: 'heavy', name: '무거운 어깨', emo: '신뢰', desc: '충격 한계 +1칸. 충격 1칸이 풀릴 때 피해 +5', apply: C => { C.impactMax += 1; C.impactDmg += 5; } },
+  { id: 'back', name: '맞댄 등', emo: '신뢰', desc: '받을 수 있는 모든 공격이 공유 받기. 한 명이 받으면 범위 안 모두 무사', apply: C => { C.sharedGuard = true; C.sharedAll = true; } },
+  { id: 'echo', name: '메아리', emo: '합 · 솔로', desc: '잔상이 2배 오래 남고, 잔상 받기는 늘 정확한 받기', apply: C => { C.echoTime *= 2; C.echoPerfect = true; } },
+  { id: 'arm', name: '긴 팔', emo: '실수 메워 주기', desc: '끼어들기 거리 ×1.6. 끼어들어 받으면 늘 정확한 받기', apply: C => { C.coverRange *= 1.6; C.coverPerfect = true; } },
+  { id: 'drum', name: '깨지는 북', emo: '합', desc: '그로기가 1.5배 빨리 찬다. 대신 보스가 25% 더 자주 친다', apply: C => { C.grogPerfect *= 1.5; C.grogGuard *= 1.5; C.bossTempo *= 1.25; } },
+  { id: 'thin', name: '얇은 틈', emo: '합', desc: '틈이 40% 짧다. 대신 완벽한 합 배율 +1.5', apply: C => { C.gapPerfect *= 0.6; C.gapGuard *= 0.6; C.perfectHapMul += 1.5; } },
+  { id: 'first', name: '먼저 휘두르기', emo: '신뢰', desc: '받기 0.3초 전에 친 공격까지 완벽한 합 (기본 0.12초)', apply: C => { C.preHap = Math.max(C.preHap, 0.3); } },
+  { id: 'glass', name: '유리 몸', emo: '긴장', desc: '아군 피 무한이 꺼진다. 대신 합·완벽한 합 배율 +1', apply: C => { C.infiniteHP = false; C.hapMul += 1; C.perfectHapMul += 1; } },
+  { id: 'onebody', name: '한 몸', emo: '합', desc: '합이 터지면 받은 사람만이 아니라 둘의 충격이 모두 풀린다', apply: C => { C.releaseBoth = true; } },
+  { id: 'breath', name: '고른 숨', emo: '역할 교대', desc: '충격이 2배 빨리 풀린다', apply: C => { C.impactRest /= 2; C.impactRestBench /= 2; } },
+];
+const draftEl = $('draft');
+function restoreBase() { if (G.cfgBase) { Object.assign(CFG, G.cfgBase); G.cfgBase = null; } }
+function applyRelics() {
+  Object.assign(CFG, G.cfgBase);
+  CFG.boss = G.run.order[G.run.stage];
+  for (const id of G.run.relics) RELICS.find(r => r.id === id)?.apply(CFG);
+  gui?.controllersRecursive().forEach(c => c.updateDisplay());
+}
+function newRun(mode) {
+  restoreBase();
+  G.cfgBase = { ...CFG };
+  const first = CFG.boss, other = first === 'gate' ? 'monk' : 'gate';
+  G.run = { mode, stage: 0, order: [first, other], relics: [], offer: [] };
+}
+function showDraft() {
+  const R = G.run, pool = RELICS.filter(r => !R.relics.includes(r.id)).filter(r => G.mode === 'solo' || r.id !== 'echo').filter(r => G.mode !== 'solo' || r.id !== 'arm');
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  R.offer = pool.slice(0, 3).map(r => r.id);
+  $('draftTitle').textContent = `마당 ${R.stage + 1} · 유물 고르기`;
+  $('draftSub').textContent = `상대: ${BOSSES[R.order[R.stage]].name}` + (R.relics.length ? ` · 가진 유물: ${R.relics.map(id => RELICS.find(r => r.id === id).name).join(', ')}` : '');
+  $('relicOpts').innerHTML = R.offer.map((id, i) => {
+    const r = RELICS.find(x => x.id === id);
+    return `<button class="mode" type="button" data-relic="${id}"><span class="emo">${r.emo}</span><span class="big">${r.name}</span><span class="desc"><kbd>${i + 1}</kbd>${r.desc}</span></button>`;
+  }).join('');
+  $('relicOpts').querySelectorAll('button').forEach(b => b.addEventListener('click', () => pickRelic(b.dataset.relic)));
+  titleEl.hidden = resultEl.hidden = true; hudEl.hidden = true;
+  draftEl.hidden = false;
+  $('relicOpts').querySelector('button')?.focus();
+}
+function pickRelic(id) {
+  if (draftEl.hidden) return;
+  if (id) G.run.relics.push(id);
+  draftEl.hidden = true;
+  fight(G.run.mode);
+}
+$('draftSkip').addEventListener('click', () => pickRelic(null));
 function start(mode) {
+  if (CFG.relicDraft && mode !== 'demo') {
+    newRun(mode);
+    G.mode = mode; G.running = false;
+    return showDraft();
+  }
+  restoreBase(); G.run = null;
+  fight(mode);
+}
+function nextStage() {
+  if (!G.run || G.run.stage >= G.run.order.length - 1) return;
+  G.run.stage++;
+  showDraft();
+}
+function fight(mode) {
+  if (G.run) applyRelics();
   audio();
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
@@ -2290,6 +2391,7 @@ function start(mode) {
   else G.timeScale = 1;
   syncDemoBar();
   G.players.forEach((p, i) => ($('name' + i).textContent = (mode === 'duo' ? `${i + 1}P ` : '') + p.char.name));
+  $('relicRow').innerHTML = G.run ? `<span>마당 ${G.run.stage + 1}/${G.run.order.length}</span>` + G.run.relics.map(id => `<span>${RELICS.find(r => r.id === id).name}</span>`).join('') : '';
   $('hint').innerHTML = {
     solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받기 → <kbd>Q</kbd> 합 → <kbd>Q</kbd> 맺기 · 공격이 올 때 <kbd>Q</kbd> → 잔상이 받고 반대편에서 치기',
     duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피 · 파트너가 위험할 때 받기 = 끼어들기',
@@ -2305,7 +2407,9 @@ function endGame(win) {
 function showResult() {
   G.running = false;
   const s = G.stats, sec = Math.round(G.now);
-  $('resultTitle').textContent = G.win ? '격파' : '전멸';
+  const R = G.run, more = R && G.win && R.stage < R.order.length - 1;
+  $('resultTitle').textContent = !G.win ? '전멸' : R && !more ? '원정 완료' : '격파';
+  $('nextBtn').hidden = !more;
   $('resultStats').innerHTML = `
     <dt>걸린 시간</dt><dd>${Math.floor(sec / 60)}분 ${sec % 60}초</dd>
     <dt>합</dt><dd>${s.hap}번 (완벽한 합 ${s.perfect}번)</dd>
@@ -2317,13 +2421,16 @@ function showResult() {
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>번갈아 받기</dt><dd>${s.chain}번</dd>
+    ${R ? `<dt>유물</dt><dd>${R.relics.map(id => RELICS.find(r => r.id === id).name).join(', ') || '없음'}</dd>` : ''}
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
   resultEl.hidden = false; hudEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
   $('caption').hidden = $('demoBar').hidden = true; resetCine();
-  $('againBtn').focus();
+  (more ? $('nextBtn') : $('againBtn')).focus();
 }
 function showTitle() {
   G.running = false;
+  restoreBase(); G.run = null; draftEl.hidden = true;
+  gui?.controllersRecursive().forEach(c => c.updateDisplay());
   resultEl.hidden = true; hudEl.hidden = true; titleEl.hidden = false; tuneBtn.hidden = true; guiEl.hidden = true;
   $('caption').hidden = $('demoBar').hidden = true; resetCine(); G.timeScale = 1;
   texts.forEach(t => t.el.remove()); texts.length = 0;
@@ -2349,6 +2456,8 @@ $('fxBtn').addEventListener('click', () => { CFG.fx = CFG.fx === '기존' ? '새
 $('speedBtn').addEventListener('click', () => { G.timeScale = SPEEDS[(SPEEDS.indexOf(G.timeScale) + 1) % SPEEDS.length]; syncDemoBar(); });
 $('demoExit').addEventListener('click', showTitle);
 $('againBtn').addEventListener('click', () => start(G.mode));
+$('nextBtn').addEventListener('click', nextStage);
+$('draftBtn').addEventListener('click', () => { CFG.relicDraft = !CFG.relicDraft; $('draftBtn').setAttribute('aria-pressed', String(CFG.relicDraft)); });
 $('menuBtn').addEventListener('click', showTitle);
 
 // 조정 패널
