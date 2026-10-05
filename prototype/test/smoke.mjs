@@ -343,6 +343,51 @@ for (let i = 0; i < 3; i++) {
 }
 await ev(() => { __game.CFG.groggyOn = false; __game.CFG.charDiff = true; });
 
+// 13) [알파] 늙은 중 탈 번갈아 받기: 1P, 2P가 박자마다 번갈아 받으면 네 번째 박자에 틈.
+//     1P가 연달아 받으려 하면 반동 때문에 못 받는다 (반동 중엔 받기 자세가 안 됨)
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.boss = 'monk'; });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+results.monkName = await ev(() => document.getElementById('bossName').textContent);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, 0); P1.pos.set(-1.2, 0, 3.5); P2.pos.set(1.2, 0, 3.5);
+  B.target = P1; B.begin('chain');
+});
+results.chainBeats = [];
+for (let i = 0; i < 4; i++) {
+  // 박자 사이 시간은 그대로 흘려보낸다 (반동이 실제로 풀리는지가 핵심). 박자가 떨어지기 직전에 받기 자세
+  if (i === 0) await ev(() => { const B = __game.G.boss; B.t = B.atk.windup - 0.3; });
+  await page.waitForFunction(i => { const B = __game.G.boss; return B.state !== 'windup' || (B.atk.i === i && B.t > B.atk.windup - 0.12); }, i, { timeout: 15000 });
+  await page.evaluate(i => {
+    const { G } = __game; const p = G.players[i % 2];
+    if (p.state === 'free') { p.state = 'receive'; p.receiveStart = G.now; p.forceRcv = 0.3; }
+  }, i);
+  await page.waitForFunction(i => __game.G.boss.state !== 'windup' || __game.G.boss.atk.i > i, i, { timeout: 15000 });
+  results.chainBeats.push(await ev(() => [__game.G.boss.state, __game.G.boss.atk.i, __game.G.boss.atk.got]));
+}
+results.chain = await ev(() => [__game.G.boss.state, __game.G.stats.chain]);
+// 같은 사람이 연달아: 1P만 받기 시도 → 두 번째 박자에서 1P는 반동 중이라 못 받고 끊김
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.state = 'chase'; B.cd = 99; B.pos.set(0, 0, 0);
+  for (const p of G.players) { p.state = 'free'; p.t = 0; p.rcvCd = 0; p.impact = 0; }
+  P1.pos.set(-1.2, 0, 3.5); P2.pos.set(1.2, 0, 3.5);
+  B.target = P1; B.begin('chain');
+});
+results.chainSame = [];
+for (let i = 0; i < 2; i++) {
+  await ev(() => {
+    const { G } = __game; const B = G.boss, p = G.players[0];
+    B.t = B.atk.windup - 0.05;
+    if (p.state === 'free') { p.state = 'receive'; p.receiveStart = G.now; p.forceRcv = 0.3; }
+  });
+  await waitState(() => __game.G.boss.state !== 'windup' || __game.G.boss.t < 0.2);
+  results.chainSame.push(await ev(() => [__game.G.boss.state, __game.G.players[0].state]));
+}
+await ev(() => { __game.CFG.boss = 'gate'; });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -351,7 +396,9 @@ await page.screenshot({ path: path.join(out, '5_mobile_title.png') });
 
 await browser.close();
 const grog = results.groggy.map(g => g[0]).join() === 'recover,recover,gap' && results.groggy[1][1] > results.groggy[0][1] && results.groggy[2][1] === 0;
-const alpha = grog && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const monk = results.monkName.includes('늙은 중') && results.chain[0] === 'gap' && results.chain[1] === 1
+  && results.chainSame[0][0] === 'windup' && results.chainSame[1][0] === 'recover';
+const alpha = grog && monk && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1

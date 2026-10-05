@@ -137,6 +137,11 @@ body.cine #caption { opacity: 0; }
 .mode { all: unset; cursor: pointer; display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 4px; background: rgba(255,255,255,0.04); transition: background 0.12s, border-color 0.12s; }
 .mode:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,210,63,0.6); }
 .mode:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.picks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 13px; color: var(--ink-dim); }
+.pick { all: unset; cursor: pointer; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: rgba(255,255,255,0.03); }
+.pick[aria-pressed="true"] { border-color: var(--gold); background: rgba(255,210,63,0.12); color: var(--gold); }
+.pick:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.pick small { color: var(--ink-dim); margin-left: 6px; }
 .mode .big { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.03em; }
 .mode .desc { font-size: 13px; color: var(--ink-dim); }
 .mode kbd { font-family: var(--font-body); font-size: 11px; border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; margin-right: 6px; color: var(--ink-dim); }
@@ -193,7 +198,7 @@ td:first-child { color: var(--ink-dim); }
 <div id="hud" hidden>
   <div class="top">
     <div class="boss">
-      <div class="boss-name">시험용 보스 · 밤의 문지기</div>
+      <div class="boss-name" id="bossName">시험용 보스 · 밤의 문지기</div>
       <div class="bar"><i id="bossHp"></i></div>
       <div class="mom grog" id="grogWrap"><span>그로기</span><div class="bar"><i id="grog"></i></div></div>
       <div class="mom" id="momWrap"><span id="momLabel">기세</span><div class="bar"><i id="mom"></i></div></div>
@@ -232,6 +237,8 @@ td:first-child { color: var(--ink-dim); }
       혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
     <p class="rule"><strong>그로기</strong>: 받기 한 번으로는 틈이 안 열려요. 받아낼 때마다 보스 <strong>그로기</strong>가 차고(정확한 받기가 더 많이),
       <strong>꽉 차는 순간</strong> 마지막으로 받은 사람 반대편에 틈이 열려요. 덜 찬 받기는 보스를 튕겨 낼 뿐이고, 보스는 곧바로 다시 들어와요.</p>
+    <p class="rule"><strong>늙은 중 탈</strong>: 네 박자로 연달아 내려쳐요. 한 번 받으면 반동이 다음 박자보다 길어서 <strong>같은 사람이 연달아 못 받아요</strong>.
+      둘이 <strong>번갈아</strong> 받아 내면 큰 틈이 열려요. 혼자 할 때는 박자마다 태그로 교대해서 받아요.</p>
     <p class="rule">합을 맞으면 보스는 <strong>받아낸 사람 쪽으로</strong> 휘청여요. 반동이 풀린 받은 사람이 그쪽을 치면 <strong>맺기</strong>.
       (혼자 할 때는 합 직후 한 번 더 태그.) 합과 맺기로 <strong>기세</strong>가 차고, 기세가 가득할 때 완벽한 합을 내면 <strong>합기</strong>가 터져요.</p>
     <p class="rule"><strong>충격</strong>: 받을 때마다 몸에 충격이 쌓여요(정확한 받기 1칸, 버티기 2칸). 칸이 넘치면 받기가 깨져요.
@@ -282,6 +289,11 @@ td:first-child { color: var(--ink-dim); }
         <span class="big">합 연출 보기</span>
         <span class="desc"><kbd>4</kbd>조작 없이 합과 완벽한 합을 번갈아 관람</span>
       </button>
+    </div>
+    <div class="picks" id="bossPicks">
+      <span>상대 <kbd>B</kbd></span>
+      <button class="pick" type="button" data-boss="gate" aria-pressed="true">밤의 문지기<small>기본</small></button>
+      <button class="pick" type="button" data-boss="monk" aria-pressed="false">늙은 중 탈<small>번갈아 받기</small></button>
     </div>
     <div class="table-wrap">
       <table>
@@ -424,6 +436,14 @@ const CFG = {
   echoOn: true,
   echoTime: 1.0,
   echoPerfect: false,    // 유물 "메아리": 잔상 받기는 늘 정확한 받기
+  // [알파] 늙은 중 탈: 번갈아 받기 (4박자 연타. 받은 사람의 반동이 다음 박자보다 길어서 같은 사람이 연달아 못 받는다)
+  boss: 'gate',
+  chainChance: 0.45,
+  chainBeats: 4,
+  chainFirst: 1.0,
+  chainBeat: 0.7,
+  chainRecoil: 0.85,
+  chainGapMul: 1.3,      // 끝까지 번갈아 받으면 틈이 이만큼 길다
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -475,6 +495,7 @@ const FIT = {
 const ATTACKS = {
   slam:    { name: '내려찍기',      receivable: true,  windup: 0.9, radius: 2.0, dmg: 25 },
   midSlam: { name: '사이 내려찍기', receivable: true,  windup: 1.1, radius: 3.0, dmg: 25, shared: true },
+  chain:   { name: '번갈아 치기',   receivable: true,  windup: 1.0, radius: 2.4, dmg: 18, shared: true },  // [알파] 늙은 중 탈 전용
   sweep:   { name: '휩쓸기',        receivable: true,  windup: 1.0, radius: 4.4, dmg: 20, shared: true },  // [알파] 공유 받기 확인용 광역 근접
   charge:  { name: '돌진',          receivable: true,  windup: 0.8, length: 12, width: 2.6, speed: 20, dmg: 20 },
   shock:   { name: '충격파',        receivable: false, windup: 1.1, speed: 9, thick: 0.9, dmg: 15 },
@@ -486,6 +507,11 @@ const STYLES = {
   '강한 대비': { bg: 0x0f1218, ground: 0x0b0d12, floor: 0x4a5160, stone: 0x5c6273, steps: [0.16, 1], outline: 0x000000, outlineScale: 1.1, hemi: 1.1, sun: 3.2 },
 };
 
+// [알파] 보스 종류
+const BOSSES = {
+  gate: { name: '시험용 보스 · 밤의 문지기', body: 0x5b3a8c, arm: 0x4a2f73 },
+  monk: { name: '늙은 중 탈 · 번갈아 받기', body: 0x9a7444, arm: 0x5e4426 },
+};
 const COLOR = { p1: 0xff7a59, p2: 0x45c4ff, boss: 0x5b3a8c, gold: 0xffd23f, recv: 0xff5a36, unblock: 0xb06cff, fin: 0x7fe3ff, impact: 0xff9a3c, save: 0x9ff0c8 };
 const ARENA_R = 14, PLAYER_R = 0.5, SPEED = 6.2;
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -804,6 +830,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Backquote') toggleGui();
   if (!G.running && !resultEl.hidden && e.code === 'KeyR') start(G.mode);
   if (e.code === 'Escape') showTitle();
+  if (!titleEl.hidden && e.code === 'KeyB') setBoss(CFG.boss === 'gate' ? 'monk' : 'gate');
   if (!titleEl.hidden && (e.code === 'Digit1' || e.code === 'Numpad1')) start('solo');
   if (!titleEl.hidden && (e.code === 'Digit2' || e.code === 'Numpad2')) start('duo');
   if (!titleEl.hidden && (e.code === 'Digit3' || e.code === 'Numpad3')) start('practice');
@@ -1223,6 +1250,8 @@ class Boss {
       fist.group.position.set(0, -1.1, 0.25); arm.add(fist.group);
       this.spin.add(arm); this.arms.push(arm);
     }
+    this.armMats = [];
+    this.arms.forEach(a => a.traverse(o => { if (o.material?.isMeshToonMaterial && !this.armMats.includes(o.material)) this.armMats.push(o.material); }));
     this.weak = new THREE.Group();
     this.weak.add(new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff3c4 })));
     this.weak.add(new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 12), new THREE.MeshBasicMaterial({ color: COLOR.gold, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })));
@@ -1244,6 +1273,11 @@ class Boss {
     this.hideOpen();
   }
   get pos() { return this.root.position; }
+  applyKind() {
+    const k = BOSSES[CFG.boss] || BOSSES.gate;
+    this.bodyMat.color.set(k.body); this.armMats.forEach(m => m.color.set(k.arm));
+    $('bossName').textContent = k.name;
+  }
   forward() { return V(Math.sin(this.yaw), 0, Math.cos(this.yaw)); }
   faceDir(d, k) {
     let diff = Math.atan2(d.x, d.z) - this.yaw;
@@ -1313,7 +1347,7 @@ class Boss {
         this.t += dt;
         const A = this.atk, p = clamp(this.t / A.windup, 0, 1);
         this.tele?.set(p);
-        if (A.kind === 'slam') this.faceDir(dirTo(this.pos, A.center), dt * 8);
+        if (A.kind === 'slam' || A.kind === 'chain') this.faceDir(dirTo(this.pos, A.center), dt * 8);
         if (A.kind === 'midSlam') {
           this.faceDir(dirTo(A.from, A.center), dt * 8);
           const s = clamp((p - 0.35) / 0.65, 0, 1);
@@ -1335,6 +1369,7 @@ class Boss {
   }
   choose(d) {
     const alive = activePlayers();
+    if (CFG.boss === 'monk' && d < 7 && Math.random() < CFG.chainChance) return this.begin('chain');
     if (isDuo() && alive.length === 2 && distXZ(alive[0].pos, alive[1].pos) < 6.5 && Math.random() < 0.35) return this.begin('midSlam');
     // [알파] 휩쓸기: 둘 다 보스 가까이 붙어 있을 때 (솔로는 가끔)
     const near = alive.filter(p => distXZ(p.pos, this.pos) < ATTACKS.sweep.radius + 0.3).length;
@@ -1348,7 +1383,10 @@ class Boss {
     const A = { kind, ...ATTACKS[kind] }, tgt = this.target;
     this.atk = A; this.state = 'windup'; this.t = 0; this.hitSet = new Set();
     G.players.forEach(q => { q.coveredBy = q.coverTarget = null; });
-    if (kind === 'sweep') {
+    if (kind === 'chain') {
+      Object.assign(A, { i: 0, got: 0, windup: CFG.chainFirst });
+      this.chainZone(A);
+    } else if (kind === 'sweep') {
       A.center = this.pos.clone().setY(0);
       this.tele = circleTele(A.center, A.radius, COLOR.recv);
     } else if (kind === 'slam') {
@@ -1372,32 +1410,77 @@ class Boss {
     }
     SFX.windup(kind);
   }
+  // [알파] 번갈아 치기: 한 박자마다 두 사람(솔로는 필드 캐릭터) 쪽 바닥을 친다
+  chainZone(A) {
+    const list = activePlayers();
+    if (isDuo() && list.length === 2) {
+      const [a, b] = list;
+      A.center = a.pos.clone().add(b.pos).multiplyScalar(0.5).setY(0);
+      A.radius = clamp(distXZ(a.pos, b.pos) / 2 + 1.3, 2.4, 4.6);
+    } else {
+      A.center = (list[0] || this.target).pos.clone().setY(0);
+      A.radius = 2.2;
+    }
+    this.tele?.dispose();
+    this.tele = circleTele(A.center, A.radius, COLOR.recv);
+  }
+  chainStrike(A) {
+    const receivers = this.resolveArea(A), last = A.i >= CFG.chainBeats - 1;
+    if (!receivers.length) {
+      popText(above(this, 4.4), '번갈아 받기 끊김', 'hint', 1.0); SFX.miss();
+      this.state = 'recover'; this.t = 0.9;
+      return;
+    }
+    A.got++;
+    if (last) {
+      G.stats.chain++;
+      popText(above(this, 5.2), '번갈아 받기!', 'hap', 1.2);
+      this.groggy = 0;
+      openGap(receivers);
+      this.gapT *= CFG.chainGapMul; this.gapLen = this.gapT;
+      return;
+    }
+    receiveFeedback(receivers);
+    for (const x of receivers) x.p.t = Math.max(x.p.t, CFG.chainRecoil);
+    popText(above(this, 4.4), `${A.i + 1} / ${CFG.chainBeats}`, 'sub', 0.6);
+    A.i++; A.windup = CFG.chainBeat;
+    this.state = 'windup'; this.t = 0; this.hitSet = new Set();
+    G.players.forEach(q => { q.coveredBy = q.coverTarget = null; });
+    this.chainZone(A);
+    SFX.windup('slam');
+  }
+  // 원형 범위 공격 판정: 받는 사람 먼저, 그다음 나머지 (끼어들기·공유 받기로 지켜진 사람은 건너뜀)
+  resolveArea(A) {
+    const receivers = [], guarding = p => p.state === 'receive' || p.state === 'cover';
+    const inZone = hitPlayers().filter(p => distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6);
+    // 받는 사람 먼저 처리해야 끼어들기로 구해진 파트너를 가릴 수 있다
+    for (const p of inZone.filter(guarding)) {
+      const r = bossHitsPlayer(p, A, A.center);
+      if (r === 'perfect' || r === 'guard') receivers.push({ p, r });
+    }
+    for (const p of inZone.filter(q => !guarding(q))) {
+      if (p.coveredBy && receivers.some(x => x.p === p.coveredBy)) continue;
+      // [알파] 광역 공유 받기: 누가 하나라도 받아냈으면 범위 안 모두가 지켜진다
+      if (((CFG.sharedGuard && A.shared) || A.kind === 'chain') && receivers.length && p.state !== 'dodge') {
+        G.stats.shield++;
+        popText(above(p, 3.0), '막아 줬다', 'save', 0.9);
+        beam(receivers[0].p.pos.clone().setY(1.1), p.pos.clone().setY(1.1), COLOR.save, 0.4);
+        continue;
+      }
+      bossHitsPlayer(p, A, A.center);
+    }
+    return receivers;
+  }
   activate() {
     const A = this.atk;
     this.t = 0;
     this.tele?.dispose(); this.tele = null;
-    if (A.kind === 'slam' || A.kind === 'midSlam' || A.kind === 'sweep') {
+    if (A.kind === 'slam' || A.kind === 'midSlam' || A.kind === 'sweep' || A.kind === 'chain') {
       if (A.kind === 'midSlam') { this.pos.x = A.center.x; this.pos.z = A.center.z; this.root.position.y = 0; }
       G.shake = Math.max(G.shake, 0.35); SFX.slam();
       fxRing(A.center, 0xffffff, 0.5, A.radius + 0.6, 0.35, 0.5);
-      const receivers = [], guarding = p => p.state === 'receive' || p.state === 'cover';
-      const inZone = hitPlayers().filter(p => distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6);
-      // 받는 사람 먼저 처리해야 끼어들기로 구해진 파트너를 가릴 수 있다
-      for (const p of inZone.filter(guarding)) {
-        const r = bossHitsPlayer(p, A, A.center);
-        if (r === 'perfect' || r === 'guard') receivers.push({ p, r });
-      }
-      for (const p of inZone.filter(q => !guarding(q))) {
-        if (p.coveredBy && receivers.some(x => x.p === p.coveredBy)) continue;
-        // [알파] 광역 공유 받기: 누가 하나라도 받아냈으면 범위 안 모두가 지켜진다
-        if (CFG.sharedGuard && A.shared && receivers.length && p.state !== 'dodge') {
-          G.stats.shield++;
-          popText(above(p, 3.0), '막아 줬다', 'save', 0.9);
-          beam(receivers[0].p.pos.clone().setY(1.1), p.pos.clone().setY(1.1), COLOR.save, 0.4);
-          continue;
-        }
-        bossHitsPlayer(p, A, A.center);
-      }
+      if (A.kind === 'chain') return this.chainStrike(A);
+      const receivers = this.resolveArea(A);
       if (receivers.length) return onReceived(receivers);
       this.state = 'recover'; this.t = 0.7;
     } else if (A.kind === 'charge') {
@@ -1463,7 +1546,7 @@ class Boss {
     else if (this.state === 'stagger') { lean = this.openDir.clone().negate(); ang = 0.35 + Math.sin(G.time * 22) * 0.08; armX = 0.2; }
     else if (this.state === 'recover' && this.bounceDir) { lean = this.bounceDir; ang = 0.3 * clamp(this.t / CFG.parryRecover, 0, 1); armX = 0.5; }
     else if (this.state === 'windup' && A.kind === 'sweep') { lean = this.forward().negate(); ang = 0.15 * p; armX = -1.2 * p; }
-    else if (this.state === 'windup' && (A.kind === 'slam' || A.kind === 'midSlam')) { lean = this.forward().negate(); ang = 0.25 * p; armX = -2.4 * p; }
+    else if (this.state === 'windup' && (A.kind === 'slam' || A.kind === 'midSlam' || A.kind === 'chain')) { lean = this.forward().negate(); ang = 0.25 * p; armX = -2.4 * p; }
     else if (this.state === 'windup' && A.kind === 'charge') { lean = this.forward(); ang = 0.3 * p; armX = 0.6 * p; }
     else if (this.state === 'active' && A.kind === 'charge') { lean = this.forward(); ang = 0.45; armX = 0.9; }
     else if (this.state === 'recover' && A && (A.kind === 'slam' || A.kind === 'midSlam')) { lean = this.forward(); ang = 0.2; armX = -0.7; }
@@ -1995,7 +2078,8 @@ function tryTag(auto) {
   const threat = B.state === 'windup' && B.atk?.receivable && out.alive && inThreat(out, B.atk);
   // [알파] 잔상 받기: 나가는 캐릭터는 1초 동안 받기 자세 잔상으로 남는다.
   // 공격 범위 안에서 태그했다면 들어오는 캐릭터는 보스 반대편(잔상이 받으면 틈이 열릴 쪽)에 선다
-  const echoEntry = CFG.echoOn && !auto && !gapEntry && !finEntry && out.alive;
+  // 반동·피격 중인 몸은 잔상을 남기지 못한다 (번갈아 받기에서 솔로는 박자마다 교대해야 하는 이유)
+  const echoEntry = CFG.echoOn && !auto && !gapEntry && !finEntry && out.alive && out.state !== 'recoil' && out.state !== 'hurt';
   const coverEntry = !echoEntry && CFG.cover && !auto && !gapEntry && !finEntry && threat;
   if (echoEntry) {
     Object.assign(out, { state: 'receive', receiveStart: G.now, forceRcv: CFG.echoTime, echo: true, echoT: CFG.echoTime, coverTarget: null, combo: 0, queued: false });
@@ -2191,11 +2275,11 @@ function start(mode) {
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
   resetCine();
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
-  G.boss.reset(); G.boss.target = G.players[0];
+  G.boss.reset(); G.boss.applyKind(); G.boss.target = G.players[0];
   camTarget.set(0, 0, 1);
   titleEl.hidden = resultEl.hidden = true; hudEl.hidden = false; tuneBtn.hidden = false;
   G.players.forEach(p => (p.latchRcv = false));
@@ -2232,6 +2316,7 @@ function showResult() {
     <dt>끼어들기 / 잔상 받기</dt><dd>${s.save}번 / ${s.echo}번 · 광역 같이 막기 ${s.shield}번</dd>
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
+    <dt>번갈아 받기</dt><dd>${s.chain}번</dd>
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
   resultEl.hidden = false; hudEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
   $('caption').hidden = $('demoBar').hidden = true; resetCine();
@@ -2243,6 +2328,13 @@ function showTitle() {
   $('caption').hidden = $('demoBar').hidden = true; resetCine(); G.timeScale = 1;
   texts.forEach(t => t.el.remove()); texts.length = 0;
 }
+// [알파] 상대 고르기
+function setBoss(k) {
+  CFG.boss = k;
+  document.querySelectorAll('#bossPicks .pick').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.boss === k)));
+  gui?.controllersRecursive().forEach(c => c.updateDisplay());
+}
+document.querySelectorAll('#bossPicks .pick').forEach(b => b.addEventListener('click', () => setBoss(b.dataset.boss)));
 $('soloBtn').addEventListener('click', () => start('solo'));
 $('duoBtn').addEventListener('click', () => start('duo'));
 $('practiceBtn').addEventListener('click', () => start('practice'));
@@ -2268,6 +2360,13 @@ fR.add(CFG, 'gapGuard', 0.2, 2, 0.05).name('틈 길이: 버티기');
 fR.add(CFG, 'recoil', 0.1, 1.2, 0.05).name('받은 사람 반동 (초)');
 fR.add(CFG, 'openHalfAngle', 30, 180, 5).name('틈 범위 (±도)');
 fR.add(CFG, 'gapReachBonus', 0, 4, 0.1).name('약점 피격 거리 보너스');
+const fBo = gui.addFolder('알파: 늙은 중 탈 (번갈아 받기)');
+fBo.add(CFG, 'boss', { '밤의 문지기': 'gate', '늙은 중 탈': 'monk' }).name('상대 (다시 시작 시)').onChange(v => setBoss(v));
+fBo.add(CFG, 'chainChance', 0, 1, 0.05).name('번갈아 치기 빈도');
+fBo.add(CFG, 'chainBeat', 0.3, 1.5, 0.05).name('박자 간격 (초)');
+fBo.add(CFG, 'chainRecoil', 0.3, 1.5, 0.05).name('번갈아 받기 반동 (초)');
+fBo.add({ go: () => { if (G.running && !G.boss.dead) { G.boss.state = 'chase'; G.boss.begin('chain'); } } }, 'go').name('지금 번갈아 치기 (테스트)');
+fBo.close();
 const fGr = gui.addFolder('알파: 그로기');
 fGr.add(CFG, 'groggyOn').name('그로기 켜기 (끄면 받기 한 번에 틈)');
 fGr.add(CFG, 'grogPerfect', 5, 100, 1).name('정확한 받기 → 그로기');
