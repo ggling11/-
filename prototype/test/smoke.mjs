@@ -409,6 +409,14 @@ await waitState(() => __game.G.running);
 results.relic2 = await ev(() => [__game.G.run.relics.join(), __game.CFG.boss, __game.CFG.impactMax, document.getElementById('bossName').textContent.includes('늙은 중')]);
 await ev(() => __game.G.boss.damage(99999));
 await waitState(() => !document.getElementById('result').hidden, 60000);
+results.next2 = await ev(() => !document.getElementById('nextBtn').hidden);
+await page.keyboard.press('KeyN');
+await waitState(() => !document.getElementById('draft').hidden);
+await page.keyboard.press('Digit0');
+await waitState(() => __game.G.running);
+results.stage3 = await ev(() => __game.CFG.boss);
+await ev(() => __game.G.boss.damage(99999));
+await waitState(() => !document.getElementById('result').hidden, 60000);
 results.runDone = await ev(() => [document.getElementById('resultTitle').textContent, document.getElementById('nextBtn').hidden]);
 await page.keyboard.press('Escape');
 results.restored = await page.evaluate(b => JSON.stringify(__game.CFG) === b, base);
@@ -521,6 +529,36 @@ await waitState(() => __game.G.stats.hap >= 1 || __game.G.boss.state !== 'gap');
 results.colorHap = await ev(() => __game.G.stats.hap);
 await ev(() => { __game.CFG.groggyOn = false; });
 
+// 19) [알파] 되받이 탈 랠리: 1P 공 앞에 2P가 서 있으면 2P가 맞고 끊김. 색 주인이 번갈아 받아 치면 네 번째에 기절
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.boss = 'rally'; __game.CFG.groggyOn = true; });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, -3); P1.pos.set(0, 0, 5); P2.pos.set(0, 0, 2);
+  B.target = P1; B.begin('volley'); B.t = B.atk.windup - 0.05;
+});
+await waitState(() => __game.G.boss.state === 'recover' || (__game.G.boss.proj && __game.G.boss.proj.back), 30000);
+results.rallyBlock = await ev(() => [__game.G.boss.state, __game.G.players[1].state]);
+await waitState(() => __game.G.boss.state === 'chase');
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, -3); B.groggy = 0;
+  for (const p of G.players) { p.state = 'free'; p.t = 0; p.impact = 0; p.rcvCd = 0; }
+  P1.pos.set(-0.8, 0, 4); P2.pos.set(0.8, 0, 4.4);
+  B.target = P1; B.begin('volley'); B.t = B.atk.windup - 0.05;
+});
+await waitState(() => __game.G.boss.state === 'active', 30000);
+for (let i = 0; i < 4; i++) {
+  await waitState(() => { const P = __game.G.boss.proj; return __game.G.boss.state !== 'active' || (P && !P.back && Math.hypot(P.pos.x - __game.G.players[P.owner].pos.x, P.pos.z - __game.G.players[P.owner].pos.z) < 1.8); }, 30000);
+  await ev(() => { const { G } = __game; const P = G.boss.proj; if (!P) return; const q = G.players[P.owner]; if (q.state === 'free') { q.state = 'receive'; q.receiveStart = G.now; q.forceRcv = 0.3; } });
+  await waitState(() => __game.G.boss.state !== 'active' || !__game.G.boss.proj || __game.G.boss.proj.back, 30000);
+}
+await waitState(() => __game.G.boss.state !== 'active', 30000);
+results.rally = await ev(() => [__game.G.boss.state, __game.G.boss.openAll, __game.G.stats.rally, __game.G.stats.rallyHit]);
+await ev(() => { __game.CFG.boss = 'gate'; __game.CFG.groggyOn = false; });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -533,14 +571,15 @@ const monk = results.monkName.includes('늙은 중') && results.chain[0] === 'ga
   && results.chainSame[0][0] === 'windup' && results.chainSame[1][0] === 'recover';
 const relic = results.draftShown && results.relic1[0] === 'heavy' && results.relic1[1] === 4 && results.relic1[2].includes('무거운 어깨')
   && results.nextShown && results.relic2[0] === 'heavy,thin' && results.relic2[1] === 'monk' && results.relic2[2] === 4 && results.relic2[3]
-  && results.runDone[0] === '원정 완료' && results.runDone[1] && results.restored;
+  && results.next2 && results.stage3 === 'rally' && results.runDone[0] === '원정 완료' && results.runDone[1] && results.restored;
 const replay = results.replay[0] > 5 && results.replay[1].includes('합') && results.replay[2] && results.replayAgain && results.replayAgainOn;
 const sw = results.switchCall[0] && results.switchCall[1] === 'dodge' && results.switchHap === 1
   && results.cross[0] === 1 && results.cross[1] === results.cross[2] * 3 && results.cross[3] === 1;
 const icpt = results.intercept[0].join() === '1,recover,20,true' && results.intercept[1].join() === '2,recover,80,true';
 const color = results.wrongColor[0] !== 'gap' && results.wrongColor[1] === 'hurt'
   && results.colorStun.join() === 'gap,true,1' && results.colorHap === 1;
-const alpha = grog && monk && relic && replay && sw && icpt && color && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const rally = results.rallyBlock[0] === 'recover' && results.rallyBlock[1] === 'hurt' && results.rally.join() === 'gap,true,1,4';
+const alpha = grog && monk && relic && replay && sw && icpt && color && rally && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1

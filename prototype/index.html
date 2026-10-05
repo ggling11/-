@@ -253,6 +253,8 @@ td:first-child { color: var(--ink-dim); }
       혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
     <p class="rule"><strong>색 공격</strong>: 보스가 <strong>1P·2P 색</strong>(혼자 할 때는 캐릭터 색)으로 빛나며 치면, 그 색 주인만 받을 수 있어요. 다른 사람에게는 받기 불가.
       밤의 문지기는 색을 맞춰 <strong>한 번만 받아도 기절</strong>하고 사방이 열려요. 혼자 할 때는 그 색 캐릭터로 태그하거나, 잔상이 받아 줘요.</p>
+    <p class="rule"><strong>되받이 탈</strong>: 1P·2P 색 공을 쏴요. 색 주인이 받으면 공이 되돌아가고, 다음 공은 다른 색. 같은 쪽에서 <strong>번갈아 앞으로 나가며</strong> 받아 쳐요.
+      공은 쏠 때 색 주인이 있던 자리로 곧게 날아가요. 그 앞에 다른 색이 서 있으면 맞아요. 네 번 이으면 기절. 혼자 할 때는 공이 필드 캐릭터를 따라오니 색에 맞춰 태그해요.</p>
     <p class="rule"><strong>스위치</strong>: 틈을 연 사람이 반동 중에 <strong>뒤로 회피</strong>하면 반동을 끊고 빠지며 "스위치!". 그 틈을 파트너가 치면 합이 더 세져요. (혼자 할 때는 받은 직후 태그가 스위치)<br>
       <strong>교차 베기</strong>: 두 사람의 타격이 <strong>거의 동시에 반대쪽</strong>에서 들어가면 두 타격 합계가 <strong>3배</strong>.</p>
     <p class="rule"><strong>그로기</strong>: 받기 한 번으로는 틈이 안 열려요. 받아낼 때마다 보스 <strong>그로기</strong>가 차고(정확한 받기가 더 많이),
@@ -315,10 +317,11 @@ td:first-child { color: var(--ink-dim); }
       <span>첫 상대 <kbd>B</kbd></span>
       <button class="pick" type="button" data-boss="gate" aria-pressed="true">밤의 문지기<small>기본</small></button>
       <button class="pick" type="button" data-boss="monk" aria-pressed="false">늙은 중 탈<small>번갈아 받기</small></button>
+      <button class="pick" type="button" data-boss="rally" aria-pressed="false">되받이 탈<small>랠리</small></button>
       <span>원정 <kbd>U</kbd></span>
       <button class="pick" type="button" id="draftBtn" aria-pressed="true">유물 고르기<small>마당마다 3개 중 1개</small></button>
     </div>
-    <p class="note">원정: 두 마당(고른 상대 → 다른 상대)을 이어서 싸워요. 마당에 들어가기 전에 <strong>유물</strong>을 하나씩 골라요. 유물은 숫자를 올리지 않고 <strong>규칙</strong>을 바꿔요. 마당이 끝나면 그 마당에서 가장 좋았던 합을 <strong>다시 보여 줘요</strong>.</p>
+    <p class="note">원정: 세 마당(고른 상대 → 나머지 둘)을 이어서 싸워요. 마당에 들어가기 전에 <strong>유물</strong>을 하나씩 골라요. 유물은 숫자를 올리지 않고 <strong>규칙</strong>을 바꿔요. 마당이 끝나면 그 마당에서 가장 좋았던 합을 <strong>다시 보여 줘요</strong>.</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>조작</th><th>1P 키보드</th><th>2P 키보드</th><th>게임패드</th></tr></thead>
@@ -510,6 +513,12 @@ const CFG = {
   colorOn: true,
   colorChance: 0.3,      // 밤의 문지기가 색 내려찍기를 고를 확률
   colorStunGap: 1.3,     // 색을 맞춰 받으면 기절: 틈 길이 배율 (사방이 열린다)
+  // [알파] 되받이 탈 (랠리): 색 공을 쏘고, 색 주인이 받아 치면 되돌아간다. 다음 공은 다른 색
+  rallyChance: 0.55,
+  rallyNeed: 4,          // 이만큼 되받아 치면 기절
+  rallySpeed: 8,
+  rallySpeedUp: 1.12,    // 되받아 칠 때마다 빨라진다
+  rallyBeat: 0.45,       // 공이 돌아온 뒤 다음 공까지
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -561,6 +570,7 @@ const FIT = {
 const ATTACKS = {
   slam:    { name: '내려찍기',      receivable: true,  windup: 0.9, radius: 2.0, dmg: 25 },
   midSlam: { name: '사이 내려찍기', receivable: true,  windup: 1.1, radius: 3.0, dmg: 25, shared: true },
+  volley:  { name: '되받이 공',     receivable: true,  windup: 1.0, dmg: 14 },  // [알파] 되받이 탈 전용
   chain:   { name: '번갈아 치기',   receivable: true,  windup: 1.0, radius: 2.4, dmg: 18, shared: true },  // [알파] 늙은 중 탈 전용
   sweep:   { name: '휩쓸기',        receivable: true,  windup: 1.0, radius: 4.4, dmg: 20, shared: true },  // [알파] 공유 받기 확인용 광역 근접
   charge:  { name: '돌진',          receivable: true,  windup: 0.8, length: 12, width: 2.6, speed: 20, dmg: 20 },
@@ -577,6 +587,7 @@ const STYLES = {
 const BOSSES = {
   gate: { name: '시험용 보스 · 밤의 문지기', body: 0x5b3a8c, arm: 0x4a2f73 },
   monk: { name: '늙은 중 탈 · 번갈아 받기', body: 0x9a7444, arm: 0x5e4426 },
+  rally: { name: '되받이 탈 · 랠리', body: 0x2f7a7f, arm: 0x1f5257 },
 };
 const COLOR = { p1: 0xff7a59, p2: 0x45c4ff, boss: 0x5b3a8c, gold: 0xffd23f, recv: 0xff5a36, unblock: 0xb06cff, fin: 0x7fe3ff, impact: 0xff9a3c, save: 0x9ff0c8 };
 const ARENA_R = 14, PLAYER_R = 0.5, SPEED = 6.2;
@@ -905,7 +916,7 @@ addEventListener('keydown', e => {
   if (!titleEl.hidden && e.code === 'KeyU') $('draftBtn').click();
   if (!G.running && !resultEl.hidden && e.code === 'KeyR') start(G.mode);
   if (e.code === 'Escape') showTitle();
-  if (!titleEl.hidden && e.code === 'KeyB') setBoss(CFG.boss === 'gate' ? 'monk' : 'gate');
+  if (!titleEl.hidden && e.code === 'KeyB') setBoss({ gate: 'monk', monk: 'rally', rally: 'gate' }[CFG.boss] || 'gate');
   if (!titleEl.hidden && (e.code === 'Digit1' || e.code === 'Numpad1')) start('solo');
   if (!titleEl.hidden && (e.code === 'Digit2' || e.code === 'Numpad2')) start('duo');
   if (!titleEl.hidden && (e.code === 'Digit3' || e.code === 'Numpad3')) start('practice');
@@ -1381,6 +1392,7 @@ class Boss {
   }
   reset() {
     this.tele?.dispose();
+    this.dropProj();
     if (this.shockMesh) disposeTree(this.shockMesh);
     Object.assign(this, { squash: 0, sqT: 0, hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null, groggy: 0, grogIdle: 0, bounceDir: null });
     this.root.position.set(0, 0, -4);
@@ -1409,7 +1421,7 @@ class Boss {
     if (G.mode === 'demo' && this.hp - n <= 0) { this.hp = this.maxHp; return; } // 자동 관람은 끝나지 않는다
     this.hp -= n; this.hitFlash = 0.1;
     if (this.hp <= 0) {
-      this.hp = 0; this.dead = true; this.state = 'dead';
+      this.hp = 0; this.dead = true; this.state = 'dead'; this.dropProj();
       this.tele?.dispose(); this.tele = null; this.hideOpen(); G.fin = null;
       if (this.shockMesh) { disposeTree(this.shockMesh); this.shockMesh = null; }
       burst(V(this.pos.x, 2, this.pos.z), COLOR.gold, 40, 9);
@@ -1486,6 +1498,7 @@ class Boss {
   choose(d) {
     const alive = activePlayers();
     if (CFG.boss === 'monk' && d < 7 && Math.random() < CFG.chainChance) return this.begin('chain');
+    if (CFG.boss === 'rally' && d > 2.5 && Math.random() < CFG.rallyChance) return this.begin('volley');
     if (CFG.boss === 'gate' && CFG.colorOn && d < 4.0 && Math.random() < CFG.colorChance) {
       // 듀오: 노린 사람의 색. 솔로: 두 캐릭터 중 하나 (필드에 없는 쪽이면 태그해서 받거나 잔상으로)
       const owner = G.mode === 'solo' ? (Math.random() < 0.5 ? 0 : 1) : this.target.idx;
@@ -1504,7 +1517,10 @@ class Boss {
     const A = { kind, ...ATTACKS[kind] }, tgt = this.target;
     this.atk = A; this.state = 'windup'; this.t = 0; this.hitSet = new Set();
     G.players.forEach(q => { q.coveredBy = q.coverTarget = null; });
-    if (kind === 'chain') {
+    if (kind === 'volley') {
+      Object.assign(A, { owner: G.mode === 'solo' ? (Math.random() < 0.5 ? 0 : 1) : tgt.idx, count: 0, wait: 0, last: null });
+      this.volleyTele(A, A.owner);
+    } else if (kind === 'chain') {
       Object.assign(A, { i: 0, got: 0, windup: CFG.chainFirst });
       this.chainZone(A);
     } else if (kind === 'sweep') {
@@ -1530,6 +1546,93 @@ class Boss {
       this.tele = shockTele(this);
     }
     SFX.windup(kind);
+  }
+  // ── [알파] 되받이 탈: 랠리 ──
+  // 보스 머리 위에 다음 공의 색이 차오른다
+  volleyTele(A, owner) {
+    const q = G.players[owner], col = q.color;
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+    orb.position.y = 4.4; this.root.add(orb);
+    this.tele?.dispose();
+    this.tele = { set(k) { orb.scale.setScalar(0.3 + k * 0.9 + Math.sin(G.time * 18) * 0.05); }, dispose() { disposeTree(orb); } };
+    const who = G.mode === 'duo' ? `${owner + 1}P` : q.char.name;
+    popText(above(this, 5.2), `${who} 색!`, 'warn', 0.9);
+    tone(owner ? 784 : 523, 0.2, { type: 'triangle', vol: 0.1 });
+  }
+  // 공은 쏘는 순간 색 주인 자리로 곧게 날아간다(듀오). 솔로는 필드 캐릭터를 따라간다
+  fireProj(A) {
+    this.tele?.dispose(); this.tele = null;
+    const owner = A.owner, col = G.players[owner].color;
+    const aimAt = G.mode === 'solo' ? G.players[G.active].pos : G.players[owner].pos;
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff })));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 12), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })));
+    const pos = this.pos.clone().addScaledVector(dirTo(this.pos, aimAt), this.R + 0.4).setY(1.1);
+    g.position.copy(pos); scene.add(g);
+    const speed = CFG.rallySpeed * Math.pow(CFG.rallySpeedUp, A.count);
+    this.proj = { g, pos, dir: dirTo(this.pos, aimAt), speed, owner, back: false, travel: 0 };
+    A.color = owner;
+    this.faceDir(this.proj.dir, 1);
+    SFX.windup('charge');
+  }
+  dropProj() { if (this.proj) { disposeTree(this.proj.g); this.proj = null; } }
+  rallyStep(A, dt) {
+    if (A.wait > 0) { A.wait -= dt; if (A.wait <= 0) this.fireProj(A); return; }
+    const P = this.proj;
+    if (!P) { this.state = 'recover'; this.t = 0.6; return; }
+    if (P.back) {
+      P.dir = dirTo(P.pos, this.pos);
+      P.pos.addScaledVector(P.dir, P.speed * 1.4 * dt); P.g.position.copy(P.pos);
+      if (distXZ(P.pos, this.pos) < this.R + 0.3) {
+        this.dropProj();
+        A.count++;
+        burst(this.pos.clone().setY(2), G.players[A.owner].color, 12, 6);
+        this.hitFlash = 0.1; SFX.hit();
+        if (A.count >= CFG.rallyNeed) return this.rallyStun(A);
+        popText(above(this, 4.6), `랠리 ${A.count} / ${CFG.rallyNeed}`, 'sub', 0.7);
+        A.owner = 1 - A.owner; A.wait = CFG.rallyBeat;
+        this.volleyTele(A, A.owner); this.tele.set(1);
+      }
+      return;
+    }
+    if (G.mode === 'solo') { // 솔로: 필드 캐릭터 쪽으로 휘어 들어간다
+      const want = dirTo(P.pos, G.players[G.active].pos);
+      P.dir.lerp(want, Math.min(1, dt * 2.5)).setY(0).normalize();
+    }
+    P.pos.addScaledVector(P.dir, P.speed * dt); P.travel += P.speed * dt; P.g.position.copy(P.pos);
+    const hitA = { kind: 'volley', receivable: true, dmg: ATTACKS.volley.dmg, color: P.owner };
+    for (const p of hitPlayers()) {
+      if (distXZ(p.pos, P.pos) > PLAYER_R + 0.55) continue;
+      if (p.echo && p.idx !== P.owner) continue; // 다른 색 잔상은 공이 지나간다
+      const r = bossHitsPlayer(p, hitA, P.pos);
+      if (r === 'perfect' || r === 'guard') {
+        receiveFeedback([{ p, r }]);
+        A.last = { p, r };
+        P.back = true; P.speed *= CFG.rallySpeedUp;
+        G.stats.rallyHit++;
+        burst(P.pos, 0xffffff, 10, 6);
+        return;
+      }
+      if (r === 'dodge') continue;
+      return this.rallyEnd('랠리 끊김');
+    }
+    if (P.travel > ARENA_R * 2.2) this.rallyEnd('놓쳤다');
+  }
+  rallyEnd(msg) {
+    this.dropProj();
+    popText(above(this, 4.6), msg, 'hint', 1.0); SFX.miss();
+    this.state = 'recover'; this.t = 0.8;
+  }
+  rallyStun(A) {
+    G.stats.rally++;
+    popText(above(this, 5.6), '랠리 성공', 'sub', 1.2);
+    this.groggy = 0;
+    openGap([A.last]);
+    this.openAll = true;
+    this.gapT *= CFG.colorStunGap; this.gapLen = this.gapT;
+    this.showOpen(this.openDir, COLOR.gold, 180);
+    popText(above(this, 5.0), '기절!', 'perfect', 1.2);
+    G.shake = Math.max(G.shake, 0.5);
   }
   // [알파] 색 공격으로 바꾸기: 예고 원과 기둥을 주인 색으로, 주인 머리 위에 알림
   colorize(owner) {
@@ -1618,6 +1721,8 @@ class Boss {
       const receivers = this.resolveArea(A);
       if (receivers.length) return onReceived(receivers);
       this.state = 'recover'; this.t = 0.7;
+    } else if (A.kind === 'volley') {
+      this.state = 'active'; this.fireProj(A);
     } else if (A.kind === 'charge') {
       this.state = 'active'; this.traveled = 0;
     } else if (A.kind === 'shock') {
@@ -1627,6 +1732,7 @@ class Boss {
   }
   activeStep(dt) {
     const A = this.atk;
+    if (A.kind === 'volley') return this.rallyStep(A, dt);
     if (A.kind === 'charge') {
       const step = A.speed * dt;
       this.pos.addScaledVector(A.dir, step); this.traveled += step;
@@ -2650,8 +2756,8 @@ function applyRelics() {
 function newRun(mode) {
   restoreBase();
   G.cfgBase = { ...CFG };
-  const first = CFG.boss, other = first === 'gate' ? 'monk' : 'gate';
-  G.run = { mode, stage: 0, order: [first, other], relics: [], offer: [] };
+  const first = CFG.boss, rest = ['gate', 'monk', 'rally'].filter(k => k !== first);
+  G.run = { mode, stage: 0, order: [first, ...rest], relics: [], offer: [] };
 }
 function showDraft() {
   const R = G.run, pool = RELICS.filter(r => !R.relics.includes(r.id)).filter(r => G.mode === 'solo' || r.id !== 'echo').filter(r => G.mode !== 'solo' || (r.id !== 'arm' && r.id !== 'shieldhammer'));
@@ -2696,7 +2802,7 @@ function fight(mode) {
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
   resetCine();
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, intercept: 0, shieldIntercept: 0, colorStun: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, intercept: 0, shieldIntercept: 0, colorStun: 0, rally: 0, rallyHit: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
@@ -2747,7 +2853,7 @@ function showResultNow() {
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>번갈아 받기</dt><dd>${s.chain}번</dd>
-    <dt>색 맞춰 기절</dt><dd>${s.colorStun}번</dd>
+    <dt>색 맞춰 기절 / 랠리 기절</dt><dd>${s.colorStun}번 / ${s.rally}번 (되받아 친 공 ${s.rallyHit})</dd>
     <dt>가로채기</dt><dd>${s.intercept}번${s.shieldIntercept ? ` (파트너 지켜 냄 ${s.shieldIntercept})` : ''}</dd>
     <dt>스위치 / 교차 베기</dt><dd>${s.switchHap}번 (부름 ${s.switchCall}) / ${s.cross}번</dd>
     ${R ? `<dt>유물</dt><dd>${R.relics.map(id => RELICS.find(r => r.id === id).name).join(', ') || '없음'}</dd>` : ''}
@@ -2801,11 +2907,14 @@ fR.add(CFG, 'recoil', 0.1, 1.2, 0.05).name('받은 사람 반동 (초)');
 fR.add(CFG, 'openHalfAngle', 30, 180, 5).name('틈 범위 (±도)');
 fR.add(CFG, 'gapReachBonus', 0, 4, 0.1).name('약점 피격 거리 보너스');
 const fBo = gui.addFolder('알파: 늙은 중 탈 (번갈아 받기)');
-fBo.add(CFG, 'boss', { '밤의 문지기': 'gate', '늙은 중 탈': 'monk' }).name('상대 (다시 시작 시)').onChange(v => setBoss(v));
+fBo.add(CFG, 'boss', { '밤의 문지기': 'gate', '늙은 중 탈': 'monk', '되받이 탈': 'rally' }).name('상대 (다시 시작 시)').onChange(v => setBoss(v));
 fBo.add(CFG, 'chainChance', 0, 1, 0.05).name('번갈아 치기 빈도');
 fBo.add(CFG, 'chainBeat', 0.3, 1.5, 0.05).name('박자 간격 (초)');
 fBo.add(CFG, 'chainRecoil', 0.3, 1.5, 0.05).name('번갈아 받기 반동 (초)');
 fBo.add({ go: () => { if (G.running && !G.boss.dead) { G.boss.state = 'chase'; G.boss.begin('chain'); } } }, 'go').name('지금 번갈아 치기 (테스트)');
+fBo.add(CFG, 'rallyNeed', 1, 10, 1).name('되받이: 기절까지 랠리 수');
+fBo.add(CFG, 'rallySpeed', 3, 20, 0.5).name('되받이: 공 속도');
+fBo.add({ go: () => { if (G.running && !G.boss.dead) { G.boss.state = 'chase'; G.boss.dropProj(); G.boss.begin('volley'); } } }, 'go').name('지금 되받이 공 (테스트)');
 fBo.close();
 const fRp = gui.addFolder('알파: 최고의 합 다시 보기');
 fRp.add(CFG, 'replayOn').name('끝나면 다시 보기');
