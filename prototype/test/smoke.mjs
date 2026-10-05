@@ -104,6 +104,7 @@ await waitState(() => __game.G.active === 1);
 await ev(() => {
   const { G } = __game; const B = G.boss, J = G.players[1];
   G.tagCd = 0; B.cd = 99; B.pos.set(0, 0, -2); J.pos.set(0, 0, 6); J.yaw = Math.PI; J.state = 'free';
+  const M = G.players[0]; if (M.echo) { M.echo = false; M.root.visible = false; M.state = 'free'; } // [알파] 앞선 태그의 잔상이 돌진 길에 남지 않게
   B.target = J; B.begin('charge'); B.t = B.atk.windup - 0.02;
 });
 await page.keyboard.down('KeyG');
@@ -243,7 +244,7 @@ await page.keyboard.up('KeyL');
 results.cover = await ev(() => [__game.G.boss.state, __game.G.players[0].state, __game.G.stats.save]);
 await page.screenshot({ path: path.join(out, '5_cover.png') });
 
-// 7) [알파] 솔로 교대 받기: A가 범위 안에 있을 때 Q → B가 받기 자세로 들어와 틈을 연다
+// 7) [알파] 솔로 잔상 받기: A가 내려찍기 범위에 있을 때 Q → A는 받기 자세 잔상으로 남고 B는 보스 반대편에 → 잔상이 받아 틈 → B가 바로 쳐서 합
 await page.keyboard.press('Escape');
 await page.keyboard.press('Digit1');
 await waitState(() => __game.G.mode === 'solo' && __game.G.running);
@@ -253,9 +254,15 @@ await ev(() => {
 });
 await page.keyboard.press('KeyQ');
 await waitState(() => __game.G.active === 1);
-results.tagCoverState = await ev(() => __game.G.players[1].state);
+results.echoStart = await ev(() => { const [A, Bc] = __game.G.players; return [A.echo, A.state, A.root.visible, Bc.pos.z < 0]; });
 await waitState(() => __game.G.boss.state !== 'windup');
-results.tagCover = await ev(() => [__game.G.boss.state, __game.G.stats.save, __game.G.players[1].impact]);
+results.echoRcv = await ev(() => [__game.G.boss.state, __game.G.stats.echo, __game.G.players[0].impact]);
+const hapBefore = await ev(() => __game.G.stats.hap);
+await page.keyboard.press('KeyF');
+await waitState(() => __game.G.boss.state !== 'gap');
+results.echoHap = await page.evaluate(h => __game.G.stats.hap - h, hapBefore);
+await waitState(() => !__game.G.players[0].echo);
+results.echoGone = await ev(() => __game.G.players[0].root.visible);
 
 // 8) 알파-2 시선과 노림 (듀오): 1P가 보스 정면에서 버티고 2P는 등 뒤에서 기다림 → 노림 가득 → 받기 → 노림 합
 await page.keyboard.press('Escape');
@@ -351,7 +358,8 @@ const alpha = grog && results.impactFull === 3 && results.releaseDmg === (result
   && results.shared[0] === 'gap' && results.shared[1] !== 'hurt' && results.shared[2] === 1
   && results.helpRing === true && results.coverFar[0] === 'gap' && results.coverFar[1] !== 'hurt' && results.coverFar[2] === 1
   && results.coverNear[0] === 'gap' && results.coverNear[1] !== 'hurt' && results.coverNear[2] === 2
-  && results.tagCoverState === 'receive' && results.tagCover[0] === 'gap' && results.tagCover[1] === 1 && results.tagCover[2] >= 1;
+  && results.echoStart.join() === 'true,receive,true,true' && results.echoRcv[0] === 'gap' && results.echoRcv[1] === 1 && results.echoRcv[2] >= 1
+  && results.echoHap === 1 && results.echoGone === false;
 const ok = alpha && results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
   && results.unison.n === 1 && results.soloReceive === 'gap' && results.soloHap === 1 && results.soloFin.fin === 1 && results.soloFin.active === 0
   && results.fit === 'strong,weak,weak,strong' && results.jebiCharge.state === 'gap' && results.jebiCharge.fit === 2

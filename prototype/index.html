@@ -239,7 +239,8 @@ td:first-child { color: var(--ink-dim); }
       정확한 받기는 충격이 가득해도 버텨요.<br>
       <strong>끼어들기</strong>: 파트너 발밑에 초록 고리가 보이면 받기를 눌러요. 순간이동해서 대신 받아요.
       <strong>휩쓸기·사이 내려찍기</strong>처럼 넓은 공격은 한 명만 받아도 범위 안 모두가 안 맞아요.
-      혼자 할 때는 공격 범위 안에서 태그하면 들어오는 캐릭터가 받기 자세로 들어와요.</p>
+      <br><strong>잔상 받기</strong>(혼자 할 때): 태그로 나간 캐릭터는 1초 동안 받기 자세 <strong>잔상</strong>으로 남아 한 번 받아 줘요.
+      공격 범위 안에서 태그하면 들어오는 캐릭터는 <strong>보스 반대편</strong>에 서요. 잔상이 받는 순간 틈이 바로 그쪽으로 열려요. 태그 직후 바로 치면 완벽한 합.</p>
     <p class="rule">보스는 <strong>노리는 한 명만</strong> 봐요. 보스 <strong>등 뒤</strong>에서 기다리면 <strong>노림</strong>이 차고, 틈에 들어갈 때 그만큼 크게 쳐요.
       앞사람이 보스 코앞에서 버틸수록 뒤가 빨리 차요. 시선 안에 들키거나 틈 밖에서 치면 노림이 풀려요.
       혼자 할 때는 필드 캐릭터가 앞에서 버티는 동안 대기 캐릭터의 노림이 차요.</p>
@@ -419,6 +420,10 @@ const CFG = {
   grogDecay: 8,          // 초당 이만큼 빠진다
   parryRecover: 0.45,    // 덜 찬 받기에 튕겨 난 보스가 다시 움직이기까지
   parryNextCd: 0.5,      // 튕겨 난 뒤 다음 공격까지 (짧게 → 받기가 리듬이 된다)
+  // [알파] 잔상 받기 (솔로): 태그로 나간 캐릭터가 잠깐 받기 자세 잔상으로 남아 한 번 받아 준다
+  echoOn: true,
+  echoTime: 1.0,
+  echoPerfect: false,    // 유물 "메아리": 잔상 받기는 늘 정확한 받기
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -906,12 +911,18 @@ class Player {
       const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), new THREE.MeshBasicMaterial({ color: COLOR.impact, transparent: true, depthWrite: false }));
       this.root.add(m); this.pips.push(m);
     }
+    // [알파] 잔상일 때 몸을 반투명하게 하려고 몸의 재질을 모아 둔다
+    this.mats = [];
+    this.spin.traverse(o => { if (o.material && !this.mats.includes(o.material)) { o.material.userData.wasTransparent = o.material.transparent; o.material.userData.baseOpacity = o.material.opacity; this.mats.push(o.material); } });
+    this.echoRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 40), basicT(0xbfe9ff, 0.7));
+    this.echoRing.rotation.x = -Math.PI / 2; this.echoRing.position.y = 0.05; this.root.add(this.echoRing);
+    this.echoLook = false;
     scene.add(this.root);
     this.reset(V(), 0);
   }
   reset(pos, yaw) {
     this.root.position.copy(pos); this.yaw = yaw;
-    Object.assign(this, { hp: 100, state: 'free', t: 0, kb: V(), rcvCd: 0, dodgeCd: 0, iframe: 0, flash: 0, aggro: 0, queued: false, hapGlow: 0, respawnT: 0, receiveStart: -9, aim: 0, aimState: '', aimFull: false, aimSeen: false, impact: 0, restT: 0, coveredBy: null, coverTarget: null, forceRcv: 0, combo: 0, drop: 0 });
+    Object.assign(this, { hp: 100, state: 'free', t: 0, kb: V(), rcvCd: 0, dodgeCd: 0, iframe: 0, flash: 0, aggro: 0, queued: false, hapGlow: 0, respawnT: 0, receiveStart: -9, aim: 0, aimState: '', aimFull: false, aimSeen: false, impact: 0, restT: 0, coveredBy: null, coverTarget: null, forceRcv: 0, combo: 0, drop: 0, echo: false, echoT: 0 });
     this.root.position.y = 0;
     this.root.visible = true;
     this.tilt.quaternion.identity();
@@ -1103,6 +1114,14 @@ class Player {
     this.cue.position.y = (this.mark.visible ? 2.95 : 2.3) + Math.sin(G.time * 8) * 0.05;
     this.mark.position.y = 2.4 + Math.sin(G.time * 6) * 0.08;
     this.foot.visible = s !== 'down';
+    // 잔상
+    const echo = this.echo;
+    if (echo !== this.echoLook) {
+      this.echoLook = echo;
+      for (const m of this.mats) { m.transparent = echo || m.userData.wasTransparent; m.opacity = echo ? 0.42 * m.userData.baseOpacity : m.userData.baseOpacity; m.depthWrite = !echo && !m.userData.wasTransparent; m.needsUpdate = true; }
+    }
+    this.echoRing.visible = echo;
+    if (echo) { this.echoRing.scale.setScalar(1 + (1 - clamp(this.echoT / CFG.echoTime, 0, 1)) * 0.4); this.foot.visible = false; }
     // 끼어들기 가능 표시
     const mate = G.players[1 - this.idx];
     this.helpRing.visible = G.running && isDuo() && mate.canCover();
@@ -1362,7 +1381,7 @@ class Boss {
       G.shake = Math.max(G.shake, 0.35); SFX.slam();
       fxRing(A.center, 0xffffff, 0.5, A.radius + 0.6, 0.35, 0.5);
       const receivers = [], guarding = p => p.state === 'receive' || p.state === 'cover';
-      const inZone = activePlayers().filter(p => distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6);
+      const inZone = hitPlayers().filter(p => distXZ(p.pos, A.center) <= A.radius + PLAYER_R * 0.6);
       // 받는 사람 먼저 처리해야 끼어들기로 구해진 파트너를 가릴 수 있다
       for (const p of inZone.filter(guarding)) {
         const r = bossHitsPlayer(p, A, A.center);
@@ -1394,7 +1413,7 @@ class Boss {
       const step = A.speed * dt;
       this.pos.addScaledVector(A.dir, step); this.traveled += step;
       const receivers = [];
-      for (const p of activePlayers()) {
+      for (const p of hitPlayers()) {
         if (!this.hitSet.has(p) && distXZ(p.pos, this.pos) < this.R + PLAYER_R + 0.1) {
           this.hitSet.add(p);
           const r = bossHitsPlayer(p, A, this.pos);
@@ -1409,7 +1428,7 @@ class Boss {
       this.shockMesh = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.01, this.shockR - A.thick / 2), this.shockR + A.thick / 2, 96), basicT(COLOR.unblock, 0.75));
       this.shockMesh.rotation.x = -Math.PI / 2; this.shockMesh.position.set(this.pos.x, 0.07, this.pos.z);
       scene.add(this.shockMesh);
-      for (const p of activePlayers()) {
+      for (const p of hitPlayers()) {
         if (!this.hitSet.has(p) && Math.abs(distXZ(p.pos, this.pos) - this.shockR) < A.thick / 2 + PLAYER_R * 0.5) {
           this.hitSet.add(p);
           bossHitsPlayer(p, A, this.pos);
@@ -1480,6 +1499,21 @@ G.boss = new Boss();
 
 const isDuo = () => G.mode === 'duo' || G.mode === 'practice' || G.mode === 'demo';
 const above = (o, h = 2.6) => V(o.pos.x, (o.root?.position.y || 0) + h, o.pos.z);
+// [알파] 보스 공격에 맞을 수 있는 사람: 필드 캐릭터 + 솔로의 잔상
+function hitPlayers() {
+  const list = activePlayers();
+  if (G.mode === 'solo') { const o = G.players[1 - G.active]; if (o.echo && o.alive) list.push(o); }
+  return list;
+}
+function endEcho(o) {
+  if (!o.echo) return;
+  o.echo = false; o.echoT = 0;
+  if (G.mode === 'solo' && o !== G.players[G.active]) {
+    burst(o.pos.clone().setY(1), 0xbfe9ff, 8, 3);
+    o.root.visible = false;
+    if (o.alive) o.state = 'free';
+  }
+}
 function activePlayers() {
   if (G.mode === 'solo') { const p = G.players[G.active]; return p.alive ? [p] : []; }
   return G.players.filter(p => p.alive);
@@ -1573,7 +1607,7 @@ function bossHitsPlayer(p, A, src) {
     if (!A.receivable) popText(above(p, 3.1), '받기 불가!', 'warn');
     else {
       const f = fit(p, A.kind);
-      const perfect = p.state === 'receive' && G.now - p.receiveStart <= CFG.perfectWindow * FIT.window(f);
+      const perfect = p.state === 'receive' && (G.now - p.receiveStart <= CFG.perfectWindow * FIT.window(f) || (p.echo && CFG.echoPerfect));
       if (CFG.impact) {
         const add = perfect ? CFG.impactPerfect : CFG.impactGuard;
         // 정확한 받기는 한계에서도 버틴다 (세키로처럼). 버티기만 넘치면 무너진다
@@ -1686,6 +1720,12 @@ function receiveFeedback(list) {
     G.stats.save++; SFX.save();
     popText(above(G.mode === 'solo' ? r : m, 3.4), G.mode === 'solo' ? '교대 받기!' : '구했다!', 'save', 1.1);
     if (G.mode !== 'solo') { beam(r.pos.clone().setY(1.1), m.pos.clone().setY(1.1), COLOR.save, 0.45); m.hapGlow = 0.4; }
+  }
+  for (const r of receivers) {
+    if (!r.echo) continue;
+    r.echoT = 0; // 한 번 받으면 반동이 끝날 때 사라진다
+    G.stats.echo++;
+    popText(above(r, 3.4), '잔상 받기!', 'save', 1.1);
   }
   return { receivers, perfect, fits, best };
 }
@@ -1945,14 +1985,34 @@ function playerHitsBoss(p) {
 
 function tryTag(auto) {
   const out = G.players[G.active], inn = G.players[1 - G.active], B = G.boss;
+  if (inn.echo) { inn.echo = false; inn.echoT = 0; } // 잔상으로 남아 있던 캐릭터를 다시 부르면 잔상은 그대로 사라지고 본체가 들어온다
   // 혼자 하기: 합 직후 한 번 더 태그하면 받았던 캐릭터가 맺기 쪽으로 들어온다 (쿨타임 무시)
   const finEntry = !auto && finFor(inn);
   if (!inn.alive || (!auto && G.tagCd > 0 && !finEntry)) return;
   G.tagCd = CFG.tagCooldown;
   const gapEntry = !auto && B.state === 'gap' && !B.hapDone;
   // [알파] 교대 받기: 받을 수 있는 공격 범위 안에서 태그하면 들어오는 캐릭터가 받기 자세로 그 자리에 선다
-  const coverEntry = CFG.cover && !auto && !gapEntry && !finEntry && B.state === 'windup' && B.atk?.receivable && out.alive && inThreat(out, B.atk);
-  if (coverEntry) {
+  const threat = B.state === 'windup' && B.atk?.receivable && out.alive && inThreat(out, B.atk);
+  // [알파] 잔상 받기: 나가는 캐릭터는 1초 동안 받기 자세 잔상으로 남는다.
+  // 공격 범위 안에서 태그했다면 들어오는 캐릭터는 보스 반대편(잔상이 받으면 틈이 열릴 쪽)에 선다
+  const echoEntry = CFG.echoOn && !auto && !gapEntry && !finEntry && out.alive;
+  const coverEntry = !echoEntry && CFG.cover && !auto && !gapEntry && !finEntry && threat;
+  if (echoEntry) {
+    Object.assign(out, { state: 'receive', receiveStart: G.now, forceRcv: CFG.echoTime, echo: true, echoT: CFG.echoTime, coverTarget: null, combo: 0, queued: false });
+    out.root.position.y = 0;
+    if (threat) {
+      const back = dirTo(out.pos, B.pos);
+      inn.pos.copy(B.pos).addScaledVector(back, B.R + 1.4).setY(0);
+      inn.yaw = Math.atan2(-back.x, -back.z);
+      popText(above(inn, 2.9), '돌아 들어왔다', 'small', 0.7);
+    } else {
+      const side = dirTo(out.pos, B.pos); side.set(side.z, 0, -side.x);
+      inn.pos.copy(out.pos).addScaledVector(side, 1.4);
+      inn.yaw = out.yaw;
+      clearAim(inn);
+    }
+    inn.state = 'free';
+  } else if (coverEntry) {
     inn.pos.copy(out.pos);
     inn.yaw = Math.atan2(B.pos.x - out.pos.x, B.pos.z - out.pos.z);
     Object.assign(inn, { state: 'receive', receiveStart: G.now, forceRcv: CFG.coverHold, coverTarget: out });
@@ -1969,8 +2029,10 @@ function tryTag(auto) {
     clearAim(inn); // 틈이 아닐 때 들어오면 기다린 노림을 못 쓴다
   }
   inn.root.visible = true; inn.tilt.quaternion.identity();
-  if (out.alive) { out.state = 'free'; out.combo = 0; out.root.position.y = 0; }
-  out.root.visible = false;
+  if (!echoEntry) {
+    if (out.alive) { out.state = 'free'; out.combo = 0; out.root.position.y = 0; }
+    out.root.visible = false;
+  }
   G.active = 1 - G.active; B.target = inn;
   burst(inn.pos.clone().setY(1), inn.color, 14, 6);
   fxRing(inn.pos, inn.color, 0.4, 2.2, 0.3);
@@ -2084,6 +2146,12 @@ function step(dt) {
     if (c.tag) tryTag(false);
     if (G.autoTag > 0) { G.autoTag -= dt; if (G.autoTag <= 0) tryTag(true); }
     G.players[G.active].update(dt, c);
+    const o = G.players[1 - G.active];
+    if (o.echo) {
+      o.echoT -= dt;
+      o.update(dt, idleCtrl(o));
+      if (!o.alive || (o.state !== 'recoil' && (o.echoT <= 0 || o.state !== 'receive'))) endEcho(o);
+    }
   } else if (G.mode === 'practice') {
     const c = getCtrl(0);
     if (c.tag) switchControl();
@@ -2123,7 +2191,7 @@ function start(mode) {
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
   resetCine();
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
@@ -2139,7 +2207,7 @@ function start(mode) {
   syncDemoBar();
   G.players.forEach((p, i) => ($('name' + i).textContent = (mode === 'duo' ? `${i + 1}P ` : '') + p.char.name));
   $('hint').innerHTML = {
-    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받기 → <kbd>Q</kbd> 합 → <kbd>Q</kbd> 맺기 · 공격 범위 안에서 <kbd>Q</kbd> = 교대 받기',
+    solo: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 태그 — 받기 → <kbd>Q</kbd> 합 → <kbd>Q</kbd> 맺기 · 공격이 올 때 <kbd>Q</kbd> → 잔상이 받고 반대편에서 치기',
     duo: '1P <kbd>WASD</kbd> <kbd>F</kbd> 공격 <kbd>G</kbd> 받기 <kbd>Space</kbd> 회피 · 2P <kbd>방향키</kbd> <kbd>K</kbd> 공격 <kbd>L</kbd> 받기 <kbd>J</kbd> 회피 · 파트너가 위험할 때 받기 = 끼어들기',
     practice: '<kbd>WASD</kbd> 이동 · <kbd>F</kbd> 공격 · <kbd>G</kbd> 받기 · <kbd>Space</kbd> 회피 · <kbd>Q</kbd> 조작 바꾸기 — 받기를 누른 채 바꾸면 받기 자세 유지 · 다른 캐릭터가 위험할 때 받기 = 끼어들기',
     demo: '자동 관람 중 — 조작하지 않아도 돼요. 오른쪽 아래에서 연출을 기존/새 연출로 바꿔 비교할 수 있어요. <kbd>Esc</kbd> 나가기',
@@ -2161,7 +2229,7 @@ function showResult() {
     <dt>맺기</dt><dd>${s.fin}번</dd>
     <dt>합기</dt><dd>${s.unison}번</dd>
     <dt>놓친 틈</dt><dd>${s.missed}번</dd>
-    <dt>끼어들기 / 교대 받기</dt><dd>${s.save}번 · 광역 같이 막기 ${s.shield}번</dd>
+    <dt>끼어들기 / 잔상 받기</dt><dd>${s.save}번 / ${s.echo}번 · 광역 같이 막기 ${s.shield}번</dd>
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
@@ -2264,6 +2332,8 @@ fI.add(CFG, 'impactRestBench', 0.5, 10, 0.5).name('대기 회복 (초/칸)');
 fI.add(CFG, 'cover').name('끼어들기 켜기');
 fI.add(CFG, 'coverRange', 2, 10, 0.5).name('끼어들기 거리');
 fI.add(CFG, 'sharedGuard').name('광역 공유 받기 (+휩쓸기)');
+fI.add(CFG, 'echoOn').name('잔상 받기 (솔로)');
+fI.add(CFG, 'echoTime', 0.3, 3, 0.1).name('잔상 지속 (초)');
 fI.add(CFG, 'coverHold', 0.1, 1, 0.05).name('끼어든 뒤 자세 유지 (초)');
 const fK = gui.addFolder('캐릭터');
 fK.add(CFG, 'charDiff').name('캐릭터 차이 켜기');
@@ -2338,7 +2408,7 @@ function drawHud() {
   $('momWrap').hidden = !CFG.momOn;
   $('momWrap').classList.toggle('full', G.mom >= 100);
   $('momLabel').textContent = G.mom >= 100 ? '기세 가득' : '기세';
-  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b> · 맺기 <b>${s.fin}</b> · 합기 <b>${s.unison}</b> · 노림 합 <b>${s.aimHap}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 잘 맞는 받기 ${s.fitReceive} · 놓친 틈 ${s.missed}<br>구함 ${s.save} · 같이 막기 ${s.shield} · 풀어 준 충격 ${s.released} · 무너짐 ${s.broken}<br>마지막 합: ${last}`;
+  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b> · 맺기 <b>${s.fin}</b> · 합기 <b>${s.unison}</b> · 노림 합 <b>${s.aimHap}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 잘 맞는 받기 ${s.fitReceive} · 놓친 틈 ${s.missed}<br>구함 ${s.save} · 잔상 ${s.echo} · 같이 막기 ${s.shield} · 풀어 준 충격 ${s.released} · 무너짐 ${s.broken}<br>마지막 합: ${last}`;
 }
 const DIM = new THREE.Color(0x05060b), tmpC = new THREE.Color();
 function fxUpdate(dt, fdt = dt) {
