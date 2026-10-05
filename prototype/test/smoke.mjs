@@ -472,6 +472,28 @@ results.cross = await ev(() => {
   return [...a, G.stats.cross, hp1 - B.hp];
 });
 
+// 17) [알파] 모루 차지 → 보스 예비 동작 중에 맞히면 가로채기 (공격이 끊기고 그로기가 찬다). 유물 '방패 망치'면 파트너를 노린 공격일 때 크게
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.groggyOn = true; });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+results.intercept = [];
+for (const relicOn of [false, true]) {
+  await page.evaluate(r => {
+    const { G, CFG } = __game; const B = G.boss, [P1, P2] = G.players;
+    CFG.guardIntercept = r; B.groggy = 0;
+    B.state = 'chase'; B.cd = 99; B.pos.set(0, 0, 0); P1.state = 'free'; P1.pos.set(0, 0, 2.6); P1.yaw = Math.PI; P2.pos.set(0, 0, -6);
+  }, relicOn);
+  await page.keyboard.down('KeyF');
+  await waitState(() => __game.G.players[0].state === 'charge' && __game.G.players[0].chargeFull);
+  await ev(() => { const { G } = __game; const B = G.boss; B.target = G.players[1]; B.begin('slam'); B.t = 0; });
+  await page.keyboard.up('KeyF');
+  await waitState(() => __game.G.boss.state !== 'windup');
+  results.intercept.push(await ev(() => [__game.G.stats.intercept, __game.G.boss.state, Math.round(__game.G.boss.groggy), __game.G.boss.target === __game.G.players[0]]));
+  await waitState(() => __game.G.players[0].state === 'free');
+}
+await ev(() => { __game.CFG.groggyOn = false; __game.CFG.guardIntercept = false; });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -488,7 +510,8 @@ const relic = results.draftShown && results.relic1[0] === 'heavy' && results.rel
 const replay = results.replay[0] > 5 && results.replay[1].includes('합') && results.replay[2] && results.replayAgain && results.replayAgainOn;
 const sw = results.switchCall[0] && results.switchCall[1] === 'dodge' && results.switchHap === 1
   && results.cross[0] === 1 && results.cross[1] === results.cross[2] * 3 && results.cross[3] === 1;
-const alpha = grog && monk && relic && replay && sw && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const icpt = results.intercept[0].join() === '1,recover,20,true' && results.intercept[1].join() === '2,recover,80,true';
+const alpha = grog && monk && relic && replay && sw && icpt && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1

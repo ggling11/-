@@ -277,6 +277,7 @@ td:first-child { color: var(--ink-dim); }
           <li>돌진은 버거워요. 판정이 좁고 멀리 밀려나요</li>
           <li>느리고 무거운 한 방. 완벽한 합을 노리려면 <b>미리 휘둘러야</b> 해요</li>
           <li>태그 진입: 위에서 떨어지며 내려치기</li>
+          <li><b>공격을 누르고 있다가 놓으면 차지 한 방</b>. 보스가 예비 동작 중일 때 맞히면 <b>가로채기</b>: 공격을 끊고 그로기가 크게 차요</li>
         </ul>
       </div>
       <div class="char" style="--c: var(--p2)">
@@ -495,6 +496,13 @@ const CFG = {
   crossWindow: 0.2,
   crossDot: -0.2,        // 두 사람이 보스를 기준으로 이 값보다 반대쪽 (약 100도 이상 벌어짐)
   crossMul: 3,
+  // [알파] 모루 차지 공격: 공격을 누르고 있다가 놓으면 무거운 한 방. 보스 예비 동작 중에 맞으면 가로채기
+  chargeOn: true,
+  chargeTime: 0.6,
+  chargeMul: 2.5,
+  chargeGrog: 20,        // 가로채기 → 보스 그로기 +
+  guardIntercept: false, // 유물 "방패 망치": 파트너를 노린 공격을 가로채면 그로기 +60, 피해 ×2
+  chargeStun: 1.0,       // 가로채기 → 보스가 휘청이는 시간
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -904,11 +912,12 @@ function pads() { return [...(navigator.getGamepads?.() || [])].filter(Boolean);
 function getCtrl(slot) {
   const schemes = G.mode === 'duo' ? [KB[slot]] : KB;
   const padSlots = G.mode === 'duo' ? [slot] : [0, 1];
-  let mx = 0, my = 0, atk = false, rcvHeld = false, rcvPressed = false, dodge = false, tag = false;
+  let mx = 0, my = 0, atk = false, atkHeld = false, rcvHeld = false, rcvPressed = false, dodge = false, tag = false;
   for (const k of schemes) {
     mx += (keysDown.has(k.right) ? 1 : 0) - (keysDown.has(k.left) ? 1 : 0);
     my += (keysDown.has(k.up) ? 1 : 0) - (keysDown.has(k.down) ? 1 : 0);
     atk ||= k.atk.some(c => keysPressed.has(c));
+    atkHeld ||= k.atk.some(c => keysDown.has(c));
     rcvHeld ||= k.rcv.some(c => keysDown.has(c));
     rcvPressed ||= k.rcv.some(c => keysPressed.has(c));
     dodge ||= k.dodge.some(c => keysPressed.has(c));
@@ -925,12 +934,12 @@ function getCtrl(slot) {
     ax += (held(15) ? 1 : 0) - (held(14) ? 1 : 0);
     ay += (held(12) ? 1 : 0) - (held(13) ? 1 : 0);
     mx += ax; my += ay;
-    atk ||= PAD.atk.some(edge); rcvHeld ||= PAD.rcv.some(held); rcvPressed ||= PAD.rcv.some(edge);
+    atk ||= PAD.atk.some(edge); atkHeld ||= PAD.atk.some(held); rcvHeld ||= PAD.rcv.some(held); rcvPressed ||= PAD.rcv.some(edge);
     dodge ||= PAD.dodge.some(edge); tag ||= PAD.tag.some(edge);
   }
   const move = RIGHT.clone().multiplyScalar(mx).addScaledVector(FWD, my);
   if (move.length() > 1) move.normalize();
-  return { move, atk, rcvHeld, rcvPressed, dodge, tag };
+  return { move, atk, atkHeld, rcvHeld, rcvPressed, dodge, tag };
 }
 function clearInputEdges() {
   keysPressed.clear();
@@ -1035,7 +1044,9 @@ class Player {
       if (ch.entry === 'dash') { windup = Math.max(CFG.tagWindup, 0.1); lunge = true; }  // 제비 날기: 멀리서 파고든다
     }
     if (kind === 'chain') { windup = 0.07; recover = 0.08; }
-    Object.assign(this, { state: 'attack', t: 0, hitDone: false, queued: false, windup, recover, lunge, drop, tagEntry: kind === 'tag' });
+    if (kind === 'charged') { windup = 0.12; recover = 0.45; }
+    if (kind === 'released') { windup = 0.02; }
+    Object.assign(this, { state: 'attack', t: 0, hitDone: false, queued: false, windup, recover, lunge, drop, tagEntry: kind === 'tag', charged: kind === 'charged', atkKind: kind });
   }
   startDodge(dir) {
     this.combo = 0;
@@ -1083,6 +1094,10 @@ class Player {
             if (gap > 0.6) this.pos.addScaledVector(to, Math.min(gap - 0.6, ch.lungeSpeed * dt));
           } else this.pos.addScaledVector(c.move, SPEED * 0.3 * dt);
           if (this.drop) this.root.position.y = this.drop * Math.max(0, 1 - this.t / this.windup);
+          // [알파] 모루: 휘두르는 버튼을 내려칠 때까지 계속 누르고 있으면 차지로 넘어간다 (톡 치면 지연 없이 그냥 공격)
+          if (this.t >= this.windup && this.atkKind === 'normal' && CFG.chargeOn && this.char.key === 'moru' && c.atkHeld) {
+            Object.assign(this, { state: 'charge', chargeFull: false }); break;
+          }
           if (this.t >= this.windup) {
             this.hitDone = true; this.root.position.y = 0;
             if (this.drop) { G.shake = Math.max(G.shake, 0.3); fxRing(this.pos, this.color, 0.3, 2.4, 0.3); }
@@ -1113,6 +1128,22 @@ class Player {
           this.state = 'free';
           if (go) this.startAttack();
         }
+        break;
+      // [알파] 모루 차지: 누르고 있는 동안 모으고, 놓으면 친다. 받기·회피로 끊을 수 있다
+      case 'charge':
+        this.t += dt;
+        if (c.dodge && this.dodgeCd <= 0) { this.startDodge(dodgeDir()); break; }
+        if (c.rcvPressed && this.tryCover()) break;
+        if (c.rcvPressed && this.rcvCd <= 0) { this.state = 'receive'; this.receiveStart = G.now; break; }
+        this.pos.addScaledVector(c.move, SPEED * 0.35 * dt);
+        if (!B.dead && distXZ(this.pos, B.pos) < 7) this.faceDir(dirTo(this.pos, B.pos), dt * 8);
+        else if (c.move.lengthSq() > 0.01) this.faceDir(c.move, dt * 10);
+        if (!this.chargeFull && this.t >= CFG.chargeTime) {
+          this.chargeFull = true;
+          fxRing(this.pos, this.color, 0.4, 1.8, 0.3); SFX.tag();
+          popText(above(this, 2.9), '차지', 'small', 0.6);
+        }
+        if (!c.atkHeld) this.startAttack(this.chargeFull ? 'charged' : 'released'); // 덜 모으고 놓으면 그 자리에서 바로 내려친다
         break;
       case 'cover': {
         this.t += dt;
@@ -1189,7 +1220,8 @@ class Player {
     else if (s === 'attack') setLean(this.tilt, this.forward(), this.hitDone ? 0.25 : -0.15, k);
     else setLean(this.tilt, null, 0, k);
     let armY = 0.25;
-    if (s === 'attack') armY = !this.hitDone ? lerp(0.25, 1.5, this.t / this.windup) : lerp(-1.6, 0.25, clamp((this.t - this.windup) / this.recover, 0, 1));
+    if (s === 'charge') armY = lerp(0.25, 1.9, clamp(this.t / CFG.chargeTime, 0, 1)) + (this.chargeFull ? Math.sin(G.time * 30) * 0.05 : 0);
+    else if (s === 'attack') armY = !this.hitDone ? lerp(0.25, 1.5, this.t / this.windup) : lerp(-1.6, 0.25, clamp((this.t - this.windup) / this.recover, 0, 1));
     this.arm.rotation.y = armY;
     const recv = s === 'receive' || s === 'cover';
     this.ring.visible = this.shield.visible = recv;
@@ -1255,7 +1287,8 @@ Player.prototype.drawAim = function () {
     this.aimRing.material.color.set(this.aimState === 'seen' ? COLOR.recv : COLOR.gold);
     this.aimRing.scale.setScalar(full ? 1.08 + Math.sin(G.time * 10) * 0.06 : 1);
   }
-  const g = full && CFG.aimOn ? 0.55 + Math.sin(G.time * 10) * 0.25 : a * 0.3;
+  let g = full && CFG.aimOn ? 0.55 + Math.sin(G.time * 10) * 0.25 : a * 0.3;
+  if (this.state === 'charge') g = Math.max(g, this.chargeFull ? 0.8 + Math.sin(G.time * 24) * 0.2 : 0.6 * this.t / CFG.chargeTime);
   this.bladeMat.emissive.setRGB(g, g * 0.75, 0.05 * g);
   const B = G.boss, line = on && isDuo() && !B.dead && (this.aimState === 'charge' || this.aimState === 'seen' || full);
   this.aimLine.visible = line;
@@ -1365,6 +1398,7 @@ class Boss {
   }
   damage(n) {
     if (this.dead) return;
+    if (G.mode === 'demo' && this.hp - n <= 0) { this.hp = this.maxHp; return; } // 자동 관람은 끝나지 않는다
     this.hp -= n; this.hitFlash = 0.1;
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true; this.state = 'dead';
@@ -1915,6 +1949,30 @@ function openGap(list) {
   }
 }
 
+// [알파] 가로채기 (모루 차지 공격의 일부)
+function intercept(p, dmg) {
+  const B = G.boss;
+  // 유물 "방패 망치": 파트너를 노리던 공격을 끊어 파트너가 맞지 않게 했다면 크게 보상
+  const shield = CFG.guardIntercept && isDuo() && B.target && B.target !== p && B.target.alive;
+  const grog = shield ? CFG.chargeGrog + 60 : CFG.chargeGrog;
+  if (shield) { dmg *= 2; G.stats.shieldIntercept++; popText(above(B.target, 3.0), '지켜 냈다', 'save', 1.0); }
+  B.damage(dmg);
+  registerHit(p, dmg);
+  if (B.dead) return;
+  B.tele?.dispose(); B.tele = null;
+  B.state = 'recover'; B.t = CFG.chargeStun; B.cd = 0.8; B.bounceDir = dirTo(p.pos, B.pos);
+  G.players.forEach(q => { q.coveredBy = q.coverTarget = null; });
+  addGroggy(grog);
+  if (isDuo()) { B.target = p; G.players.forEach(q => (q.aggro = 0)); }
+  G.stats.intercept++;
+  const hp = B.pos.clone().lerp(p.pos, 0.4).setY(1.6);
+  burst(hp, p.color, 24, 9); burst(hp, 0xffffff, 12, 7);
+  fxRing(B.pos, p.color, B.R, 7, 0.45);
+  G.hitstop = Math.max(G.hitstop, 0.14); G.shake = Math.max(G.shake, 0.6); G.punch = Math.max(G.punch, 0.6);
+  SFX.slam(); SFX.fin();
+  popText(above(B, 4.8), '가로채기!', 'hap', 1.1);
+  popText(above(B, 4.0), `${Math.round(dmg)} · 그로기 +${grog}`, 'sub', 1.0);
+}
 // [알파] 스위치 / 교차 베기
 function callSwitch(by) {
   G.switch = { by, until: G.now + CFG.switchWindow };
@@ -1935,7 +1993,7 @@ function switchBonus(p, base) {
   return extra;
 }
 function registerHit(p, dmg) {
-  if (!CFG.crossOn) return;
+  if (!CFG.crossOn || G.mode === 'demo') return;
   const B = G.boss, dir = dirTo(B.pos, p.pos), prev = G.lastHit;
   if (prev && prev.p !== p && G.now - prev.t <= CFG.crossWindow && prev.dir.dot(dir) <= CFG.crossDot && !B.dead) {
     G.lastHit = null;
@@ -2161,7 +2219,12 @@ function playerHitsBoss(p) {
   const finOpen = finFor(p);
   if (finOpen) { reach = ch.reach + CFG.gapReachBonus; minDot = -0.3; }
   if (d > B.R + PLAYER_R + reach || p.forward().dot(to) < minDot) { SFX.swing(); return; }
-  const base = ch.dmg;
+  let base = ch.dmg;
+  if (p.charged) {
+    base *= CFG.chargeMul;
+    // [알파] 가로채기: 차지 한 방이 보스 예비 동작 중에 들어가면 공격을 끊는다
+    if (B.state === 'windup' && !B.dead) return intercept(p, base);
+  }
   if (finOpen && dirTo(B.pos, p.pos).dot(G.fin.dir) >= Math.cos((CFG.finHalfAngle * Math.PI) / 180)) return doFin(p);
   if (gapOpen) {
     if (inOpenSide(p)) {
@@ -2528,6 +2591,7 @@ const RELICS = [
   { id: 'breathe', name: '같은 숨', emo: '합', desc: '"동시"로 쳐 주는 폭이 넓어진다. 받기 뒤 0.25 → 0.4초 안이면 완벽한 합', apply: C => { C.perfectHap = Math.max(C.perfectHap, 0.4); } },
   { id: 'glass', name: '유리 몸', emo: '긴장', desc: '아군 피 무한이 꺼진다. 대신 합·완벽한 합 배율 +1', apply: C => { C.infiniteHP = false; C.hapMul += 1; C.perfectHapMul += 1; } },
   { id: 'onebody', name: '한 몸', emo: '합', desc: '합이 터지면 받은 사람만이 아니라 둘의 충격이 모두 풀린다', apply: C => { C.releaseBoth = true; } },
+  { id: 'shieldhammer', name: '방패 망치', emo: '실수 메워 주기', desc: '파트너를 노린 공격을 모루 차지로 가로채면 그로기 +60, 피해 ×2 (듀오)', apply: C => { C.guardIntercept = true; } },
   { id: 'breath', name: '고른 숨', emo: '역할 교대', desc: '충격이 2배 빨리 풀린다', apply: C => { C.impactRest /= 2; C.impactRestBench /= 2; } },
 ];
 const draftEl = $('draft');
@@ -2545,7 +2609,7 @@ function newRun(mode) {
   G.run = { mode, stage: 0, order: [first, other], relics: [], offer: [] };
 }
 function showDraft() {
-  const R = G.run, pool = RELICS.filter(r => !R.relics.includes(r.id)).filter(r => G.mode === 'solo' || r.id !== 'echo').filter(r => G.mode !== 'solo' || r.id !== 'arm');
+  const R = G.run, pool = RELICS.filter(r => !R.relics.includes(r.id)).filter(r => G.mode === 'solo' || r.id !== 'echo').filter(r => G.mode !== 'solo' || (r.id !== 'arm' && r.id !== 'shieldhammer'));
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   R.offer = pool.slice(0, 3).map(r => r.id);
   $('draftTitle').textContent = `마당 ${R.stage + 1} · 유물 고르기`;
@@ -2587,7 +2651,7 @@ function fight(mode) {
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
   resetCine();
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, intercept: 0, shieldIntercept: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
@@ -2638,6 +2702,7 @@ function showResultNow() {
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>번갈아 받기</dt><dd>${s.chain}번</dd>
+    <dt>가로채기</dt><dd>${s.intercept}번${s.shieldIntercept ? ` (파트너 지켜 냄 ${s.shieldIntercept})` : ''}</dd>
     <dt>스위치 / 교차 베기</dt><dd>${s.switchHap}번 (부름 ${s.switchCall}) / ${s.cross}번</dd>
     ${R ? `<dt>유물</dt><dd>${R.relics.map(id => RELICS.find(r => r.id === id).name).join(', ') || '없음'}</dd>` : ''}
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
@@ -2707,6 +2772,10 @@ fSw.add(CFG, 'switchBonus', 0, 3, 0.25).name('스위치 합 배율 +');
 fSw.add(CFG, 'crossOn').name('교차 베기 켜기');
 fSw.add(CFG, 'crossWindow', 0.05, 0.6, 0.01).name('교차 베기: 동시 판정 (초)');
 fSw.add(CFG, 'crossMul', 1, 6, 0.5).name('교차 베기 배율');
+fSw.add(CFG, 'chargeOn').name('모루 차지 공격');
+fSw.add(CFG, 'chargeTime', 0.2, 1.5, 0.05).name('차지 시간 (초)');
+fSw.add(CFG, 'chargeMul', 1, 5, 0.25).name('차지 피해 배율');
+fSw.add(CFG, 'chargeGrog', 0, 100, 5).name('가로채기 → 그로기 +');
 fSw.close();
 const fGr = gui.addFolder('알파: 그로기');
 fGr.add(CFG, 'groggyOn').name('그로기 켜기 (끄면 받기 한 번에 틈)');
@@ -2813,7 +2882,7 @@ const tmpV = V();
 function drawHud() {
   const B = G.boss;
   $('bossHp').style.width = `${(B.hp / B.maxHp) * 100}%`;
-  const label = p => ({ cover: '끼어들기', receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: isDuo() ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
+  const label = p => ({ charge: p.chargeFull ? '차지 가득' : '차지', cover: '끼어들기', receive: '받기 자세', recoil: '반동', dodge: '회피', hurt: '피격', down: isDuo() ? `쓰러짐 ${Math.max(0, Math.ceil(p.respawnT))}` : '쓰러짐' }[p.state] || '');
   G.players.forEach((p, i) => {
     $('hp' + i).style.width = `${clamp(p.hp, 0, 100)}%`;
     const benched = G.mode !== 'duo' && i !== G.active;
