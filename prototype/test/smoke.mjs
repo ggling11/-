@@ -28,6 +28,8 @@ await page.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
 await page.route('http://local.test/', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + '</body></html>' }));
 await page.goto('http://local.test/');
 await page.waitForFunction(() => window.__game, null, { timeout: 15000 });
+// 이전 시나리오들은 '받기 한 번 = 틈' 규칙을 전제로 한다. [알파] 그로기 시나리오에서만 켠다
+await page.evaluate(() => { __game.CFG.groggyOn = false; });
 await page.screenshot({ path: path.join(out, '0_title.png') });
 
 const ev = f => page.evaluate(f);
@@ -315,6 +317,25 @@ await page.waitForFunction(n => __game.G.stats.hap > n, before, { timeout: 18000
 results.demoOldFx = await ev(() => __game.CFG.fx);
 
 
+// 12) [알파] 그로기: 정확한 받기 두 번은 튕겨 낼 뿐(틈 없음), 세 번째에 그로기가 꽉 차며 틈
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.groggyOn = true; __game.CFG.charDiff = false; });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+results.groggy = [];
+for (let i = 0; i < 3; i++) {
+  await ev(() => {
+    const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+    B.state = 'chase'; B.pos.set(0, 0, 0); P1.state = 'free'; P1.rcvCd = 0; P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3.2);
+    B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.05;
+  });
+  await page.keyboard.down('KeyG');
+  await waitState(() => __game.G.boss.state !== 'windup');
+  await page.keyboard.up('KeyG');
+  results.groggy.push(await ev(() => [__game.G.boss.state, Math.round(__game.G.boss.groggy)]));
+}
+await ev(() => { __game.CFG.groggyOn = false; __game.CFG.charDiff = true; });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -322,7 +343,8 @@ results.mobileOverflow = await ev(() => document.documentElement.scrollWidth > i
 await page.screenshot({ path: path.join(out, '5_mobile_title.png') });
 
 await browser.close();
-const alpha = results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const grog = results.groggy.map(g => g[0]).join() === 'recover,recover,gap' && results.groggy[1][1] > results.groggy[0][1] && results.groggy[2][1] === 0;
+const alpha = grog && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1

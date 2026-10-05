@@ -81,6 +81,10 @@ body { margin: 0; background: var(--night); color: var(--ink); font-family: var(
 /* 기세: 두 사람이 함께 쌓는 공동 게이지 */
 .mom { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em; }
 .mom .bar { height: 6px; }
+/* [알파] 보스 그로기: 받기로 차고, 꽉 차는 순간 틈이 열린다 */
+.mom.grog .bar > i { background: linear-gradient(90deg, #f4efe6, var(--impact)); transition: width 0.08s; }
+.mom.grog.hot { color: var(--impact); }
+.mom.grog.hot .bar { border-color: var(--impact); box-shadow: 0 0 8px rgba(255,154,60,0.6); }
 .mom .bar > i { width: 0%; background: linear-gradient(90deg, #7fe3ff, var(--gold)); }
 .mom.full { color: var(--gold); }
 .mom.full .bar { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,210,63,0.7); animation: momPulse 0.6s ease-in-out infinite alternate; }
@@ -191,6 +195,7 @@ td:first-child { color: var(--ink-dim); }
     <div class="boss">
       <div class="boss-name">시험용 보스 · 밤의 문지기</div>
       <div class="bar"><i id="bossHp"></i></div>
+      <div class="mom grog" id="grogWrap"><span>그로기</span><div class="bar"><i id="grog"></i></div></div>
       <div class="mom" id="momWrap"><span id="momLabel">기세</span><div class="bar"><i id="mom"></i></div></div>
     </div>
     <div class="stats" id="stats"></div>
@@ -225,6 +230,8 @@ td:first-child { color: var(--ink-dim); }
     <p class="rule">한 명이 보스 공격을 <strong>받아내면</strong>, 보스의 틈은 <strong>파트너 쪽</strong>으로 열려요.
       그 틈을 치면 <strong>합</strong>. 받기와 거의 동시에 치면 <strong>완벽한 합</strong>이에요.
       혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
+    <p class="rule"><strong>그로기</strong>: 받기 한 번으로는 틈이 안 열려요. 받아낼 때마다 보스 <strong>그로기</strong>가 차고(정확한 받기가 더 많이),
+      <strong>꽉 차는 순간</strong> 마지막으로 받은 사람 반대편에 틈이 열려요. 덜 찬 받기는 보스를 튕겨 낼 뿐이고, 보스는 곧바로 다시 들어와요.</p>
     <p class="rule">합을 맞으면 보스는 <strong>받아낸 사람 쪽으로</strong> 휘청여요. 반동이 풀린 받은 사람이 그쪽을 치면 <strong>맺기</strong>.
       (혼자 할 때는 합 직후 한 번 더 태그.) 합과 맺기로 <strong>기세</strong>가 차고, 기세가 가득할 때 완벽한 합을 내면 <strong>합기</strong>가 터져요.</p>
     <p class="rule"><strong>충격</strong>: 받을 때마다 몸에 충격이 쌓여요(정확한 받기 1칸, 버티기 2칸). 칸이 넘치면 받기가 깨져요.
@@ -402,6 +409,16 @@ const CFG = {
   cover: true,
   coverRange: 10,        // 이 거리 안이면 순간이동으로 끼어든다
   coverDash: 0.08,
+  // [알파] 그로기: 받기가 보스 그로기를 채우고, 꽉 차는 순간에만 틈이 열린다
+  groggyOn: true,
+  groggyMax: 100,
+  grogPerfect: 40,       // 정확한 받기 한 번
+  grogGuard: 25,         // 버티기 한 번
+  grogHit: 3,            // 틈 밖 일반 공격 한 번
+  grogHold: 3,           // 이 시간 동안 안 차면
+  grogDecay: 8,          // 초당 이만큼 빠진다
+  parryRecover: 0.45,    // 덜 찬 받기에 튕겨 난 보스가 다시 움직이기까지
+  parryNextCd: 0.5,      // 튕겨 난 뒤 다음 공격까지 (짧게 → 받기가 리듬이 된다)
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -1202,7 +1219,7 @@ class Boss {
   reset() {
     this.tele?.dispose();
     if (this.shockMesh) disposeTree(this.shockMesh);
-    Object.assign(this, { squash: 0, sqT: 0, hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null });
+    Object.assign(this, { squash: 0, sqT: 0, hp: CFG.bossHP, maxHp: CFG.bossHP, state: 'chase', cd: 1.8, t: 0, tele: null, atk: null, hitFlash: 0, dead: false, yaw: 0, openDir: V(0, 0, 1), gapReceivers: [], hapDone: true, shockMesh: null, groggy: 0, grogIdle: 0, bounceDir: null });
     this.root.position.set(0, 0, -4);
     this.root.visible = true;
     this.hideOpen();
@@ -1258,6 +1275,10 @@ class Boss {
     if (this.dead) { this.root.position.y = Math.max(-3.5, this.root.position.y - dt * 0.9); return; }
     this.validateTarget();
     const tgt = this.target;
+    if (this.groggy > 0 && this.state !== 'gap' && this.state !== 'stagger') {
+      this.grogIdle += dt;
+      if (this.grogIdle > CFG.grogHold) this.groggy = Math.max(0, this.groggy - CFG.grogDecay * dt);
+    }
     switch (this.state) {
       case 'chase':
         if (!tgt) break;
@@ -1284,7 +1305,7 @@ class Boss {
         break;
       }
       case 'active': this.t += dt; this.activeStep(dt); break;
-      case 'recover': this.t -= dt; if (this.t <= 0) this.state = 'chase'; break;
+      case 'recover': this.t -= dt; if (this.t <= 0) { this.state = 'chase'; this.bounceDir = null; } break;
       case 'gap': this.gapT -= dt; if (this.gapT <= 0) this.closeGap(); break;
       case 'stagger':
         this.t -= dt;
@@ -1358,7 +1379,7 @@ class Boss {
         }
         bossHitsPlayer(p, A, A.center);
       }
-      if (receivers.length) return openGap(receivers);
+      if (receivers.length) return onReceived(receivers);
       this.state = 'recover'; this.t = 0.7;
     } else if (A.kind === 'charge') {
       this.state = 'active'; this.traveled = 0;
@@ -1380,7 +1401,7 @@ class Boss {
           if (r === 'perfect' || r === 'guard') receivers.push({ p, r });
         }
       }
-      if (receivers.length) return openGap(receivers);
+      if (receivers.length) return onReceived(receivers);
       if (this.traveled >= A.len) { this.state = 'recover'; this.t = 0.6; }
     } else if (A.kind === 'shock') {
       this.shockR += A.speed * dt;
@@ -1421,6 +1442,7 @@ class Boss {
     const p = A ? clamp(this.t / A.windup, 0, 1) : 0;
     if (this.state === 'gap') { lean = this.openDir.clone().negate(); ang = 0.32; armX = -0.3; }
     else if (this.state === 'stagger') { lean = this.openDir.clone().negate(); ang = 0.35 + Math.sin(G.time * 22) * 0.08; armX = 0.2; }
+    else if (this.state === 'recover' && this.bounceDir) { lean = this.bounceDir; ang = 0.3 * clamp(this.t / CFG.parryRecover, 0, 1); armX = 0.5; }
     else if (this.state === 'windup' && A.kind === 'sweep') { lean = this.forward().negate(); ang = 0.15 * p; armX = -1.2 * p; }
     else if (this.state === 'windup' && (A.kind === 'slam' || A.kind === 'midSlam')) { lean = this.forward().negate(); ang = 0.25 * p; armX = -2.4 * p; }
     else if (this.state === 'windup' && A.kind === 'charge') { lean = this.forward(); ang = 0.3 * p; armX = 0.6 * p; }
@@ -1434,7 +1456,8 @@ class Boss {
     else if (this.state === 'windup' && A.kind === 'shock') { const v = 0.3 + 0.3 * Math.sin(G.time * 30); e.setRGB(0.45 * v * 2, 0.2 * v, 0.9 * v * 2); }
     else if (this.state === 'gap') e.setRGB(0.12, 0.09, 0.0);
     else e.setRGB(0, 0, 0);
-    this.eyeMat.color.set(this.state === 'gap' || this.state === 'stagger' ? 0x6b5a2a : COLOR.gold);
+    const gk = CFG.groggyOn ? this.groggy / CFG.groggyMax : 0;
+    this.eyeMat.color.set(this.state === 'gap' || this.state === 'stagger' ? 0x6b5a2a : gk > 0.75 && Math.sin(G.time * 24) > 0 ? COLOR.impact : COLOR.gold);
     if (this.weak.visible) this.weak.scale.setScalar(1.4 + Math.sin(G.time * 14) * 0.18);
     // 합을 맞으면 찌그러졌다가 출렁이며 돌아온다 (정지 중에는 찌그러진 채로 멈춤)
     this.sqT = (this.sqT || 0) + dt;
@@ -1601,16 +1624,40 @@ function downPlayer(p) {
   } else if (!G.players.some(q => q.alive)) endGame(false);
 }
 
-function openGap(list) {
+// [알파] 그로기: 받기 성공은 먼저 여기로 온다. 그로기가 꽉 차는 순간에만 틈이 열리고, 아니면 보스가 튕겨 날 뿐이다
+const groggyActive = () => CFG.groggyOn && G.mode !== 'demo';
+function addGroggy(n) {
+  const B = G.boss;
+  if (!groggyActive() || B.dead || B.state === 'gap' || B.state === 'stagger') return;
+  B.groggy = Math.min(CFG.groggyMax, B.groggy + n); B.grogIdle = 0;
+}
+function onReceived(list) {
+  const B = G.boss;
+  if (!groggyActive()) return openGap(list);
+  const kind = B.atk?.kind;
+  let add = 0;
+  for (const x of list) add += (x.r === 'perfect' ? CFG.grogPerfect : CFG.grogGuard) * ({ strong: 1.25, weak: 0.75 }[fit(x.p, kind)] || 1);
+  addGroggy(add);
+  if (B.groggy >= CFG.groggyMax - 1e-6) {
+    B.groggy = 0;
+    popText(above(B, 5.2), '그로기!', 'hap', 1.0);
+    G.shake = Math.max(G.shake, 0.4);
+    return openGap(list);
+  }
+  // 덜 찬 받기: 보스는 받은 사람 반대쪽으로 튕겨 나고, 곧바로 다시 들어온다
+  const { receivers } = receiveFeedback(list);
+  B.tele?.dispose(); B.tele = null;
+  const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
+  B.bounceDir = dirTo(avg, B.pos);
+  B.state = 'recover'; B.t = CFG.parryRecover; B.cd = CFG.parryNextCd;
+  popText(above(B, 4.4), `그로기 ${Math.round((B.groggy / CFG.groggyMax) * 100)}%`, 'small', 0.7);
+}
+
+// 받기 성공의 공통 반응: 반동, 기록, 소리와 글자, 끼어들기 성공
+function receiveFeedback(list) {
   const B = G.boss, receivers = list.map(x => x.p), perfect = list.some(x => x.r === 'perfect');
   const kind = B.atk?.kind, fits = receivers.map(p => fit(p, kind));
   const best = fits.includes('strong') ? 'strong' : fits.includes('even') ? 'even' : 'weak';
-  B.tele?.dispose(); B.tele = null;
-  Object.assign(B, { state: 'gap', gapT: (perfect ? CFG.gapPerfect : CFG.gapGuard) * FIT.gap(best), gapStart: G.now, gapReceivers: receivers, hapDone: false });
-  B.gapLen = B.gapT;
-  const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
-  B.openDir = distXZ(avg, B.pos) > 0.05 ? dirTo(avg, B.pos) : B.forward().negate();
-  B.showOpen();
   receivers.forEach((p, i) => {
     const f = fits[i];
     p.state = 'recoil'; p.t = CFG.recoil * FIT.recoil(f); p.queued = false; p.combo = 0;
@@ -1633,18 +1680,30 @@ function openGap(list) {
   }
   if (fits[0] === 'strong') popText(above(r0, 2.45), `${r0.char.name}의 몫`, 'sub', 0.9);
   else if (fits[0] === 'weak') popText(above(r0, 2.45), '버겁다', 'small', 0.9);
-  if (receivers.length > 1) popText(above(B, 4.4), '둘 다 받았다… 칠 사람이 없다', 'hint', 1.3);
-  // 정확하게 받아 주면 파트너의 노림이 한 번에 오른다
-  if (perfect && CFG.aimOn) {
-    const partners = G.mode === 'solo' ? [G.players[1 - G.active]] : activePlayers().filter(q => !receivers.includes(q));
-    for (const q of partners) if (q.alive) addAim(q, CFG.aimReceiveBonus);
-  }
   for (const r of receivers) {
     const m = r.coverTarget;
     if (!m || m.coveredBy !== r) continue;
     G.stats.save++; SFX.save();
     popText(above(G.mode === 'solo' ? r : m, 3.4), G.mode === 'solo' ? '교대 받기!' : '구했다!', 'save', 1.1);
     if (G.mode !== 'solo') { beam(r.pos.clone().setY(1.1), m.pos.clone().setY(1.1), COLOR.save, 0.45); m.hapGlow = 0.4; }
+  }
+  return { receivers, perfect, fits, best };
+}
+
+function openGap(list) {
+  const B = G.boss;
+  const { receivers, perfect, best } = receiveFeedback(list);
+  B.tele?.dispose(); B.tele = null;
+  Object.assign(B, { state: 'gap', gapT: (perfect ? CFG.gapPerfect : CFG.gapGuard) * FIT.gap(best), gapStart: G.now, gapReceivers: receivers, hapDone: false, bounceDir: null });
+  B.gapLen = B.gapT;
+  const avg = V(); receivers.forEach(p => avg.add(p.pos)); avg.divideScalar(receivers.length);
+  B.openDir = distXZ(avg, B.pos) > 0.05 ? dirTo(avg, B.pos) : B.forward().negate();
+  B.showOpen();
+  if (receivers.length > 1) popText(above(B, 4.4), '둘 다 받았다… 칠 사람이 없다', 'hint', 1.3);
+  // 정확하게 받아 주면 파트너의 노림이 한 번에 오른다
+  if (perfect && CFG.aimOn) {
+    const partners = G.mode === 'solo' ? [G.players[1 - G.active]] : activePlayers().filter(q => !receivers.includes(q));
+    for (const q of partners) if (q.alive) addAim(q, CFG.aimReceiveBonus);
   }
   // 받기 직전에 먼저 들어간 파트너 공격 → 동시로 보고 완벽한 합
   for (const h of G.recentHits) {
@@ -1873,6 +1932,7 @@ function playerHitsBoss(p) {
   burst(hitPoint, 0xffffff, 5, 4);
   popText(hitPoint, String(base), 'dmg', 0.5);
   G.recentHits.push({ p, time: G.now, base, aim: CFG.aimOn ? p.aim : 0 });
+  addGroggy(CFG.grogHit);
   clearAim(p, '노림 풀림'); // 틈 밖에서 치면 숨어 있던 자리가 드러난다
   if (isDuo() && B.target !== p && ['chase', 'recover', 'windup'].includes(B.state)) {
     p.aggro += ch.aggro;
@@ -2140,6 +2200,13 @@ fR.add(CFG, 'gapGuard', 0.2, 2, 0.05).name('틈 길이: 버티기');
 fR.add(CFG, 'recoil', 0.1, 1.2, 0.05).name('받은 사람 반동 (초)');
 fR.add(CFG, 'openHalfAngle', 30, 180, 5).name('틈 범위 (±도)');
 fR.add(CFG, 'gapReachBonus', 0, 4, 0.1).name('약점 피격 거리 보너스');
+const fGr = gui.addFolder('알파: 그로기');
+fGr.add(CFG, 'groggyOn').name('그로기 켜기 (끄면 받기 한 번에 틈)');
+fGr.add(CFG, 'grogPerfect', 5, 100, 1).name('정확한 받기 → 그로기');
+fGr.add(CFG, 'grogGuard', 5, 100, 1).name('버티기 → 그로기');
+fGr.add(CFG, 'grogHit', 0, 20, 1).name('틈 밖 공격 → 그로기');
+fGr.add(CFG, 'grogDecay', 0, 40, 1).name('초당 빠짐 (3초 뒤부터)');
+fGr.add(CFG, 'parryNextCd', 0.1, 2, 0.05).name('튕긴 뒤 다음 공격까지 (초)');
 const fH = gui.addFolder('합');
 fH.add(CFG, 'perfectHap', 0.05, 0.6, 0.01).name('완벽한 합: 받기 후 (초)');
 fH.add(CFG, 'preHap', 0, 0.4, 0.01).name('완벽한 합: 받기 전 (초)');
@@ -2264,6 +2331,9 @@ function drawHud() {
   const s = G.stats;
   if (!s) return;
   const last = s.last == null ? '아직 없음' : s.last < 0 ? `받기 ${Math.abs(s.last).toFixed(2)}초 전` : `받기 후 ${s.last.toFixed(2)}초`;
+  $('grogWrap').hidden = !groggyActive();
+  $('grog').style.width = `${(B.groggy / CFG.groggyMax) * 100}%`;
+  $('grogWrap').classList.toggle('hot', B.groggy / CFG.groggyMax > 0.75);
   $('mom').style.width = `${G.mom}%`;
   $('momWrap').hidden = !CFG.momOn;
   $('momWrap').classList.toggle('full', G.mom >= 100);
