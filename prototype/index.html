@@ -251,6 +251,8 @@ td:first-child { color: var(--ink-dim); }
     <p class="rule">한 명이 보스 공격을 <strong>받아내면</strong>, 보스의 틈은 <strong>파트너 쪽</strong>으로 열려요.
       그 틈을 치면 <strong>합</strong>. 받기와 거의 동시에 치면 <strong>완벽한 합</strong>이에요.
       혼자 할 때는 받아낸 직후 태그하면 교체되는 캐릭터가 틈으로 들어가요.</p>
+    <p class="rule"><strong>스위치</strong>: 틈을 연 사람이 반동 중에 <strong>뒤로 회피</strong>하면 반동을 끊고 빠지며 "스위치!". 그 틈을 파트너가 치면 합이 더 세져요. (혼자 할 때는 받은 직후 태그가 스위치)<br>
+      <strong>교차 베기</strong>: 두 사람의 타격이 <strong>거의 동시에 반대쪽</strong>에서 들어가면 두 타격 합계가 <strong>3배</strong>.</p>
     <p class="rule"><strong>그로기</strong>: 받기 한 번으로는 틈이 안 열려요. 받아낼 때마다 보스 <strong>그로기</strong>가 차고(정확한 받기가 더 많이),
       <strong>꽉 차는 순간</strong> 마지막으로 받은 사람 반대편에 틈이 열려요. 덜 찬 받기는 보스를 튕겨 낼 뿐이고, 보스는 곧바로 다시 들어와요.</p>
     <p class="rule"><strong>늙은 중 탈</strong>: 네 박자로 연달아 내려쳐요. 한 번 받으면 반동이 다음 박자보다 길어서 <strong>같은 사람이 연달아 못 받아요</strong>.
@@ -484,6 +486,15 @@ const CFG = {
   replayPre: 2.2,        // 합 이전 몇 초부터
   replayPost: 1.3,       // 합 이후 몇 초까지
   replaySlow: 0.25,      // 합 앞뒤 슬로모션 배속
+  // [알파] 스위치: 받은 사람이 반동 중에 뒤로 회피하면 반동을 끊고 빠진다. 그 틈을 파트너가 치면 스위치 보너스
+  switchOn: true,
+  switchWindow: 1.2,     // 스위치를 부른 뒤 이 시간 안에 파트너가 합을 치면
+  switchBonus: 0.5,      // 합 배율 +0.5
+  // [알파] 교차 베기: 두 사람의 타격이 거의 동시에 반대쪽에서 들어가면 두 타격 합계 ×3
+  crossOn: true,
+  crossWindow: 0.2,
+  crossDot: -0.2,        // 두 사람이 보스를 기준으로 이 값보다 반대쪽 (약 100도 이상 벌어짐)
+  crossMul: 3,
   // [알파] 광역 공유 받기: 광역 공격(휩쓸기, 사이 내려찍기)은 한 명만 받아도 범위 안 모두가 안 맞는다
   sharedGuard: true,
   coverHold: 0.35,       // 끼어들기/교대 받기 직후 버튼을 떼도 받기 자세가 유지되는 시간
@@ -1096,6 +1107,7 @@ class Player {
         this.kb.multiplyScalar(Math.pow(0.02, dt));
         // 반동 중에 누른 공격은 기억해 뒀다가 반동이 풀리는 순간 나간다 (맺기를 놓치지 않게)
         if (this.state === 'recoil' && c.atk) this.queued = true;
+        if (this.state === 'recoil' && c.dodge && this.trySwitch(c.move)) break;
         if (this.t <= 0) {
           const go = this.state === 'recoil' && this.queued;
           this.state = 'free';
@@ -1118,6 +1130,18 @@ class Player {
         if (this.t <= 0) { this.state = 'free'; this.dodgeCd = 0.3; }
         break;
     }
+  }
+  // [알파] 스위치: 틈을 연 사람이 반동 중에 뒤로(또는 방향 없이) 회피하면 반동을 끊고 빠지며 파트너를 부른다
+  trySwitch(move) {
+    const B = G.boss;
+    if (!CFG.switchOn || G.mode === 'solo' || B.state !== 'gap' || B.hapDone || !B.gapReceivers.includes(this)) return false;
+    const away = dirTo(B.pos, this.pos), dir = move.lengthSq() > 0.01 ? move.clone().normalize() : away;
+    if (dir.dot(away) < 0.2) return false;
+    this.queued = false;
+    this.startDodge(dir);
+    this.iframe = Math.max(this.iframe, this.ch.dodgeTime);
+    callSwitch(this);
+    return true;
   }
   // [알파] 끼어들기: 파트너가 받을 수 있는 공격 범위에 갇혔고(받기 안 하는 중이거나 충격이 한계) 가까이 있으면 순간이동해 대신 받는다.
   // 나도 범위 안이어도 된다. 다만 공유 받기 공격에서 나도 범위 안이면 그냥 받기만 해도 파트너가 지켜지니 끼어들 필요가 없다.
@@ -1626,7 +1650,7 @@ const G = {
   timeScale: 1, freezeFx: false, release: null, impact: 0, cine: null, lines: 0, linesPos: V(), dim: 0, cineBody: 0, afterglow: 0, glowList: [], ghostT: 0, demo: null,
   players: [], boss: null, active: 0, tagCd: 0, autoTag: 0,
   recentHits: [], stats: null, mom: 0, fin: null,
-  rec: [], best: null, clipPending: null, replay: null, replayed: false,
+  rec: [], best: null, clipPending: null, replay: null, replayed: false, switch: null, lastHit: null,
 };
 G.players = [new Player(0, CHARS.moru), new Player(1, CHARS.jebi)];
 G.boss = new Boss();
@@ -1891,6 +1915,52 @@ function openGap(list) {
   }
 }
 
+// [알파] 스위치 / 교차 베기
+function callSwitch(by) {
+  G.switch = { by, until: G.now + CFG.switchWindow };
+  G.stats.switchCall++;
+  popText(above(by, 3.0), '스위치!', 'save', 0.9);
+  fxRing(by.pos, by.color, 0.4, 2.0, 0.3);
+  SFX.tag();
+}
+function switchBonus(p, base) {
+  const S = G.switch;
+  if (!S || S.by === p || G.now > S.until) return 0;
+  G.switch = null; G.stats.switchHap++;
+  const extra = base * CFG.switchBonus;
+  G.boss.damage(extra);
+  popText(above(G.boss, 5.4), `스위치 +${CFG.switchBonus}`, 'save', 1.0);
+  const c = G.boss.pos.clone().setY(1.2);
+  beam(chest(S.by), c, S.by.color, 0.35); beam(c, chest(p), p.color, 0.35);
+  return extra;
+}
+function registerHit(p, dmg) {
+  if (!CFG.crossOn) return;
+  const B = G.boss, dir = dirTo(B.pos, p.pos), prev = G.lastHit;
+  if (prev && prev.p !== p && G.now - prev.t <= CFG.crossWindow && prev.dir.dot(dir) <= CFG.crossDot && !B.dead) {
+    G.lastHit = null;
+    const extra = (prev.dmg + dmg) * (CFG.crossMul - 1);
+    B.damage(extra); G.stats.cross++;
+    crossFx(prev.p, p, Math.round(prev.dmg + dmg + extra));
+    return;
+  }
+  G.lastHit = { p, t: G.now, dir, dmg };
+}
+function crossFx(a, b, total) {
+  const B = G.boss, c = B.pos.clone().setY(1.6);
+  for (const q of [a, b]) {
+    const from = chest(q), to = c.clone().addScaledVector(dirTo(q.pos, B.pos), B.R + 1.6).setY(1.9);
+    beam(from, to, q.color, 0.6);
+    q.hapGlow = 1.0;
+  }
+  burst(c, 0xffffff, 26, 10); burst(c, COLOR.gold, 20, 8);
+  fxRing(B.pos, 0xffffff, B.R, 9, 0.5);
+  G.hitstop = Math.max(G.hitstop, 0.16); G.shake = Math.max(G.shake, 0.7); G.flash = Math.max(G.flash, 0.7); G.punch = Math.max(G.punch, 0.8);
+  SFX.fin(); SFX.hap();
+  popText(above(B, 5.0), '교차 베기!', 'perfect', 1.3);
+  popText(above(B, 4.2), `×${CFG.crossMul} · ${total}`, 'sub', 1.3);
+}
+
 function doHap(p, grade, dtr, dmg, rel = 0, aim = 0) {
   const B = G.boss, perfect = grade === 'perfect', full = aim >= 0.99;
   clearAim(p);
@@ -1978,6 +2048,7 @@ function doFin(p) {
   closeFin();
   const base = p.ch.dmg;
   B.damage(base * CFG.finMul);
+  registerHit(p, base * CFG.finMul);
   if (!B.dead) B.t += CFG.finStaggerAdd + p.ch.finStagger;   // 모루 맺기는 휘청임을 더 늘린다
   G.stats.fin++;
   addMom(CFG.momFin);
@@ -2098,11 +2169,14 @@ function playerHitsBoss(p) {
       const rel = releaseImpact(), dmg = (base + rel * CFG.impactDmg) * ((grade === 'perfect' ? CFG.perfectHapMul : CFG.hapMul) + aim * CFG.aimBonusMul);
       B.damage(dmg);
       doHap(p, grade, dtr, dmg, rel, aim);
+      const sw = switchBonus(p, base + rel * CFG.impactDmg);
+      registerHit(p, dmg + sw);
       return;
     }
     popText(above(B, 4.2), '반대쪽!', 'hint', 0.7);
   }
   B.damage(base);
+  registerHit(p, base);
   SFX.hit();
   const hitPoint = p.pos.clone().lerp(B.pos, 0.5).setY(1.5);
   burst(hitPoint, 0xffffff, 5, 4);
@@ -2155,6 +2229,7 @@ function tryTag(auto) {
     Object.assign(inn, { state: 'receive', receiveStart: G.now, forceRcv: CFG.coverHold, coverTarget: out });
     out.coveredBy = inn;
   } else if (gapEntry || finEntry) {
+    if (gapEntry && CFG.switchOn && B.gapReceivers.includes(out)) callSwitch(out); // 솔로는 받은 직후 태그가 곧 스위치
     const dir = finEntry ? G.fin.dir : B.openDir;
     // 제비는 멀리서 날아 들어오고, 모루는 바로 위에서 떨어진다
     inn.pos.copy(B.pos).addScaledVector(dir, B.R + (inn.ch.entry === 'dash' ? 2.6 : 1.1)).setY(0);
@@ -2507,12 +2582,12 @@ function nextStage() {
 }
 function fight(mode) {
   if (G.run) applyRelics();
-  G.rec = []; G.best = null; G.clipPending = null; G.replayed = false;
+  G.rec = []; G.best = null; G.clipPending = null; G.replayed = false; G.switch = null; G.lastHit = null;
   audio();
   G.mode = mode; G.running = true; G.ended = false; G.now = 0;
   G.hitstop = G.shake = G.punch = G.flash = 0; G.slow = null; G.active = 0; G.tagCd = 0; G.autoTag = 0; G.recentHits = []; G.mom = 0; G.fin = null;
   resetCine();
-  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
+  G.stats = { hap: 0, perfect: 0, receive: 0, perfectReceive: 0, missed: 0, last: null, fin: 0, unison: 0, save: 0, broken: 0, released: 0, shield: 0, echo: 0, chain: 0, switchCall: 0, switchHap: 0, cross: 0, aimHap: 0, aimSum: 0, fitReceive: 0 };
   G.players[0].reset(V(-2.5, 0, 5), Math.PI);
   G.players[1].reset(V(2.5, 0, 5), Math.PI);
   if (mode === 'solo') G.players[1].root.visible = false;
@@ -2563,6 +2638,7 @@ function showResultNow() {
     <dt>풀어 준 충격</dt><dd>${s.released}칸 · 자세 무너짐 ${s.broken}번</dd>
     <dt>노림 합</dt><dd>${s.aimHap}번${s.aimHap ? ` (평균 노림 ${Math.round((s.aimSum / s.aimHap) * 100)}%)` : ''}</dd>
     <dt>번갈아 받기</dt><dd>${s.chain}번</dd>
+    <dt>스위치 / 교차 베기</dt><dd>${s.switchHap}번 (부름 ${s.switchCall}) / ${s.cross}번</dd>
     ${R ? `<dt>유물</dt><dd>${R.relics.map(id => RELICS.find(r => r.id === id).name).join(', ') || '없음'}</dd>` : ''}
     <dt>보스 남은 체력</dt><dd>${Math.ceil(G.boss.hp)} / ${G.boss.maxHp}</dd>`;
   resultEl.hidden = false; hudEl.hidden = true; tuneBtn.hidden = true; guiEl.hidden = true;
@@ -2625,6 +2701,13 @@ fRp.add(CFG, 'replayOn').name('끝나면 다시 보기');
 fRp.add(CFG, 'replaySlow', 0.1, 1, 0.05).name('합 앞뒤 배속');
 fRp.add(CFG, 'replayPre', 0.5, 4, 0.1).name('합 몇 초 전부터');
 fRp.close();
+const fSw = gui.addFolder('알파: 스위치와 교차 베기');
+fSw.add(CFG, 'switchOn').name('스위치 켜기');
+fSw.add(CFG, 'switchBonus', 0, 3, 0.25).name('스위치 합 배율 +');
+fSw.add(CFG, 'crossOn').name('교차 베기 켜기');
+fSw.add(CFG, 'crossWindow', 0.05, 0.6, 0.01).name('교차 베기: 동시 판정 (초)');
+fSw.add(CFG, 'crossMul', 1, 6, 0.5).name('교차 베기 배율');
+fSw.close();
 const fGr = gui.addFolder('알파: 그로기');
 fGr.add(CFG, 'groggyOn').name('그로기 켜기 (끄면 받기 한 번에 틈)');
 fGr.add(CFG, 'grogPerfect', 5, 100, 1).name('정확한 받기 → 그로기');
@@ -2765,7 +2848,7 @@ function drawHud() {
   $('momWrap').hidden = !CFG.momOn;
   $('momWrap').classList.toggle('full', G.mom >= 100);
   $('momLabel').textContent = G.mom >= 100 ? '기세 가득' : '기세';
-  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b> · 맺기 <b>${s.fin}</b> · 합기 <b>${s.unison}</b> · 노림 합 <b>${s.aimHap}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 잘 맞는 받기 ${s.fitReceive} · 놓친 틈 ${s.missed}<br>구함 ${s.save} · 잔상 ${s.echo} · 같이 막기 ${s.shield} · 풀어 준 충격 ${s.released} · 무너짐 ${s.broken}<br>마지막 합: ${last}`;
+  $('stats').innerHTML = `합 <b>${s.hap}</b> · 완벽한 합 <b>${s.perfect}</b> · 맺기 <b>${s.fin}</b> · 합기 <b>${s.unison}</b> · 노림 합 <b>${s.aimHap}</b><br>받기 ${s.receive} · 정확한 받기 ${s.perfectReceive} · 잘 맞는 받기 ${s.fitReceive} · 놓친 틈 ${s.missed}<br>스위치 ${s.switchHap} · 교차 ${s.cross} · 구함 ${s.save} · 잔상 ${s.echo} · 같이 막기 ${s.shield} · 풀어 준 충격 ${s.released} · 무너짐 ${s.broken}<br>마지막 합: ${last}`;
 }
 const DIM = new THREE.Color(0x05060b), tmpC = new THREE.Color();
 function fxUpdate(dt, fdt = dt) {

@@ -441,6 +441,37 @@ results.replayAgainOn = await ev(() => !!__game.G.replay);
 await page.mouse.click(300, 300);
 await waitState(() => !document.getElementById('result').hidden);
 
+// 16) [알파] 스위치: 1P 받기 → 반동 중 뒤로 회피(Space) → 스위치 → 2P 합에 보너스
+//     교차 베기: 반대쪽 두 사람의 타격이 같은 순간 → 두 타격 합계 ×3
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.pos.set(0, 0, 0); P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3.2); P2.yaw = 0; P1.yaw = Math.PI;
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.12;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup');
+await page.keyboard.up('KeyG');
+await page.keyboard.press('Space');
+await waitState(() => !!__game.G.switch || __game.G.players[0].state !== 'recoil');
+results.switchCall = await ev(() => [!!__game.G.switch, __game.G.players[0].state]);
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.stats.hap >= 1);
+results.switchHap = await ev(() => __game.G.stats.switchHap);
+results.cross = await ev(() => {
+  const { G, playerHitsBoss } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.state = 'stagger'; B.t = 5; B.hapDone = true; G.fin = null; G.lastHit = null; B.hp = B.maxHp = 9999;
+  P1.pos.set(0, 0, 2.4); P1.yaw = Math.PI; P2.pos.set(0, 0, -2.4); P2.yaw = 0;
+  const hp0 = B.hp;
+  playerHitsBoss(P1); playerHitsBoss(P2);
+  const a = [G.stats.cross, hp0 - B.hp, P1.ch.dmg + P2.ch.dmg];
+  G.lastHit = null; const hp1 = B.hp;
+  playerHitsBoss(P1); // 혼자 치면 교차 아님
+  return [...a, G.stats.cross, hp1 - B.hp];
+});
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -455,7 +486,9 @@ const relic = results.draftShown && results.relic1[0] === 'heavy' && results.rel
   && results.nextShown && results.relic2[0] === 'heavy,thin' && results.relic2[1] === 'monk' && results.relic2[2] === 4 && results.relic2[3]
   && results.runDone[0] === '원정 완료' && results.runDone[1] && results.restored;
 const replay = results.replay[0] > 5 && results.replay[1].includes('합') && results.replay[2] && results.replayAgain && results.replayAgainOn;
-const alpha = grog && monk && relic && replay && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
+const sw = results.switchCall[0] && results.switchCall[1] === 'dodge' && results.switchHap === 1
+  && results.cross[0] === 1 && results.cross[1] === results.cross[2] * 3 && results.cross[3] === 1;
+const alpha = grog && monk && relic && replay && sw && results.impactFull === 3 && results.releaseDmg === (results.jebiDmg + 3 * 10) * 3 && results.impactAfter === 0 && results.released === 3
   && results.breakState[0] !== 'gap' && results.breakState[1] === 'hurt' && results.breakState[2] === 1
   && results.coverDash === 'cover' && results.cover[0] === 'gap' && results.cover[1] === 'free' && results.cover[2] === 1
   && results.perfectAtFull[0] === 'gap' && results.perfectAtFull[1] === 3 && results.perfectAtFull[2] === 1
