@@ -43,12 +43,17 @@ await page.evaluate(() => {
 
 async function measure(name) {
   await page.evaluate(n => { __game.CFG.style = n; __game.applyStyle(); __game.G.timeScale = 1; }, name);
+  if (process.env.FLK_EVAL) await page.evaluate(new Function(process.env.FLK_EVAL)); // 원인 가르기용 (예: FLK_EVAL='__game.G.boss.setModel(false)')
   await page.waitForTimeout(1500); // 셰이더 컴파일과 입자 자리 잡기
   // 멈춘 뒤 카메라가 다시 자리 잡는 이동은 깜빡임이 아니다 → 카메라가 완전히 설 때까지 기다린다
+  // 카메라를 빨리 자리 잡게 한 뒤(시간 배율 40), 정말 멈췄는지 확인한다 (측정 중 카메라가 움직이면 모든 모서리가 깜빡임으로 잡힌다)
+  await page.evaluate(() => { __game.G.timeScale = 40; });
+  for (let i = 0; i < 10; i++) await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(() => { __game.G.timeScale = 1; });
   await page.waitForFunction(() => new Promise(ok => { const c = __game.camera.position.clone(); requestAnimationFrame(() => requestAnimationFrame(() => ok(c.distanceTo(__game.camera.position) < 1e-4))); }), null, { timeout: 120000, polling: 200 });
   return page.evaluate(() => new Promise(done => {
     const frames = [], N = 24, step = 6;
-    const { G } = __game;
+    const { G } = __game, cam0 = __game.camera.position.clone(); let camMove = 0;
     let last = performance.now();
     window.__afterFrame = renderer => {
       // 실제 프레임 간격과 상관없이 매 프레임 1/60초가 흐르게 (timeScale로 맞춘다)
@@ -58,7 +63,7 @@ async function measure(name) {
       const px = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
       const L = [];
       for (let y = 0; y < h; y += step) for (let x = 0; x < w; x += step) { const i = (y * w + x) * 4; L.push(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]); }
-      frames.push(L);
+      frames.push(L); camMove = Math.max(camMove, __game.camera.position.distanceTo(cam0));
       if (frames.length >= N) {
         window.__afterFrame = null; G.timeScale = 1;
         const means = frames.map(f => f.reduce((a, b) => a + b, 0) / f.length), mu = means.reduce((a, b) => a + b, 0) / N;
@@ -78,7 +83,7 @@ async function measure(name) {
           img.data[o] = Math.min(255, base + c * 30); img.data[o + 1] = base; img.data[o + 2] = base; img.data[o + 3] = 255;
         }
         cx.putImageData(img, 0, 0);
-        done({ glob: +glob.toFixed(3), jump: +(jump / cnt * 100).toFixed(3), back: +(back / cnt3 * 100).toFixed(3), mean: +mu.toFixed(1), map: cv.toDataURL() });
+        done({ glob: +glob.toFixed(3), jump: +(jump / cnt * 100).toFixed(3), back: +(back / cnt3 * 100).toFixed(3), mean: +mu.toFixed(1), camMove: +camMove.toExponential(1), map: cv.toDataURL() });
       }
     };
   }));
@@ -86,10 +91,10 @@ async function measure(name) {
 const rows = [];
 for (const n of LOOKS) {
   const r = await measure(n);
-  const pass = r.glob < LIMIT.glob && r.jump < LIMIT.jump && r.back < LIMIT.back;
+  const pass = r.glob < LIMIT.glob && r.jump < LIMIT.jump && r.back < LIMIT.back && r.camMove < 1e-3; // 카메라가 움직였으면 측정 자체가 무효
   fs.writeFileSync(path.join(here, 'out', `flicker_${LOOKS.indexOf(n)}.png`), Buffer.from(r.map.split(',')[1], 'base64')); delete r.map;
   rows.push({ look: n, ...r, pass });
-  console.log(`${pass ? '통과' : '실패'}  ${n.padEnd(8)}  glob ${r.glob}  jump ${r.jump}%  back ${r.back}%  (평균 휘도 ${r.mean})`);
+  console.log(`${pass ? '통과' : '실패'}  ${n.padEnd(8)}  glob ${r.glob}  jump ${r.jump}%  back ${r.back}%  (평균 휘도 ${r.mean}, 측정 중 카메라 이동 ${r.camMove})`);
 }
 await browser.close();
 const ok = rows.every(r => r.pass) && !errors.length;
