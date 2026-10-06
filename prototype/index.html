@@ -868,7 +868,9 @@ void main(){
   if (uPoster > 0.0) c = floor(c * uPoster + 0.5) / uPoster;
   if (uScan > 0.0) c *= 1.0 - uScan * (0.5 + 0.5 * sin(gl_FragCoord.y / uDpr * 3.14159));
   vec2 q = vUv - 0.5; c *= 1.0 - uVig * dot(q, q) * 2.4;
-  c += (hash(floor(gl_FragCoord.xy / uDpr) + fract(uTime) * 91.0) - 0.5) * uGrain;
+  // 필름 입자: 24fps로만 바뀌고, 어두운 곳·밝은 곳보다 중간 톤에 실린다 (어두운 화면이 TV 잡음처럼 끓지 않게)
+  float gk = 0.25 + 3.0 * l * (1.0 - l);
+  c += (hash(floor(gl_FragCoord.xy / uDpr) + floor(uTime * 24.0) * 1.37) - 0.5) * uGrain * gk;
   gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }` });
   let w = 4, h = 4, dpr = 1;
@@ -1345,18 +1347,19 @@ partGeo2.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(PART_N
 partGeo2.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(PART_N * 3).fill(1), 3));
 const partMat2 = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
-  uniforms: { uSize: { value: 0.15 }, uScale: { value: 400 }, uKind: { value: 0 }, uTime: { value: 0 }, uAlpha: { value: 1 } },
-  vertexShader: `attribute float aSeed; attribute vec3 aCol; varying float vSeed; varying vec3 vCol; uniform float uSize, uScale;
+  uniforms: { uSize: { value: 0.15 }, uScale: { value: 400 }, uKind: { value: 0 }, uTime: { value: 0 }, uAlpha: { value: 1 }, uY0: { value: 0 }, uY1: { value: 10 } },
+  vertexShader: `attribute float aSeed; attribute vec3 aCol; varying float vSeed; varying vec3 vCol; varying float vFade; uniform float uSize, uScale, uY0, uY1;
 void main(){ vSeed = aSeed; vCol = aCol; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+  vFade = smoothstep(uY0, uY0 + 1.5, position.y) * smoothstep(uY1, uY1 - 2.0, position.y); // 생기고 사라질 때 툭 튀지 않게
   gl_PointSize = uSize * (0.6 + aSeed * 0.8) * uScale / -mv.z; }`,
-  fragmentShader: `varying float vSeed; varying vec3 vCol; uniform float uKind, uTime, uAlpha;
+  fragmentShader: `varying float vSeed; varying vec3 vCol; varying float vFade; uniform float uKind, uTime, uAlpha;
 void main(){ vec2 p = gl_PointCoord - 0.5; float a;
   if (uKind < 0.5) a = smoothstep(0.5, 0.0, length(p));                                   // 둥근 불티·먼지
   else if (uKind < 1.5) { a = step(abs(p.x), 0.32) * step(abs(p.y), 0.2); }                // 색종이
   else if (uKind < 2.5) { a = smoothstep(0.08, 0.0, abs(p.x)) * smoothstep(0.5, 0.2, abs(p.y)); } // 빗줄기
   else { a = max(smoothstep(0.07, 0.0, abs(p.x)) * smoothstep(0.5, 0.0, abs(p.y)), smoothstep(0.07, 0.0, abs(p.y)) * smoothstep(0.5, 0.0, abs(p.x))) + smoothstep(0.18, 0.0, length(p)); } // 반짝이
-  float tw = 0.55 + 0.45 * sin(uTime * (2.0 + vSeed * 5.0) + vSeed * 40.0);
-  gl_FragColor = vec4(vCol, a * uAlpha * (uKind > 2.5 || uKind < 0.5 ? tw : 1.0)); }`,
+  float tw = 0.75 + 0.25 * sin(uTime * (0.8 + vSeed * 1.2) + vSeed * 40.0); // 느리게 숨쉬기만 (빠른 반짝임은 깜빡임)
+  gl_FragColor = vec4(vCol, a * uAlpha * vFade * (uKind > 2.5 ? tw : 1.0)); }`,
 });
 const parts2 = new THREE.Points(partGeo2, partMat2); parts2.frustumCulled = false; parts2.visible = false; arena.add(parts2);
 let partSpec = null;
@@ -1370,6 +1373,7 @@ function setParticles(spec) {
   parts2.visible = !!spec;
   if (!spec) return;
   partMat2.uniforms.uKind.value = spec.kind; partMat2.uniforms.uSize.value = spec.size; partMat2.uniforms.uAlpha.value = spec.alpha ?? 1;
+  partMat2.uniforms.uY0.value = spec.y0; partMat2.uniforms.uY1.value = spec.y1;
   partMat2.blending = spec.add ? THREE.AdditiveBlending : THREE.NormalBlending; partMat2.needsUpdate = true;
   partGeo2.setDrawRange(0, spec.n);
   const C = partGeo2.attributes.aCol.array, pal = spec.colors.map(c => new THREE.Color(c));
@@ -1386,14 +1390,14 @@ const LOOK_STYLES = {
       hemiSky: 0x7a5a7a, hemiGround: 0x1a0a10, sunColor: 0xffdcae, sunPos: [-5, 24, 9],
       rim: { color: 0xff8a40, str: 0.75, pow: 2.4, self: 0.15, dir: [0.4, -0.2, -1], dirAmt: 0.6 }, shade: { color: 0x4a2860, amt: 0.65 },
       parts: { kind: 0, n: 220, size: 0.16, add: true, colors: [0xff8a2a, 0xffc060, 0xff5020], r: 18, y0: -1, y1: 10, vy: 1.4, sway: 0.6 },
-      post: { kuwa: 1, bloom: 0.6, thresh: 0.62, sat: 1.15, con: 1.12, lift: [0.025, 0, 0.03], gain: [1.05, 0.98, 0.94], shTint: [0.38, 0.22, 0.5], hiTint: [0.62, 0.52, 0.4], split: 0.25, vig: 0.6, grain: 0.025 } } },
+      post: { kuwa: 1, bloom: 0.6, thresh: 0.62, sat: 1.15, con: 1.12, lift: [0.025, 0, 0.03], gain: [1.05, 0.98, 0.94], shTint: [0.38, 0.22, 0.5], hiTint: [0.62, 0.52, 0.4], split: 0.25, vig: 0.6, grain: 0.01 } } },
   '퓨리': {
     ref: 'Furi (The Game Bakers, Takashi Okazaki)', bg: 0x2a1446, ground: 0x2a1446, floor: 0xffffff, stone: 0x3a2c6a, steps: [0.45, 1], outline: 0x0a0612, outlinePx: 2.2, hemi: 1.1, sun: 3.0,
     look: { floor: 'furi', props: 'furi', ground: false, sky: { mode: 2, top: 0x1a1240, mid: 0xd0346e, bot: 0x2a1450, acc: 0xff9a5a }, fog: [0x6a2060, 45, 120],
       hemiSky: 0xff9ad0, hemiGround: 0x2a1446, sunColor: 0xfff0e8, sunPos: [9, 18, -10],
       rim: { color: 0x6af0ff, str: 1.0, pow: 2.8, self: 0, dir: [-0.6, 0.3, 0.7], dirAmt: 0.7 }, shade: { color: 0x3a1a70, amt: 0.8 },
       parts: { kind: 0, n: 120, size: 0.12, add: true, colors: [0x6af0ff, 0xffffff], r: 20, y0: -3, y1: 9, vy: 0.5, sway: 0.3 },
-      post: { bloom: 1.15, thresh: 0.5, sat: 1.25, con: 1.15, ca: 1.2, shTint: [0.38, 0.26, 0.58], hiTint: [0.62, 0.5, 0.45], split: 0.2, vig: 0.35, grain: 0.02 } } },
+      post: { bloom: 1.15, thresh: 0.5, sat: 1.25, con: 1.15, ca: 1.2, shTint: [0.38, 0.26, 0.58], hiTint: [0.62, 0.5, 0.45], split: 0.2, vig: 0.35, grain: 0.008 } } },
   '하이파이 러시': {
     ref: 'Hi-Fi RUSH (Tango Gameworks)', bg: 0x48b8ff, ground: 0x2f8ae0, floor: 0xffffff, stone: 0x1a1a22, steps: [0.5, 1], outline: 0x000000, outlinePx: 3.8, hemi: 1.25, sun: 2.1,
     look: { floor: 'hifi', props: 'hifi', ground: true, sky: { mode: 0, top: 0x2a8cff, mid: 0x6cd0ff, bot: 0x2f8ae0, acc: 0xffffff }, fog: [0x7ac8ff, 55, 130],
@@ -1407,7 +1411,7 @@ const LOOK_STYLES = {
       hemiSky: 0xc8d0c8, hemiGround: 0x3a403a, sunColor: 0xfff4dc, sunPos: [-15, 14, -3],
       rim: { color: 0xffffff, str: 0.4, pow: 4, self: 0, dir: [-1, 0.2, 0], dirAmt: 0.8 }, shade: { color: 0x2a3a46, amt: 0.55 },
       parts: { kind: 0, n: 160, size: 0.1, add: false, colors: [0xe8e8e0, 0xc8c8c0], r: 20, y0: -1, y1: 9, vy: -0.25, sway: 1.0, alpha: 0.6 },
-      post: { kuwa: 1, bloom: 0.45, thresh: 0.7, sat: 0.85, con: 1.06, shTint: [0.42, 0.48, 0.52], hiTint: [0.56, 0.53, 0.46], split: 0.18, vig: 0.5, grain: 0.06 } } },
+      post: { kuwa: 1, bloom: 0.45, thresh: 0.7, sat: 0.85, con: 1.06, shTint: [0.42, 0.48, 0.52], hiTint: [0.56, 0.53, 0.46], split: 0.18, vig: 0.5, grain: 0.018 } } },
   '하이퍼 라이트': {
     ref: 'Hyper Light Drifter / Breaker (Heart Machine)', bg: 0xf2a6c8, ground: 0x5a4aa0, floor: 0xffffff, stone: 0x7af0ff, steps: [0.55, 1], outline: 0x2a1a4a, outlinePx: 0, hemi: 1.5, sun: 2.2,
     look: { floor: 'hyperlight', props: 'hyperlight', ground: false, sky: { mode: 4, top: 0x6a4fd0, mid: 0xff8ac0, bot: 0x3a2a8a, acc: 0xffd2a0 }, fog: [0xff9ac8, 38, 95],
@@ -1421,16 +1425,17 @@ const LOOK_STYLES = {
     look: { floor: 'springsong', props: 'springsong', ground: false, fx: true, sky: { mode: 5, top: 0x05070d, mid: 0x0d1220, bot: 0x020204, acc: 0xd0102a }, fog: [0x0a0e18, 24, 72],
       hemiSky: 0x2a3a5a, hemiGround: 0x05060a, sunColor: 0xb4ceff, sunPos: [8, 20, -14],
       rim: { color: 0xd4e4ff, str: 0.8, pow: 2.6, self: 0.25, dir: [0.4, 0.6, -0.7], dirAmt: 0.85 }, shade: { color: 0x1a2a4c, amt: 0.75 },
+      noStrobe: true,
       parts: { kind: 0, n: 260, size: 0.1, add: true, colors: [0xbfd4ff, 0xbfd4ff, 0xbfd4ff, 0xff2a3a], r: 20, y0: -1, y1: 9, vy: 0.35, sway: 0.5, alpha: 0.8 },
-      post: { bloom: 1.0, thresh: 0.56, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.7, ca: 1.3, grain: 0.05, vig: 0.7, sat: 1.08, con: 1.18, gamma: 0.95,
+      post: { bloom: 1.0, thresh: 0.56, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.7, ca: 1.3, grain: 0.014, vig: 0.7, sat: 1.08, con: 1.18, gamma: 0.95,
         lift: [0, 0.008, 0.025], gain: [0.97, 1.0, 1.07], shTint: [0.3, 0.42, 0.58], hiTint: [0.62, 0.5, 0.46], split: 0.28 } } },
   '디 어센트': {
     ref: 'The Ascent (Neon Giant) · Ghostrunner', bg: 0x05070f, ground: 0x05070f, floor: 0xffffff, stone: 0x22263a, steps: [0.3, 0.7, 1], outline: 0x05060c, outlinePx: 1.6, hemi: 0.6, sun: 0.8,
     look: { floor: 'ascent', props: 'ascent', ground: false, sky: { mode: 3, top: 0x020308, mid: 0x0b0f24, bot: 0x07060f, acc: 0x3ce6ff }, fog: [0x0a0c1e, 26, 80],
       hemiSky: 0x3040a0, hemiGround: 0x0a0a14, sunColor: 0x8090ff, sunPos: [-6, 22, 8],
       rim: { color: 0x7af0ff, str: 0.9, pow: 2.2, self: 1, dir: [0, 1, 0], dirAmt: 0 }, shade: { color: 0x101040, amt: 0.6 },
-      parts: { kind: 2, n: 400, size: 0.45, add: true, colors: [0x9ab8ff, 0xc8d8ff], r: 22, y0: -1, y1: 14, vy: -18, sway: 0, alpha: 0.5 },
-      post: { bloom: 1.35, thresh: 0.45, ca: 1.8, scan: 0.06, grain: 0.04, sat: 1.2, con: 1.15, vig: 0.5, shTint: [0.42, 0.4, 0.62], hiTint: [0.55, 0.5, 0.55], split: 0.15 } } },
+      parts: { kind: 2, n: 180, size: 0.42, add: true, colors: [0x7a90c8, 0x9ab0e0], r: 22, y0: -1, y1: 14, vy: -10, sway: 0, alpha: 0.18 },
+      post: { bloom: 1.35, thresh: 0.45, ca: 1.8, scan: 0.06, grain: 0.012, sat: 1.2, con: 1.15, vig: 0.5, shTint: [0.42, 0.4, 0.62], hiTint: [0.55, 0.5, 0.55], split: 0.15 } } },
 };
 Object.assign(STYLES, LOOK_STYLES);
 for (const s of Object.values(STYLES)) if (s.outlinePx === undefined) s.outlinePx = Math.round((s.outlineScale - 1) * 36 * 10) / 10;
@@ -1473,6 +1478,7 @@ function applyLook() {
 function lookTick(dt) {
   domeMat.uniforms.uTime.value = G.time; partMat2.uniforms.uTime.value = G.time; LOOKU.time.value = G.time;
   cineTick(dt); POST.tick(dt);
+  if (style.look?.noStrobe && G.impact > 0) { G.impact = 0; G.flash = Math.max(G.flash, 0.55); } // 흑백 반전 스트로브 대신 부드러운 흰 섬광
   OUTU.res.value.set(innerWidth, innerHeight);
   OUTU.px.value = style.outlinePx * Math.max(0.75, innerHeight / 720);
   if (partSpec && parts2.visible && dt > 0) {
@@ -1490,9 +1496,9 @@ function lookTick(dt) {
   if (!lookEnv) return;
   const U = lookEnv.userData, t = G.time;
   for (const f of U.flicker) {
-    if (f.L) f.L.intensity = f.base * (f.soft ? 0.85 + 0.15 * Math.sin(t * 1.3 + f.ph) : 0.75 + 0.25 * Math.sin(t * 13 + f.ph) * Math.sin(t * 7.3 + f.ph * 2));
-    if (f.fire) f.fire.scale.set(1, 0.85 + 0.2 * Math.sin(t * 17 + f.ph), 1);
-    if (f.sign) f.sign.material.opacity = Math.sin(t * 0.7 + f.ph) > -0.92 || Math.sin(t * 40) > 0 ? 1 : 0.25;
+    if (f.L) f.L.intensity = f.base * (f.soft ? 0.92 + 0.08 * Math.sin(t * 1.3 + f.ph) : 0.95 + 0.03 * Math.sin(t * 3.1 + f.ph) + 0.02 * Math.sin(t * 5.3 + f.ph * 2)); // 천천히 일렁임
+    if (f.fire) f.fire.scale.set(1, 0.92 + 0.08 * Math.sin(t * 6 + f.ph), 1);
+    if (f.sign) f.sign.material.opacity = 0.82 + 0.18 * Math.sin(t * 0.9 + f.ph); // 간판은 점멸 대신 천천히 숨쉬기
   }
   for (const o of U.float) { o.o.position.y = o.y + Math.sin(t * 0.6 + o.ph) * o.amp; if (o.spin) o.o.rotation.y += o.spin * dt; if (o.spinZ) o.o.rotation.z += o.spinZ * dt; }
   for (const o of U.pulse) { const k = 1 + Math.max(0, Math.sin(t * 8 + o.ph)) * 0.12; o.o.scale.set(k, 1, k); }
@@ -1533,12 +1539,13 @@ class FxPoints {
     g.setAttribute('aSize', new THREE.BufferAttribute(new Float32Array(max), 1));
     g.setAttribute('aAlpha', new THREE.BufferAttribute(new Float32Array(max), 1));
     g.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
+    g.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(max), 1));
     this.geo = g;
     this.mat = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
       uniforms: { uScale: { value: 500 } },
-      vertexShader: `attribute float aSize, aAlpha; attribute vec3 aCol; varying float vA; varying vec3 vC; varying float vSeed; uniform float uScale;
-void main(){ vA = aAlpha; vC = aCol; vSeed = fract(position.x * 13.1 + position.z * 7.7); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = aSize * uScale / -mv.z; }`,
+      vertexShader: `attribute float aSize, aAlpha, aSeed; attribute vec3 aCol; varying float vA; varying vec3 vC; varying float vSeed; uniform float uScale;
+void main(){ vA = aAlpha; vC = aCol; vSeed = aSeed; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = aSize * uScale / -mv.z; }`,
       fragmentShader: `varying float vA; varying vec3 vC; varying float vSeed;
 void main(){ vec2 p = gl_PointCoord - 0.5; float r = length(p);
   float edge = 0.5 - 0.08 * sin(atan(p.y, p.x) * 5.0 + vSeed * 30.0);
@@ -1548,20 +1555,20 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float r = length(p);
   }
   spawn(pos, vel, size, grow, life, color, alpha, drag = 1.5, grav = 0) {
     if (this.items.length >= this.max) this.items.shift();
-    this.items.push({ p: pos.clone(), v: vel.clone(), size, grow, life, t: 0, c: new THREE.Color(color), a: alpha, drag, grav });
+    this.items.push({ p: pos.clone(), v: vel.clone(), size, grow, life, t: 0, c: new THREE.Color(color), a: alpha, drag, grav, seed: Math.random() });
   }
   update(dt) {
-    const P = this.geo.attributes.position.array, S = this.geo.attributes.aSize.array, A = this.geo.attributes.aAlpha.array, C = this.geo.attributes.aCol.array;
+    const P = this.geo.attributes.position.array, S = this.geo.attributes.aSize.array, A = this.geo.attributes.aAlpha.array, C = this.geo.attributes.aCol.array, SD = this.geo.attributes.aSeed.array;
     this.items = this.items.filter(it => (it.t += dt) < it.life);
     this.items.forEach((it, i) => {
       it.v.multiplyScalar(Math.exp(-it.drag * dt)); it.v.y += it.grav * dt; it.p.addScaledVector(it.v, dt);
       const k = it.t / it.life;
       P[i * 3] = it.p.x; P[i * 3 + 1] = it.p.y; P[i * 3 + 2] = it.p.z;
       S[i] = it.size + it.grow * it.t; A[i] = it.a * Math.min(1, it.t * 12) * (1 - k) * (1 - k);
-      C[i * 3] = it.c.r; C[i * 3 + 1] = it.c.g; C[i * 3 + 2] = it.c.b;
+      C[i * 3] = it.c.r; C[i * 3 + 1] = it.c.g; C[i * 3 + 2] = it.c.b; SD[i] = it.seed;
     });
     this.geo.setDrawRange(0, this.items.length);
-    for (const k of ['position', 'aSize', 'aAlpha', 'aCol']) this.geo.attributes[k].needsUpdate = true;
+    for (const k of ['position', 'aSize', 'aAlpha', 'aCol', 'aSeed']) this.geo.attributes[k].needsUpdate = true;
     this.mat.uniforms.uScale.value = innerHeight * 0.9;
   }
   clear() { this.items.length = 0; this.geo.setDrawRange(0, 0); }
@@ -1663,7 +1670,7 @@ function cineTick(dt) {
       cine.smoke.spawn(p, V(Math.cos(a) * 0.4, 1.0 + Math.random() * 0.8, Math.sin(a) * 0.4), 0.7 + Math.random() * 0.6, 1.4, 1.1 + Math.random() * 0.6, 0x030306, 0.55, 1.2);
       if (Math.random() < (winding ? 0.35 : 0.15)) cine.glow.spawn(p, V((Math.random() - 0.5) * 0.6, 1.4 + Math.random(), (Math.random() - 0.5) * 0.6), 0.12, 0, 0.9, 0xff2a3a, 0.9, 0.6);
     }
-    cine.light.intensity = (winding ? 10 : 6) + Math.sin(G.time * 9) * 1.2;
+    cine.light.intensity += ((winding ? 9 : 6) + Math.sin(G.time * 2.2) * 0.6 - cine.light.intensity) * Math.min(1, dt * 4);
   }
   for (const s of [cine.dust, cine.smoke, cine.glow]) s.update(dt);
   // 궤적
@@ -4265,6 +4272,7 @@ function frame(ms) {
   if (G.replay) replayCamera(); else drawCamera(raw);
   if (G.impact > 0) { renderImpact(G.impact > 2 ? 0 : 1); G.impact--; }
   else renderLook();
+  window.__afterFrame?.(renderer); // 검사용: 그린 직후 픽셀 읽기 (flicker.mjs)
 }
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
@@ -4275,5 +4283,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
+window.__game = { camera, startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
 </script>
