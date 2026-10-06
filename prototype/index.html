@@ -670,9 +670,10 @@ const floorMat = toon(style.floor);
 floorMat.userData.noRim = true;
 const floor = new THREE.Mesh(new THREE.CylinderGeometry(ARENA_R + 1, ARENA_R + 1.8, 1, 72), floorMat);
 floor.position.y = -0.5; floor.receiveShadow = true; arena.add(floor);
+const guideRings = []; // [알파] 스프링 송 월드에선 바닥에 새긴 홈이 대신한다
 for (const [r, op] of [[ARENA_R, 0.22], [9.5, 0.07], [5, 0.07]]) {
   const ring = new THREE.Mesh(new THREE.RingGeometry(r - 0.12, r + 0.12, 96), basicT(0xffffff, op));
-  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; arena.add(ring);
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; arena.add(ring); guideRings.push(ring);
 }
 const stoneMats = [], stoneGroup = new THREE.Group(); arena.add(stoneGroup);
 for (let i = 0; i < 11; i++) {
@@ -967,6 +968,12 @@ void main(){
     c += vec3(1.0) * s * 0.8;
     float n = fbm(p * 0.6 + uTime * 0.01);
     c = mix(c, uAcc, smoothstep(0.55, 0.8, n) * down * 0.6);
+  } else if (uMode > 5.5) {                    // 6 달밤 (스프링 송 월드): 땅이 덮으니 하늘만. 달무리, 엷은 구름
+    vec3 md = normalize(vec3(0.047, 0.667, -0.744)); // 달빛(태양) 방향과 같게
+    float m = max(dot(vDir, md), 0.0);
+    c += uAcc * (smoothstep(0.9993, 0.9996, m) * 3.0 + pow(m, 60.0) * 0.35 + pow(m, 8.0) * 0.1);
+    float n = fbm(vDir.xz / max(y, 0.1) * 0.7 + vec2(uTime * 0.004, 0.0));
+    c = mix(c, uMid * 1.8 + uAcc * 0.05 * pow(m, 4.0), smoothstep(0.52, 0.82, n) * smoothstep(0.02, 0.3, y) * 0.55);
   } else if (uMode > 4.5) {                    // 5 검은 진흙과 붉은 맥 + 안개 (스프링 송)
     float n = fbm(p * 1.4 + vec2(uTime * 0.015, -uTime * 0.01));
     float vein = 1.0 - smoothstep(0.0, 0.03, abs(n - 0.5));
@@ -1281,42 +1288,8 @@ const PROPS = {
     const under = new THREE.Mesh(new THREE.ConeGeometry(ARENA_R + 1.8, 11, 8, 1), envToon(0x5a4aa0)); under.rotation.x = Math.PI; under.position.y = -6.5; E.add(under);
   },
   springsong(E) {
-    // 어둠 속 삼나무 숲 (실루엣), 석등, 부서진 돌기둥, 바깥만 덮는 안개, 달빛 줄기
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2 + (i % 3) * 0.13, R = ARENA_R + 5 + (i % 4) * 2.4, h = 9 + (i % 5) * 1.6;
-      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R);
-      const trunk = envMesh(new THREE.CylinderGeometry(0.22, 0.38, h * 0.55, 7), envToon(0x15120f)); trunk.position.y = h * 0.27; g.add(trunk);
-      for (let k = 0; k < 3; k++) { const c = envMesh(new THREE.ConeGeometry(2.4 - k * 0.6, h * 0.42, 8), envToon(0x0c1412)); c.position.y = h * (0.42 + k * 0.2); g.add(c); }
-      E.add(g);
-    }
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4, R = ARENA_R + 0.7;
-      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, 0, Math.sin(a) * R); g.rotation.y = -a;
-      const base = envMesh(new THREE.BoxGeometry(0.9, 0.3, 0.9), envToon(0x4a4e58)); base.position.y = 0.15; g.add(base);
-      const post = envMesh(new THREE.CylinderGeometry(0.16, 0.2, 1.0, 8), envToon(0x4a4e58)); post.position.y = 0.8; g.add(post);
-      const box = envMesh(new THREE.BoxGeometry(0.6, 0.5, 0.6), envToon(0x3a3e48)); box.position.y = 1.5; g.add(box);
-      const fire = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.26, 0.62), glowMat(0xff2a30, 0.8)); fire.position.y = 1.5; g.add(fire);
-      const cap = envMesh(new THREE.ConeGeometry(0.62, 0.45, 4), envToon(0x4a4e58)); cap.position.y = 1.97; cap.rotation.y = Math.PI / 4; g.add(cap);
-      const L = new THREE.PointLight(0xff2030, 2.2, 6, 1.6); L.position.y = 1.5; g.add(L);
-      E.userData.flicker.push({ L, base: 2.2, ph: i * 1.9 });
-      E.add(g);
-    }
-    for (let i = 0; i < 3; i++) {
-      const a = (i / 3) * Math.PI * 2 + 0.9, R = ARENA_R + 2.6, h = 2.5 + i;
-      const p = envMesh(new THREE.BoxGeometry(1, h, 1), envToon(0x5a5e68)); p.position.set(Math.cos(a) * R, h / 2 - 0.9, Math.sin(a) * R); p.rotation.set(0.25 * (i - 1), a, 0.2); E.add(p);
-    }
-    for (let i = 0; i < 14; i++) {
-      const a = Math.random() * Math.PI * 2, R = ARENA_R + 0.4 + Math.random() * 1.2, s = 0.25 + Math.random() * 0.4;
-      const r = envMesh(new THREE.DodecahedronGeometry(s, 0), envToon(0x3a3e48)); r.position.set(Math.cos(a) * R, s * 0.5, Math.sin(a) * R); r.rotation.set(i, i * 2, 0); E.add(r);
-    }
-    const fogCv = document.createElement('canvas'); fogCv.width = fogCv.height = 256;
-    { const g = fogCv.getContext('2d'); for (let k = 0; k < 60; k++) { const x = Math.random() * 256, y = Math.random() * 256, r = 20 + Math.random() * 50; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); } }
-    const fogTex = new THREE.CanvasTexture(fogCv); fogTex.wrapS = fogTex.wrapT = THREE.RepeatWrapping; fogTex.repeat.set(3, 3);
-    for (let k = 0; k < 3; k++) {
-      const m = new THREE.Mesh(new THREE.RingGeometry(ARENA_R + 0.5, 46, 64, 1), new THREE.MeshBasicMaterial({ map: fogTex, color: 0x7d93c8, transparent: true, opacity: 0.16 - k * 0.03, depthWrite: false, blending: THREE.AdditiveBlending }));
-      m.rotation.x = -Math.PI / 2; m.position.y = 0.3 + k * 1.4; E.add(m);
-      E.userData.float.push({ o: m, y: m.position.y, ph: k * 2, amp: 0.15, spinZ: 0.02 * (k % 2 ? 1 : -1) });
-    }
+    // 달밤의 산중 돌 마당 (허공 없이 땅에 발붙인 세계). 만드는 법은 buildHFWorld
+    buildHFWorld(E);
   },
   ascent(E) {
     const signs = [['파동', '#ff3ca0'], ['LIVE', '#3ce6ff'], ['합', '#ff3ca0'], ['24시', '#3ce6ff'], ['무대', '#b07aff']];
@@ -1421,13 +1394,14 @@ const LOOK_STYLES = {
       post: { pixel: 3, bloom: 1.0, thresh: 0.6, sat: 1.15, con: 1.05, poster: 14, vig: 0.2 } } },
   '스프링 송': {
     ref: "Fate/stay night [Heaven's Feel] III. spring song (ufotable)", short: '극장판 · ufotable', bg: 0x06080e, ground: 0x05060a, floor: 0xffffff, stone: 0x4a4e58,
-    steps: [0.18, 0.52, 1], outline: 0x06070c, outlinePx: 1.3, hemi: 0.55, sun: 2.4,
-    look: { floor: 'springsong', props: 'springsong', ground: false, fx: true, sky: { mode: 5, top: 0x05070d, mid: 0x0d1220, bot: 0x020204, acc: 0xd0102a }, fog: [0x0a0e18, 24, 72],
-      hemiSky: 0x2a3a5a, hemiGround: 0x05060a, sunColor: 0xb4ceff, sunPos: [8, 20, -14],
+    steps: [0.18, 0.52, 1], outline: 0x06070c, outlinePx: 1.3, hemi: 0.7, sun: 2.9,
+    look: { floor: 'springsong', props: 'springsong', ground: false, fx: true, world: true, fogRel: true,
+      sky: { mode: 6, top: 0x04060c, mid: 0x161e2e, bot: 0x161e2e, acc: 0xcfe0ff }, fog: [0x161e2e, 6, 58],
+      hemiSky: 0x34445f, hemiGround: 0x0b0d12, sunColor: 0xc6d6f2, sunPos: [1.4, 19, -21.2],
       rim: { color: 0xd4e4ff, str: 0.8, pow: 2.6, self: 0.25, dir: [0.4, 0.6, -0.7], dirAmt: 0.85 }, shade: { color: 0x1a2a4c, amt: 0.75 },
       noStrobe: true,
       parts: { kind: 0, n: 260, size: 0.1, add: true, colors: [0xbfd4ff, 0xbfd4ff, 0xbfd4ff, 0xff2a3a], r: 20, y0: -1, y1: 9, vy: 0.35, sway: 0.5, alpha: 0.8 },
-      post: { bloom: 1.0, thresh: 0.56, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.7, ca: 1.3, grain: 0.014, vig: 0.7, sat: 1.08, con: 1.18, gamma: 0.95,
+      post: { bloom: 0.9, thresh: 0.8, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.7, ca: 1.3, grain: 0.014, vig: 0.7, sat: 1.08, con: 1.18, gamma: 0.95,
         lift: [0, 0.008, 0.025], gain: [0.97, 1.0, 1.07], shTint: [0.3, 0.42, 0.58], hiTint: [0.62, 0.5, 0.46], split: 0.28 } } },
   '디 어센트': {
     ref: 'The Ascent (Neon Giant) · Ghostrunner', bg: 0x05070f, ground: 0x05070f, floor: 0xffffff, stone: 0x22263a, steps: [0.3, 0.7, 1], outline: 0x05060c, outlinePx: 1.6, hemi: 0.6, sun: 0.8,
@@ -1449,6 +1423,10 @@ function applyLook() {
   stoneGroup.visible = !L;
   ground.visible = !L || L.ground;
   dome.visible = !!L;
+  const world = !!L?.world; // [알파] 땅에 발붙인 세계: 떠 있는 원판과 그려 넣은 안내 원을 치운다
+  floor.visible = !world; guideRings.forEach(r => (r.visible = !world));
+  scene.environment = world ? makeHFEnv() : null;
+  Object.assign(sun.shadow.camera, world ? { left: -26, right: 26, top: 26, bottom: -26 } : { left: -20, right: 20, top: 20, bottom: -20 }); sun.shadow.camera.updateProjectionMatrix();
   OUTU.px.value = style.outlinePx;
   LOOKU.sunI.value = style.sun;
   if (!L) {
@@ -1481,6 +1459,7 @@ function lookTick(dt) {
   if (style.look?.noStrobe && G.impact > 0) { G.impact = 0; G.flash = Math.max(G.flash, 0.55); } // 흑백 반전 스트로브 대신 부드러운 흰 섬광
   OUTU.res.value.set(innerWidth, innerHeight);
   OUTU.px.value = style.outlinePx * Math.max(0.75, innerHeight / 720);
+  if (style.look?.fogRel && scene.fog) { const d = camera.position.distanceTo(camTarget); scene.fog.near = d + style.look.fog[1]; scene.fog.far = d + style.look.fog[2]; }
   if (partSpec && parts2.visible && dt > 0) {
     const P = partGeo2.attributes.position.array, S = partGeo2.attributes.aSeed.array, s = partSpec;
     for (let i = 0; i < s.n; i++) {
@@ -1746,6 +1725,490 @@ function cineFx(kind, pos) {
     spawnDust(ground, 16, 6, 1.1); spawnDebris(ground, 8, 8, 4); rippleAt(pos, 1.6);
   } else if (kind === 'hit') {
     burst(pos, 0xffffff, 6, 9, true); cine.glow.spawn(pos, V(), 0.9, 2, 0.1, 0xcfe0ff, 0.7, 0); rippleAt(pos, 0.2);
+  }
+}
+
+// ───────────────────────── [알파] 스프링 송 월드: 달밤의 산중 돌 마당 ─────────────────────────
+// 원칙 (docs/실험/알파-스프링송-프롬프트.md 단계 2): 허공 없이 땅에 발붙인 세계. 배경은 질감이 있는 PBR 돌, 캐릭터는 툰.
+// 화면 위쪽(보스 너머) = 축대·돌계단·문기둥·숲, 좌우 = 바위 노두와 숲, 경계 = 무너진 돌난간, 안내 원 = 바닥에 새긴 홈.
+const HFTEX = {};
+// 캔버스 높이맵 → 노멀맵 (가장자리 이어짐 지원)
+function heightToNormal(hctx, size, strength, wrap) {
+  const src = hctx.getImageData(0, 0, size, size).data, out = new ImageData(size, size), o = out.data, k = strength / 255;
+  const nb = q => (wrap ? (q + size) % size : Math.max(0, Math.min(size - 1, q)));
+  for (let y = 0; y < size; y++) {
+    const yu = nb(y - 1) * size, yd = nb(y + 1) * size, row = y * size;
+    for (let x = 0; x < size; x++) {
+      const xl = nb(x - 1), xr = nb(x + 1);
+      const dx = (src[(row + xr) * 4] - src[(row + xl) * 4]) * k, dy = (src[(yd + x) * 4] - src[(yu + x) * 4]) * k;
+      const l = Math.sqrt(dx * dx + dy * dy + 1), i = (row + x) * 4;
+      o[i] = (-dx / l * 0.5 + 0.5) * 255; o[i + 1] = (dy / l * 0.5 + 0.5) * 255; o[i + 2] = (1 / l * 0.5 + 0.5) * 255; o[i + 3] = 255;
+    }
+  }
+  const cv = document.createElement('canvas'); cv.width = cv.height = size; cv.getContext('2d').putImageData(out, 0, 0);
+  return cv;
+}
+function texFrom(cv, srgb, repeat) {
+  const t = new THREE.CanvasTexture(cv);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 4;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); }
+  return t;
+}
+function mkCanvas(size) { const c = document.createElement('canvas'); c.width = c.height = size; return [c, c.getContext('2d', { willReadFrequently: true })]; } // 다시 읽는 캔버스: CPU 쪽에 둔다
+function rngOf(seed) { let s = seed; return () => ((s = (s * 16807) % 2147483647) / 2147483647); }
+// 점 잡티 (굵은 알갱이만. 고운 결은 stoneFinish가 픽셀 단위로)
+function speckle(g, size, rnd, n, cols, rMax) {
+  for (let i = 0; i < n; i++) { g.fillStyle = cols[(rnd() * cols.length) | 0]; const r = 0.5 + rnd() * rMax; g.beginPath(); g.arc(rnd() * size, rnd() * size, r, 0, 7); g.fill(); }
+}
+function blotches(g, size, rnd, n, col, rMin, rMax, wrap) {
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * size, y = rnd() * size, r = rMin + rnd() * (rMax - rMin);
+    for (const [ox, oy] of wrap ? [[0, 0], [size, 0], [-size, 0], [0, size], [0, -size]] : [[0, 0]]) {
+      const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r); gr.addColorStop(0, col); gr.addColorStop(1, col.replace(/[\d.]+\)$/, '0)'));
+      g.fillStyle = gr; g.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+    }
+  }
+}
+// 높이맵 전체를 한 번에 흐린다 (상자 흐림 3회 ≈ 가우스). 돌 모서리가 둥글게 깎인 경사가 된다
+function blurField(f, size, rad, wrap) {
+  let a = f, b = new Float32Array(size * size);
+  const ix = new Int32Array(size + rad * 2 + 2), inv = 1 / (rad * 2 + 1); // 가장자리 넘어간 자리의 실제 칸 (이어짐/붙잡기)
+  for (let k = 0; k < ix.length; k++) { const q = k - rad - 1; ix[k] = wrap ? (q % size + size) % size : Math.max(0, Math.min(size - 1, q)); }
+  for (let pass = 0; pass < 3; pass++) {
+    for (let y = 0; y < size; y++) { // 가로
+      const row = y * size; let acc = 0;
+      for (let k = -rad; k <= rad; k++) acc += a[row + ix[k + rad + 1]];
+      for (let x = 0; x < size; x++) { b[row + x] = acc * inv; acc += a[row + ix[x + rad * 2 + 2]] - a[row + ix[x + 1]]; }
+    }
+    for (let x = 0; x < size; x++) { // 세로
+      let acc = 0;
+      for (let k = -rad; k <= rad; k++) acc += b[ix[k + rad + 1] * size + x];
+      for (let y = 0; y < size; y++) { a[y * size + x] = acc * inv; acc += b[ix[y + rad * 2 + 2] * size + x] - b[ix[y + 1] * size + x]; }
+    }
+  }
+  return a;
+}
+// 이어지는 값 노이즈 (주기 = cells칸), out에 더한다
+function vnoise(size, cells, rnd, out, amp) {
+  const g = new Float32Array(cells * cells); for (let i = 0; i < g.length; i++) g[i] = rnd();
+  const i0 = new Int32Array(size), i1 = new Int32Array(size), tt = new Float32Array(size), k = cells / size;
+  for (let x = 0; x < size; x++) { const f = x * k, i = Math.floor(f), t = f - i; i0[x] = i % cells; i1[x] = (i + 1) % cells; tt[x] = t * t * (3 - 2 * t); }
+  for (let y = 0; y < size; y++) {
+    const r0 = i0[y] * cells, r1 = i1[y] * cells, ty = tt[y], row = y * size;
+    for (let x = 0; x < size; x++) {
+      const p = g[r0 + i0[x]], q = g[r0 + i1[x]], c = g[r1 + i0[x]], d = g[r1 + i1[x]], tx = tt[x];
+      const top = p + (q - p) * tx; out[row + x] += (top + (c + (d - c) * tx - top) * ty) * amp;
+    }
+  }
+}
+function fbmField(size, rnd, cells, oct) {
+  const out = new Float32Array(size * size); let amp = 0.5, tot = 0;
+  for (let o = 0; o < oct; o++, amp *= 0.5, cells *= 2) { vnoise(size, cells, rnd, out, amp); tot += amp; }
+  for (let i = 0; i < out.length; i++) out[i] /= tot;
+  return out;
+}
+const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// 돌 마감: 돌마다 칠해 둔 색(a)과 높이(h)에 결·얼룩·모서리 닳음·줄눈 그늘·이끼·젖은 자리를 픽셀 단위로 입힌다.
+// 결과: a = 알베도, h = 높이(흐린 경사 + 결), r = 거칠기(젖은 곳은 매끈)
+function stoneFinish(a, h, r, S, rnd, o) {
+  const A = a.getImageData(0, 0, S, S), Hd = h.getImageData(0, 0, S, S), Rd = r ? r.getImageData(0, 0, S, S) : null;
+  const ad = A.data, hd = Hd.data, N = S * S;
+  const sharp = new Float32Array(N); for (let i = 0; i < N; i++) sharp[i] = hd[i * 4] / 255;
+  const hb = blurField(Float32Array.from(sharp), S, o.blur, o.wrap);
+  const mott = fbmField(S, rnd, o.mottle ?? 24, 3), stain = fbmField(S, rnd, o.stain ?? 3, 3), damp = fbmField(S, rnd, o.damp ?? 5, 2);
+  const moss = o.moss ?? 1, mc = o.mossCol ?? [44, 62, 38];
+  for (let i = 0; i < N; i++) {
+    const b = hb[i], stoneM = sstep(0.1, 0.5, b), edge = Math.max(-1, Math.min(1, (sharp[i] - b) * 5));
+    const m = (mott[i] - 0.5) * 2.4, st = sstep(0.54, 0.74, stain[i]), dp = sstep(0.5, 0.7, damp[i]), gr = rnd() - 0.5;
+    // 결(얼룩덜룩) · 큰 얼룩 · 줄눈 그늘 · 모서리 닳음(볼록한 곳 밝게)
+    let k = (1 + m * 0.32 + gr * 0.07) * (1 - st * 0.38) * (0.42 + 0.58 * stoneM) * (1 - dp * 0.22) + Math.max(0, edge) * 0.22 * stoneM;
+    let R = ad[i * 4] * k, G = ad[i * 4 + 1] * k, B = ad[i * 4 + 2] * k;
+    // 이끼: 젖은 쪽 줄눈에 자라고, 아주 젖은 곳은 돌 위로도 번진다
+    const mo = Math.min(1, ((1 - stoneM) * sstep(0.42, 0.62, damp[i]) * 0.75 + stoneM * sstep(0.66, 0.82, damp[i]) * 0.45) * moss) * (0.75 + m * 0.5);
+    if (mo > 0) { const t = Math.min(0.85, mo); R += (mc[0] * (0.8 + m) - R) * t; G += (mc[1] * (0.8 + m) - G) * t; B += (mc[2] * (0.8 + m) - B) * t; }
+    ad[i * 4] = R; ad[i * 4 + 1] = G; ad[i * 4 + 2] = B;
+    const H = b * 255 + m * (o.hm ?? 26) * stoneM + gr * 7 - st * 8;
+    hd[i * 4] = hd[i * 4 + 1] = hd[i * 4 + 2] = H;
+    if (Rd) { const rv = (0.95 - dp * 0.4 * stoneM - st * 0.08 + (1 - stoneM) * 0.04) * 255; Rd.data[i * 4] = Rd.data[i * 4 + 1] = Rd.data[i * 4 + 2] = rv; }
+  }
+  a.putImageData(A, 0, 0); h.putImageData(Hd, 0, 0); if (Rd) r.putImageData(Rd, 0, 0);
+}
+// 돌마다 다른 색: 회색 바탕에 아주 조금 차갑거나 따뜻하거나 푸르스름하게
+const STONE_HUES = [[-3, 0, 7], [0, 0, 3], [5, 3, -2], [-2, 3, 1], [-4, -1, 9]];
+function stoneCol(rnd, lo, hi) { const v = lo + rnd() * (hi - lo), h = STONE_HUES[(rnd() * STONE_HUES.length) | 0]; return `rgb(${v + h[0]},${v + h[1]},${v + h[2]})`; }
+// 돌 높이 칠하기: 돌마다 조금씩 기울어 있다 (낮은 달빛 아래서 돌마다 밝기가 달라지는 가장 큰 단서)
+function tiltFill(g, hv, cx, cy, span, rnd, amt = 26) {
+  const an = rnd() * 7, dx = Math.cos(an) * span, dy = Math.sin(an) * span, d = amt * (0.4 + rnd() * 0.6);
+  const gr = g.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy), c = v => { v = Math.max(0, Math.min(255, v)) | 0; return `rgb(${v},${v},${v})`; };
+  gr.addColorStop(0, c(hv - d)); gr.addColorStop(1, c(hv + d)); g.fillStyle = gr;
+}
+// 금: 굵기가 줄어드는 갈래 선 (색 + 높이)
+function cracks(a, h, rnd, n, x0, y0, spread, seg, wrapS) {
+  for (let i = 0; i < n; i++) {
+    let x = x0 + (rnd() - 0.5) * spread, y = y0 + (rnd() - 0.5) * spread, d = rnd() * 7, w = 1.2 + rnd() * 1.4;
+    const steps = 4 + ((rnd() * 6) | 0);
+    for (let k = 0; k < steps; k++) {
+      d += (rnd() - 0.5) * 1.1; const nx = x + Math.cos(d) * seg * (0.6 + rnd() * 0.8), ny = y + Math.sin(d) * seg * (0.6 + rnd() * 0.8);
+      for (const [ox, oy] of wrapS ? [[0, 0], [wrapS, 0], [-wrapS, 0], [0, wrapS], [0, -wrapS]] : [[0, 0]]) {
+        a.strokeStyle = 'rgba(6,7,9,0.85)'; a.lineWidth = w; a.beginPath(); a.moveTo(x + ox, y + oy); a.lineTo(nx + ox, ny + oy); a.stroke();
+        h.strokeStyle = 'rgba(0,0,0,0.9)'; h.lineWidth = w * 1.6; h.beginPath(); h.moveTo(x + ox, y + oy); h.lineTo(nx + ox, ny + oy); h.stroke();
+      }
+      x = nx; y = ny; w *= 0.85;
+    }
+  }
+}
+// 물웅덩이: 거칠기를 낮춰 달빛을 비추고, 높이를 평평하게 메운다
+function puddles(a, h, r, rnd, n, place) {
+  for (let i = 0; i < n; i++) {
+    const [x, y, w] = place(), hh = w * (0.4 + rnd() * 0.4), rot = rnd() * 3;
+    for (const [g, col] of [[a, 'rgba(14,16,22,0.22)'], [r, 'rgba(30,30,30,0.95)'], [h, 'rgba(198,198,198,0.7)']]) { // 높이는 돌 높이로 평평하게 (움푹 팬 구멍처럼 보이지 않게)
+      g.save(); g.translate(x, y); g.rotate(rot); g.scale(1, hh / w);
+      const gr = g.createRadialGradient(0, 0, 0, 0, 0, w); gr.addColorStop(0, col); gr.addColorStop(0.7, col); gr.addColorStop(1, col.replace(/[\d.]+\)$/, '0)'));
+      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, w, 0, 7); g.fill(); g.restore();
+    }
+  }
+}
+
+// 1) 바깥 판석 (8m 반복, 이음매 없이 이어짐): 줄마다 높이가 다른 엇갈린 판석
+function makeFlagstones() {
+  if (HFTEX.flag) return HFTEX.flag;
+  const S = 1024, M = 8, ppm = S / M, rnd = rngOf(11);
+  const [ac, a] = mkCanvas(S), [hc, h] = mkCanvas(S), [rc, r] = mkCanvas(S);
+  a.fillStyle = '#2a2c30'; a.fillRect(0, 0, S, S); h.fillStyle = '#5a5a5a'; h.fillRect(0, 0, S, S); r.fillStyle = '#fff'; r.fillRect(0, 0, S, S);
+  const rows = []; let y = 0;
+  while (y < M) { const rh = Math.min(M - y, 0.7 + rnd() * 0.8); rows.push([y, M - y - rh < 0.55 ? M - y : rh]); y += rows[rows.length - 1][1]; }
+  const grout = 0.05 * ppm;
+  for (const [ry, rh] of rows) {
+    const ws = []; let tot = 0; while (tot < M) { const w = 0.7 + rnd() * 1.5; ws.push(w); tot += w; }
+    const k = M / tot; let x = rnd() * M;
+    for (const w0 of ws) {
+      const s = { x, y: ry, w: w0 * k, h: rh }, missing = rnd() < 0.03, col = missing ? '#1c1f1a' : stoneCol(rnd, 66, 112), hv = missing ? 70 : 170 + rnd() * 50;
+      const jit = [0, 1, 2, 3, 4, 5, 6, 7].map(() => (rnd() - 0.5) * 0.08 * ppm);
+      for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) {
+        const x0 = s.x * ppm + ox, y0 = s.y * ppm + oy, x1 = (s.x + s.w) * ppm + ox, y1 = (s.y + s.h) * ppm + oy;
+        if (x0 > S || x1 < 0 || y0 > S || y1 < 0) continue;
+        const quad = (g, ins) => { g.beginPath(); g.moveTo(x0 + ins + jit[0], y0 + ins + jit[1]); g.lineTo(x1 - ins + jit[2], y0 + ins + jit[3]); g.lineTo(x1 - ins + jit[4], y1 - ins + jit[5]); g.lineTo(x0 + ins + jit[6], y1 - ins + jit[7]); g.closePath(); };
+        quad(a, grout); a.fillStyle = col; a.fill();
+        quad(h, grout * 1.3); tiltFill(h, hv, (x0 + x1) / 2, (y0 + y1) / 2, Math.max(x1 - x0, y1 - y0) / 2, rngOf(((s.x * 977 + s.y * 131) | 0) + 7)); h.fill();
+      }
+      x += w0 * k;
+    }
+  }
+  stoneFinish(a, h, r, S, rnd, { wrap: true, blur: 4, mottle: 16, stain: 2, damp: 4, hm: 30 });
+  cracks(a, h, rnd, 22, S / 2, S / 2, S, 16, S);
+  speckle(a, S, rnd, 1500, ['rgba(0,0,0,0.18)', 'rgba(255,255,255,0.08)'], 1.6);
+  HFTEX.flag = { map: texFrom(ac, true, 1), normal: texFrom(heightToNormal(h, S, 3.2, true), false, 1), rough: texFrom(rc, false, 1) };
+  return HFTEX.flag;
+}
+
+// 2) 마당 판 (지름 33m 원판): 길이가 제각각인 동심원 판석 + 안내 원 자리의 갓돌(테두리 돌) 고리 + 가운데 둥근 돌
+function makePlaza() {
+  if (HFTEX.plaza) return HFTEX.plaza;
+  const S = 2048, R = 16.5, ppm = S / (R * 2), C = S / 2, rnd = rngOf(23);
+  const [ac, a] = mkCanvas(S), [hc, h] = mkCanvas(S), [rc, r] = mkCanvas(S);
+  a.fillStyle = '#25272b'; a.fillRect(0, 0, S, S); h.fillStyle = '#5a5a5a'; h.fillRect(0, 0, S, S); r.fillStyle = '#fff'; r.fillRect(0, 0, S, S);
+  const arcPath = (g, r0, r1, a0, a1) => { g.beginPath(); g.arc(C, C, r1 * ppm, a0, a1); g.arc(C, C, r0 * ppm, a1, a0, true); g.closePath(); };
+  const gap = 0.035;
+  const stone = (r0, r1, a0, a1, col, hv) => {
+    const rm = (r0 + r1) / 2, ja = (rnd() - 0.5) * 0.03 / rm, jr = (rnd() - 0.5) * 0.03;
+    arcPath(a, r0 + gap + jr, r1 - gap, a0 + gap / rm + ja, a1 - gap / rm); a.fillStyle = col; a.fill();
+    arcPath(h, r0 + gap * 1.4 + jr, r1 - gap * 1.4, a0 + gap * 1.4 / rm + ja, a1 - gap * 1.4 / rm); const am = (a0 + a1) / 2;
+    tiltFill(h, hv, C + Math.cos(am) * rm * ppm, C + Math.sin(am) * rm * ppm, Math.max(r1 - r0, (a1 - a0) * rm) * ppm / 2, rnd); h.fill();
+  };
+  const ringOf = (r0, r1, lenLo, lenHi, colLo, colHi, hLo, hHi, holes) => {
+    const rm = (r0 + r1) / 2, off = rnd() * 7, end = off + Math.PI * 2;
+    let an = off;
+    while (an < end - 1e-4) {
+      let len = (lenLo + rnd() * (lenHi - lenLo)) / rm; if (end - an - len < lenLo * 0.6 / rm) len = end - an;
+      if (rnd() < holes) { arcPath(a, r0 + gap, r1 - gap, an, an + len); a.fillStyle = '#1a1d18'; a.fill(); } // 빠진 돌: 흙과 이끼
+      else if (rnd() < 0.07) { const mid = an + len * (0.35 + rnd() * 0.3), c = stoneCol(rnd, colLo, colHi), hv = hLo + rnd() * (hHi - hLo); stone(r0, r1, an, mid, c, hv); stone(r0, r1, mid, an + len, c, hv - 12); } // 쪼개진 돌
+      else stone(r0, r1, an, an + len, stoneCol(rnd, colLo, colHi), hLo + rnd() * (hHi - hLo));
+      an += len;
+    }
+  };
+  // 판석 고리 (반지름 경계는 안내 원 5, 9.5, 14를 비켜 간다)
+  for (const [r0, r1] of [[2.35, 3.9], [3.9, 4.86], [5.14, 6.2], [6.2, 7.85], [7.85, 9.36], [9.64, 10.8], [10.8, 12.5], [12.5, 13.82], [14.18, 15.5], [15.5, 16.5]])
+    ringOf(r0, r1, 0.9, 2.4, 64, 112, 175, 220, r0 > 14 ? 0.05 : 0.02);
+  // 안내 원 = 갓돌 고리: 가늘고 긴, 조금 높고 짙은 돌 (게임 안내가 건축의 일부가 된다). 아레나 끝(14)이 가장 굵다
+  ringOf(4.86, 5.14, 1.8, 2.6, 62, 84, 215, 230, 0);
+  ringOf(9.36, 9.64, 1.8, 2.6, 62, 84, 215, 230, 0);
+  ringOf(13.82, 14.18, 2.0, 2.8, 50, 66, 225, 240, 0);
+  // 가운데: 넷으로 나뉜 둥근 돌과 닳은 고리 홈
+  for (let q = 0; q < 4; q++) stone(0, 2.35, q * Math.PI / 2 + 0.4, (q + 1) * Math.PI / 2 + 0.4, stoneCol(rnd, 70, 92), 200 + rnd() * 30);
+  stoneFinish(a, h, r, S, rnd, { wrap: false, blur: 4, mottle: 40, stain: 4, damp: 7, hm: 28 });
+  for (const [g, col, lw] of [[a, 'rgba(10,11,14,0.75)', 0.07], [h, 'rgba(0,0,0,0.7)', 0.09]]) { g.lineWidth = lw * ppm; g.strokeStyle = col; g.beginPath(); g.arc(C, C, 1.3 * ppm, 0, 7); g.stroke(); }
+  cracks(a, h, rnd, 34, C, C, 30 * ppm, 13);
+  speckle(a, S, rnd, 5000, ['rgba(0,0,0,0.18)', 'rgba(255,255,255,0.07)'], 1.8);
+  puddles(a, h, r, rnd, 12, () => { const an = rnd() * 7, rr = (3 + rnd() * 11) * ppm; return [C + Math.cos(an) * rr, C + Math.sin(an) * rr, (0.5 + rnd() * 1.2) * ppm]; });
+  HFTEX.plaza = { map: texFrom(ac, true), normal: texFrom(heightToNormal(h, S, 3.6, false), false), rough: texFrom(rc, false) };
+  return HFTEX.plaza;
+}
+
+// 3) 마름돌 벽 (반복, 한 칸 3m): 높이가 다른 줄, 모서리 깎임, 물 흘러내린 자국, 아래쪽 이끼
+function makeAshlar() {
+  if (HFTEX.ashlar) return HFTEX.ashlar;
+  const S = 1024, rnd = rngOf(37);
+  const [ac, a] = mkCanvas(S), [hc, h] = mkCanvas(S), [rc, r] = mkCanvas(S);
+  a.fillStyle = '#1c1e22'; a.fillRect(0, 0, S, S); h.fillStyle = '#000'; h.fillRect(0, 0, S, S); r.fillStyle = '#fff'; r.fillRect(0, 0, S, S);
+  let y = 0;
+  while (y < S) {
+    const rh = Math.min(S - y, 100 + rnd() * 80), real = S - y - rh < 70 ? S - y : rh;
+    let x = -rnd() * 200;
+    while (x < S) {
+      const w = 150 + rnd() * 180, col = stoneCol(rnd, 70, 108), hv = 170 + rnd() * 80, j = () => (rnd() - 0.5) * 8;
+      const pts = [[x + 5 + j(), y + 5 + j()], [x + w - 5 + j(), y + 5 + j()], [x + w - 5 + j(), y + real - 5 + j()], [x + 5 + j(), y + real - 5 + j()]];
+      for (const ox of [0, S]) for (const [g, c, ins] of [[a, col, 0], [h, `rgb(${hv},${hv},${hv})`, 3]]) {
+        g.beginPath(); pts.forEach(([px, py], k) => { const cx = px - ox + (k === 0 || k === 3 ? ins : -ins), cy = py + (k < 2 ? ins : -ins); k ? g.lineTo(cx, cy) : g.moveTo(cx, cy); }); g.closePath(); g.fillStyle = c; g.fill();
+      }
+      x += w;
+    }
+    y += real;
+  }
+  stoneFinish(a, h, r, S, rnd, { wrap: true, blur: 4, mottle: 12, stain: 3, damp: 3, hm: 34, moss: 0.8 });
+  for (let i = 0; i < 70; i++) { // 흘러내린 물 자국 (세로로 가늘게, 조금씩 흔들리며)
+    let x = rnd() * S; const top = rnd() * S, len = S * (0.15 + rnd() * 0.4), w = 1.5 + rnd() * 4, al = 0.08 + rnd() * 0.14;
+    for (let yy = 0; yy < len; yy += 6) { x += (rnd() - 0.5) * 1.6; a.fillStyle = `rgba(6,8,10,${al * (1 - yy / len)})`; a.fillRect(x, (top + yy) % S, w, 6); }
+  }
+  cracks(a, h, rnd, 14, S / 2, S / 2, S, 14, S);
+  HFTEX.ashlar = { map: texFrom(ac, true, 1), normal: texFrom(heightToNormal(h, S, 5, true), false, 1), rough: texFrom(rc, false, 1) };
+  return HFTEX.ashlar;
+}
+
+// 4) 풀잎 묶음 (알파)
+function makeGrass() {
+  if (HFTEX.grass) return HFTEX.grass;
+  const [c, g] = mkCanvas(256), rnd = rngOf(5);
+  for (let i = 0; i < 46; i++) {
+    const x = 20 + rnd() * 216, lean = (rnd() - 0.5) * 70, hgt = 120 + rnd() * 130, v = 40 + rnd() * 40;
+    g.strokeStyle = `rgb(${v * 0.55},${v + 10},${v * 0.6})`; g.lineWidth = 2 + rnd() * 3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, 256); g.quadraticCurveTo(x + lean * 0.3, 256 - hgt * 0.6, x + lean, 256 - hgt); g.stroke();
+  }
+  HFTEX.grass = texFrom(c, true);
+  return HFTEX.grass;
+}
+
+// 반사용 환경: 짙은 남색 하늘, 높이 뜬 달, 낮게 깔린 붉은 기운
+function makeHFEnv() {
+  if (HFTEX.env) return HFTEX.env;
+  const s = new THREE.Scene();
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: {},
+    vertexShader: 'varying vec3 d; void main(){ d = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'varying vec3 d; void main(){ vec3 c = mix(vec3(0.02,0.025,0.04), vec3(0.07,0.1,0.17), smoothstep(-0.1, 0.6, d.y)); c += vec3(0.3,0.38,0.55) * pow(max(dot(d, normalize(vec3(-0.5, 0.55, -0.5))), 0.0), 3.0); c += vec3(0.25,0.02,0.04) * smoothstep(0.15, -0.05, d.y) * 0.6; gl_FragColor = vec4(c, 1.0); }' }));
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xdfe9ff).multiplyScalar(6) }));
+  moon.position.set(2.2, 30, -33); s.add(sky, moon); // 달빛(태양)과 같은 방향: 젖은 돌과 물웅덩이에 비친다
+  const pm = new THREE.PMREMGenerator(renderer);
+  HFTEX.env = pm.fromScene(s, 0.02).texture; pm.dispose();
+  return HFTEX.env;
+}
+
+// 바위 질감 (반복): 결과 지의류 얼룩, 젖은 이끼
+function makeRockTex() {
+  if (HFTEX.rock) return HFTEX.rock;
+  const S = 512, rnd = rngOf(53);
+  const [ac, a] = mkCanvas(S), [hc, h] = mkCanvas(S);
+  a.fillStyle = '#5a5e66'; a.fillRect(0, 0, S, S); h.fillStyle = '#b0b0b0'; h.fillRect(0, 0, S, S);
+  blotches(a, S, rnd, 26, 'rgba(150,156,150,0.3)', 8, 34, true); // 지의류
+  stoneFinish(a, h, null, S, rnd, { wrap: true, blur: 2, mottle: 8, stain: 2, damp: 3, hm: 70, moss: 0.9 });
+  cracks(a, h, rnd, 10, S / 2, S / 2, S, 12, S);
+  HFTEX.rock = { map: texFrom(ac, true, 1), normal: texFrom(heightToNormal(h, S, 4, true), false, 1) };
+  return HFTEX.rock;
+}
+// 바닥에 까는 접지 그림자 (바위·기둥 밑이 떠 보이지 않게)
+function makeAOTex() {
+  if (HFTEX.ao) return HFTEX.ao;
+  const [c, g] = mkCanvas(128), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(0,0,0,0.8)'); gr.addColorStop(0.5, 'rgba(0,0,0,0.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  HFTEX.ao = texFrom(c, false);
+  return HFTEX.ao;
+}
+
+function stdMat(o) { return new THREE.MeshStandardMaterial({ roughness: 0.88, metalness: 0, envMapIntensity: 0.55, ...o }); }
+function hfShadow(m, cast = true) { m.castShadow = cast; m.receiveShadow = true; return m; }
+// 바위: 노이즈로 찌그러뜨린 다면체, 면이 보이게 (달빛에 각이 산다)
+function rockGeo(r, seed, squash = 0.7) {
+  const g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position, rnd = rngOf(seed);
+  const ph = [rnd() * 10, rnd() * 10, rnd() * 10];
+  for (let i = 0; i < p.count; i++) {
+    const v = V(p.getX(i), p.getY(i), p.getZ(i)), n = v.clone().normalize();
+    const k = 1 + 0.22 * Math.sin(n.x * 3.1 + ph[0]) * Math.sin(n.y * 2.7 + ph[1]) + 0.12 * Math.sin(n.z * 5.3 + ph[2]);
+    v.multiplyScalar(k); v.y *= squash; if (v.y < -r * 0.25) v.y = -r * 0.25 + (v.y + r * 0.25) * 0.2;
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+function boxUVScale(geo, sx, sy, sz, unit) { // 상자 면마다 실제 크기에 맞게 UV를 늘려 질감 크기를 맞춘다
+  const uv = geo.attributes.uv, n = geo.attributes.normal;
+  for (let i = 0; i < uv.count; i++) {
+    const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i));
+    const [w, h] = ax > 0.5 ? [sz, sy] : ay > 0.5 ? [sx, sz] : [sx, sy];
+    uv.setXY(i, uv.getX(i) * w / unit, uv.getY(i) * h / unit);
+  }
+  return geo;
+}
+// 같은 재질끼리 한 덩어리로 합친다 (그리기 호출: 수백 → 십여 개). T 안의 정적인 메시만.
+function hfBake(T, E) {
+  T.updateMatrixWorld(true);
+  const groups = new Map();
+  T.traverse(o => {
+    if (!o.isMesh) return;
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    if (o.userData.uvOff) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) + o.userData.uvOff[0], uv.getY(i) + o.userData.uvOff[1]); }
+    const e = groups.get(o.material) || { list: [], cast: false };
+    e.list.push(g); e.cast ||= o.castShadow; groups.set(o.material, e);
+    o.geometry.dispose();
+  });
+  for (const [mat, { list, cast }] of groups) {
+    let n = 0; for (const g of list) n += g.attributes.position.count;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2);
+    let k = 0;
+    for (const g of list) {
+      const c = g.attributes.position.count;
+      pos.set(g.attributes.position.array, k * 3); nor.set(g.attributes.normal.array, k * 3);
+      if (g.attributes.uv) uv.set(g.attributes.uv.array, k * 2);
+      k += c; g.dispose();
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.computeBoundingSphere();
+    const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; E.add(m);
+  }
+}
+
+function buildHFWorld(E) {
+  const F = makeFlagstones(), P = makePlaza(), W = makeAshlar(), RK = makeRockTex(), grassTex = makeGrass(), rnd = rngOf(4242);
+  const toW = (along, side) => V(FWD.x * along + RIGHT.x * side, 0, FWD.z * along + RIGHT.z * side); // 화면 위쪽·오른쪽 기준 좌표
+  const alongOf = p => p.x * FWD.x + p.z * FWD.z, sideOf = p => p.x * RIGHT.x + p.z * RIGHT.z;
+  const T = new THREE.Group(); // 정적인 것: 여기 모았다가 재질별로 합친다
+  // 바닥: 마당 원판 + 지평까지 이어지는 바깥 판석 (거칠기 지도로 물웅덩이만 반사)
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), stdMat({ map: F.map.clone(), normalMap: F.normal.clone(), roughnessMap: F.rough.clone(), color: 0x9aa2ae, normalScale: new THREE.Vector2(0.9, 0.9) }));
+  for (const t of [outer.material.map, outer.material.normalMap, outer.material.roughnessMap]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(220 / 8, 220 / 8); t.needsUpdate = true; }
+  outer.rotation.x = -Math.PI / 2; outer.position.y = -0.01; hfShadow(outer, false); E.add(outer);
+  const plaza = new THREE.Mesh(new THREE.CircleGeometry(16.5, 96), stdMat({ map: P.map, normalMap: P.normal, roughnessMap: P.rough, color: 0xc8ccd4, envMapIntensity: 0.8, normalScale: new THREE.Vector2(1.1, 1.1) }));
+  plaza.rotation.x = -Math.PI / 2; plaza.position.y = 0.004; hfShadow(plaza, false); E.add(plaza);
+  // 바깥 땅의 흙·이끼 얼룩 (반복 무늬를 깨뜨린다)
+  const dirtCv = document.createElement('canvas'); dirtCv.width = dirtCv.height = 512;
+  { const g = dirtCv.getContext('2d'), r2 = rngOf(77); blotches(g, 512, r2, 60, 'rgba(18,22,16,0.55)', 20, 80, false); blotches(g, 512, r2, 40, 'rgba(40,56,34,0.4)', 15, 60, false); }
+  const dirt = new THREE.Mesh(new THREE.RingGeometry(16.6, 60, 96, 1), new THREE.MeshStandardMaterial({ map: texFrom(dirtCv, true), transparent: true, roughness: 1, depthWrite: false }));
+  dirt.rotation.x = -Math.PI / 2; dirt.position.y = 0.012; dirt.receiveShadow = true; E.add(dirt);
+
+  const ashMat = stdMat({ map: W.map, normalMap: W.normal, roughnessMap: W.rough, color: 0xa8b0bc });
+  const ashBox = (sx, sy, sz) => { const m = hfShadow(new THREE.Mesh(boxUVScale(new THREE.BoxGeometry(sx, sy, sz), sx, sy, sz, 3), ashMat)); m.userData.uvOff = [rnd(), rnd()]; return m; };
+  const rockMat = stdMat({ map: RK.map, normalMap: RK.normal, color: 0x9aa0aa, flatShading: true, roughness: 0.95 });
+  const rubbleMat = stdMat({ map: RK.map, normalMap: RK.normal, color: 0xb0b6c0, flatShading: true });
+  const aoSpots = []; // [x, z, 반지름]
+  // 경계: 무너진 돌난간 (반지름 15.3). 기둥 사이 낮은 담, 몇 군데는 무너져 돌무더기와 쓰러진 기둥
+  const RR = 15.3, posts = 28, broken = new Set([3, 4, 11, 19, 20, 24]);
+  for (let i = 0; i < posts; i++) {
+    const a0 = (i / posts) * Math.PI * 2, a1 = ((i + 1) / posts) * Math.PI * 2, am = (a0 + a1) / 2;
+    const lean = broken.has(i) || broken.has(i - 1) ? 0.12 : 0;
+    const post = ashBox(0.55, 1.25, 0.55); post.position.set(Math.cos(a0) * RR, 0.62, Math.sin(a0) * RR); post.rotation.set(lean * (rnd() - 0.5), -a0, lean * (rnd() - 0.5)); T.add(post);
+    if (!lean || rnd() < 0.5) { const cap = ashBox(0.7, 0.16, 0.7); cap.position.set(Math.cos(a0) * RR, 1.32, Math.sin(a0) * RR); cap.rotation.y = -a0; T.add(cap); }
+    aoSpots.push([Math.cos(a0) * RR, Math.sin(a0) * RR, 0.9]);
+    if (broken.has(i)) {
+      for (let k = 0; k < 6; k++) { const rr = RR + (rnd() - 0.4) * 1.6, aa = a0 + rnd() * (a1 - a0), s = 0.2 + rnd() * 0.32; const rk = hfShadow(new THREE.Mesh(rockGeo(s, i * 9 + k, 0.8), rubbleMat)); rk.position.set(Math.cos(aa) * rr, s * 0.25, Math.sin(aa) * rr); rk.rotation.set(k, k * 2, 0); T.add(rk); aoSpots.push([rk.position.x, rk.position.z, s * 2]); }
+      if (i % 2 === 1) { // 쓰러진 난간 토막
+        const seg = ashBox(1.6, 0.4, 0.75); const aa = am + 0.03, rr = RR + 0.9; seg.position.set(Math.cos(aa) * rr, 0.2, Math.sin(aa) * rr); seg.rotation.set(0, -aa + 0.5, 0.18); T.add(seg);
+      }
+      continue;
+    }
+    const len = 2 * RR * Math.sin(Math.PI / posts) - 0.5;
+    const wall = ashBox(len, 0.75, 0.4); wall.position.set(Math.cos(am) * RR, 0.375, Math.sin(am) * RR); wall.rotation.y = -am + Math.PI / 2; T.add(wall);
+    const rail = ashBox(len, 0.12, 0.5); rail.position.set(Math.cos(am) * RR, 0.81, Math.sin(am) * RR); rail.rotation.y = -am + Math.PI / 2; T.add(rail);
+  }
+  // 화면 위쪽(보스 너머): 축대 + 돌계단 + 문기둥. 축대는 위 단(테라스)의 끝까지 이어진다
+  const BACK = 19.6, back = new THREE.Group(); back.position.copy(toW(BACK, 0)); back.rotation.y = Math.atan2(FWD.x, FWD.z) + Math.PI; T.add(back);
+  const wallH = 3.4, TW = 34; // 테라스 반폭
+  for (const side of [-1, 1]) {
+    let x = 4.45;
+    while (x < TW) { // 높이가 조금씩 다른 축대 토막 + 버팀 기둥
+      const w = Math.min(TW - x, 5 + rnd() * 3), h = wallH + (rnd() - 0.5) * 0.2;
+      const b = ashBox(w, h, 2); b.position.set(side * (x + w / 2), h / 2, -1); back.add(b);
+      const c = ashBox(w + 0.1, 0.22, 2.25); c.position.set(side * (x + w / 2), h + 0.11, -1.05); back.add(c);
+      const bt = ashBox(0.9, h * 0.8, 0.7); bt.position.set(side * (x + w), h * 0.4, 0.25); back.add(bt);
+      x += w;
+    }
+  }
+  const steps = 14, sw = 7.5;
+  for (let k = 0; k < steps; k++) { const s = ashBox(sw, (k + 1) * (wallH / steps), 0.42); s.position.set(0, (k + 1) * (wallH / steps) / 2, 1.6 - k * 0.42); back.add(s); }
+  for (const side of [-1, 1]) { const cheek = ashBox(0.7, wallH + 0.5, 6.2); cheek.position.set(side * (sw / 2 + 0.35), (wallH + 0.5) / 2, -1.3); back.add(cheek); }
+  const upper = new THREE.Mesh(new THREE.PlaneGeometry(TW * 2, 40), stdMat({ map: F.map.clone(), normalMap: F.normal.clone(), color: 0x7a828c }));
+  for (const t of [upper.material.map, upper.material.normalMap]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(TW * 2 / 8, 40 / 8); t.needsUpdate = true; }
+  upper.rotation.x = -Math.PI / 2; upper.position.set(0, wallH, -22); hfShadow(upper, false); back.add(upper);
+  for (const side of [-1, 1]) { // 문기둥 (특정 건축을 흉내 내지 않은 네모 돌기둥 + 얹은 돌)
+    const p = ashBox(1.1, 7.5, 1.1); p.position.set(side * 3.2, wallH + 3.75, -4.5); back.add(p);
+    const foot = ashBox(1.6, 0.6, 1.6); foot.position.set(side * 3.2, wallH + 0.3, -4.5); back.add(foot);
+  }
+  const lintel = ashBox(8.6, 0.9, 1.3); lintel.position.set(0, wallH + 7.7, -4.5); back.add(lintel);
+  const lintel2 = ashBox(7.4, 0.5, 1.0); lintel2.position.set(0, wallH + 6.5, -4.5); back.add(lintel2);
+  // 석등 (따뜻한 등불: 차가운 달빛 속 유일한 온기)
+  const glowMatL = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffb46a).multiplyScalar(2.2) });
+  for (const pos of [toW(17.4, -5.6), toW(17.4, 5.6), toW(4, -16.4), toW(-6, 16.6)]) {
+    const g = new THREE.Group(); g.position.copy(pos); g.rotation.y = rnd() * 0.3; T.add(g);
+    for (const [x, y2, z, py] of [[0.95, 0.3, 0.95, 0.15], [0.32, 1.1, 0.32, 0.85], [0.8, 0.18, 0.8, 1.49], [0.62, 0.55, 0.62, 1.86], [1.0, 0.16, 1.0, 2.2], [0.5, 0.22, 0.5, 2.38]]) { const m = ashBox(x, y2, z); m.position.y = py; g.add(m); }
+    for (const ry of [0, Math.PI / 2]) { const glow = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.34, 0.66), glowMatL); glow.position.y = 1.86; glow.rotation.y = ry; g.add(glow); }
+    const L = new THREE.PointLight(0xffa860, 34, 15, 2); L.position.copy(pos).setY(1.9); E.add(L);
+    E.userData.flicker.push({ L, base: 34, ph: pos.x });
+    aoSpots.push([pos.x, pos.z, 1.3]);
+  }
+  // 바위 노두 (좌우)
+  const outcrops = [[6, -20, 3.2], [10, -19, 2.4], [-2, -21, 2.8], [-9, -19.5, 3.6], [-14, -17, 2.6], [5, 19.5, 3.0], [-4, 20.5, 3.4], [-12, 18, 2.4], [12, 18.5, 2.2], [-18, 6, 2.5], [-19, -4, 3.0], [-17, 13, 2.0], [16, -14, 2.2], [17, 13, 2.0]];
+  outcrops.forEach(([al, sd, r], i) => { const m = hfShadow(new THREE.Mesh(rockGeo(r, 100 + i, 0.75), rockMat)); m.position.copy(toW(al, sd)); m.position.y = r * 0.12; m.rotation.y = i * 1.7; T.add(m); aoSpots.push([m.position.x, m.position.z, r * 2.2]); });
+  for (let i = 0; i < 46; i++) { const a = rnd() * Math.PI * 2, rr = 16.8 + rnd() * 7, s = 0.15 + rnd() * 0.45; const m = hfShadow(new THREE.Mesh(rockGeo(s, 300 + i, 0.6), rockMat)); m.position.set(Math.cos(a) * rr, s * 0.1, Math.sin(a) * rr); m.rotation.y = i; T.add(m); aoSpots.push([m.position.x, m.position.z, s * 2.4]); }
+  // 삼나무 숲: 곧은 줄기 + 층층이 처진 가지 덩어리. 멀수록 안개에 녹는다
+  const barkMat = stdMat({ color: 0x2c2622, roughness: 1 }), leafMat = stdMat({ color: 0x1c2c26, roughness: 1, flatShading: true });
+  const treeSpots = [];
+  for (let i = 0; i < 64; i++) {
+    const a = (i / 64) * Math.PI * 2 + rnd() * 0.08, rr = 22.5 + rnd() * 14;
+    const p = V(Math.cos(a) * rr, 0, Math.sin(a) * rr), al = alongOf(p), sd = sideOf(p);
+    if (al < -13) continue;                                     // 카메라 앞(화면 아래)은 비워 둔다
+    if (al > BACK - 2.5 && al < BACK + 4 && Math.abs(sd) < TW + 1) continue; // 축대·계단 자리
+    if (al >= BACK + 4 && Math.abs(sd) < TW) p.y = wallH;                    // 테라스 위
+    treeSpots.push(p);
+  }
+  for (const [al, sd] of [[27, -9], [28, -3.5], [30, 4], [27, 10], [31, -14], [32, 14], [35, 0], [37, -7], [38, 8]]) treeSpots.push(toW(al, sd).setY(wallH));
+  treeSpots.forEach((p, i) => {
+    const h = 12 + rnd() * 7, g = new THREE.Group(); g.position.copy(p); g.rotation.set((rnd() - 0.5) * 0.06, rnd() * 6, (rnd() - 0.5) * 0.06); T.add(g);
+    const tr = hfShadow(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.42, h, 7), barkMat)); tr.position.y = h / 2; g.add(tr);
+    const tiers = 6 + (i % 3), r0 = 2.3 + rnd() * 0.8;
+    for (let k = 0; k < tiers; k++) {
+      const f = k / (tiers - 1), geo = new THREE.ConeGeometry(r0 * (1 - f * 0.75), 2.6 - f * 0.8, 9, 2), pa = geo.attributes.position;
+      for (let j = 0; j < pa.count; j++) { const y = pa.getY(j); if (y < 0) { const s = 1 + (rnd() - 0.5) * 0.4; pa.setX(j, pa.getX(j) * s); pa.setZ(j, pa.getZ(j) * s); pa.setY(j, y - rnd() * 0.5); } }
+      geo.computeVertexNormals();
+      const c = hfShadow(new THREE.Mesh(geo, leafMat)); c.position.y = h * 0.42 + f * h * 0.55; c.rotation.y = k * 0.9; g.add(c);
+    }
+  });
+  hfBake(T, E);
+  // 접지 그림자: 바위·기둥·석등 밑
+  const aoGeo = new THREE.PlaneGeometry(1, 1); aoGeo.rotateX(-Math.PI / 2);
+  const ao = new THREE.InstancedMesh(aoGeo, new THREE.MeshBasicMaterial({ map: makeAOTex(), transparent: true, depthWrite: false, color: 0x000000, opacity: 0.85 }), aoSpots.length), m4 = new THREE.Matrix4();
+  aoSpots.forEach(([x, z, r], i) => ao.setMatrixAt(i, m4.makeScale(r, 1, r).setPosition(x, 0.02, z)));
+  ao.renderOrder = 1; E.add(ao);
+  // 풀: 담 밑, 바위 둘레, 축대 밑에 몰아서 (마당 안에는 거의 없다)
+  const grassGeo = new THREE.PlaneGeometry(0.9, 0.7); grassGeo.translate(0, 0.35, 0);
+  const grassMat = new THREE.MeshStandardMaterial({ map: grassTex, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 1, color: 0x8aa08a });
+  const GN = 900, grass = new THREE.InstancedMesh(grassGeo, grassMat, GN), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+  for (let i = 0; i < GN; i++) {
+    let pos;
+    if (i < 420) { const a = rnd() * Math.PI * 2, rr = 15.0 + rnd() * 2.6; pos = V(Math.cos(a) * rr, 0, Math.sin(a) * rr); }
+    else if (i < 560) { const sd = (rnd() - 0.5) * TW * 2; if (Math.abs(sd) < 4.6) continue; pos = toW(BACK - 0.4 - rnd() * 1.2, sd); }
+    else { const a = rnd() * Math.PI * 2, rr = 17.8 + rnd() * 16; pos = V(Math.cos(a) * rr, 0, Math.sin(a) * rr); if (alongOf(pos) > BACK - 0.5) continue; }
+    const s = 0.6 + rnd() * 0.9;
+    q.setFromAxisAngle(V(0, 1, 0), rnd() * Math.PI); sc.set(s, s * (0.7 + rnd() * 0.6), s);
+    m4.compose(pos, q, sc); grass.setMatrixAt(i, m4);
+  }
+  grass.receiveShadow = true; E.add(grass);
+  // 바깥만 덮는 낮은 안개 고리 (천천히 돈다)
+  const fogCv = document.createElement('canvas'); fogCv.width = fogCv.height = 256;
+  { const g = fogCv.getContext('2d'), r2 = rngOf(9); for (let k = 0; k < 70; k++) { const x = r2() * 256, y = r2() * 256, r = 20 + r2() * 55; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.30)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); } }
+  const fogTex = texFrom(fogCv, false, 3);
+  for (let k = 0; k < 2; k++) {
+    const m = new THREE.Mesh(new THREE.RingGeometry(17, 48, 64, 1), new THREE.MeshBasicMaterial({ map: fogTex, color: 0x6a80b0, transparent: true, opacity: 0.12 - k * 0.04, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; m.position.y = 0.6 + k * 1.6; E.add(m);
+    E.userData.float.push({ o: m, y: m.position.y, ph: k * 2, amp: 0.1, spinZ: 0.012 * (k ? 1 : -1) });
   }
 }
 
@@ -2393,14 +2856,18 @@ Player.prototype.drawAim = function () {
 
 // ───────────────────────── 보스 ─────────────────────────
 function circleTele(center, radius, color) {
-  const g = new THREE.Group(); g.position.set(center.x, 0.03, center.z);
+  const g = new THREE.Group(); g.position.set(center.x, 0.03, center.z); g.userData.radius = radius;
   const flatMesh = (geo, op, y = 0) => { const m = new THREE.Mesh(geo, basicT(color, op)); m.rotation.x = -Math.PI / 2; m.position.y = y; g.add(m); return m; };
   flatMesh(new THREE.CircleGeometry(radius, 64), 0.12);
   const fill = flatMesh(new THREE.CircleGeometry(radius, 64), 0.32, 0.005);
-  flatMesh(new THREE.RingGeometry(radius - 0.1, radius, 64), 0.95, 0.01);
+  flatMesh(new THREE.RingGeometry(radius - (style.look?.world ? 0.15 : 0.1), radius, 64), 0.95, 0.01); // 월드 룩: 돌결 위에서 선이 묻히지 않게 조금 굵게
+  if (style.look?.world) { // [알파] 테두리를 받쳐 주는 어두운 띠 (돌바닥의 결·물기 위에서도 테두리가 선다)
+    const halo = (r0, r1, op) => { const m = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 64), basicT(0x000000, op)); m.rotation.x = -Math.PI / 2; m.position.y = 0.008; m.renderOrder = -1; g.add(m); };
+    halo(radius, radius + 0.3, 0.8); halo(Math.max(0.01, radius - 0.42), radius - 0.15, 0.32);
+  }
   fill.scale.setScalar(0.001);
   scene.add(g);
-  return { set(p) { fill.scale.setScalar(Math.max(0.001, p)); }, dispose() { disposeTree(g); } };
+  return { g, set(p) { fill.scale.setScalar(Math.max(0.001, p)); }, dispose() { disposeTree(g); } };
 }
 function laneTele(origin, dir, length, width, color) {
   const g = new THREE.Group(); g.position.set(origin.x, 0.03, origin.z); g.rotation.y = Math.atan2(dir.x, dir.z);
@@ -2410,10 +2877,11 @@ function laneTele(origin, dir, length, width, color) {
   };
   rect(width, length, 0, 0.12);
   rect(0.1, length, -width / 2, 0.95, 0.01); rect(0.1, length, width / 2, 0.95, 0.01);
+  if (style.look?.world) for (const sd of [-1, 1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.3, length).translate(0, length / 2, 0).rotateX(Math.PI / 2), basicT(0x000000, 0.8, true)); m.position.set(sd * (width / 2 + 0.2), 0.008, 0); m.renderOrder = -1; g.add(m); }
   const fill = rect(width, 1, 0, 0.32, 0.005);
   fill.scale.z = 0.001;
   scene.add(g);
-  return { set(p) { fill.scale.z = Math.max(0.001, p * length); }, dispose() { disposeTree(g); } };
+  return { g, set(p) { fill.scale.z = Math.max(0.001, p * length); }, dispose() { disposeTree(g); } };
 }
 function shockTele(boss) {
   const m = new THREE.Mesh(new THREE.RingGeometry(boss.R + 0.2, boss.R + 0.6, 64), basicT(COLOR.unblock, 0.9));
@@ -4283,5 +4751,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { camera, startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
+window.__game = { camera, scene, THREE, renderer, startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
 </script>
