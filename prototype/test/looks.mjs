@@ -13,7 +13,7 @@ fs.mkdirSync(out, { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOKS = ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트'];
+const LOOKS = ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트', '스프링 송'];
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 960, height: 540 } });

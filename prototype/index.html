@@ -637,6 +637,7 @@ const toonMats = [], outlineList = [];
 function toon(color, extra = {}) {
   const m = new THREE.MeshToonMaterial({ color, gradientMap: gradientTex, ...extra });
   m.onBeforeCompile = toonInject; m.customProgramCacheKey = () => 'lookToon'; // [알파] 레퍼런스 룩: 림·그림자 색
+  m.userData.veinU = { value: 0 }; // [알파] 스프링 송: 검게 물든 몸 + 붉은 맥
   toonMats.push(m);
   return m;
 }
@@ -690,17 +691,28 @@ for (let i = 0; i < 11; i++) {
 const LOOKU = {
   rimColor: { value: new THREE.Color(0xffffff) }, rimStr: { value: 0 }, rimPow: { value: 3 }, rimSelf: { value: 0 },
   rimDir: { value: V(0, 1, 0) }, rimDirAmt: { value: 0 },
-  shadeColor: { value: new THREE.Color(0x000000) }, shadeAmt: { value: 0 }, sunI: { value: 2.4 },
+  shadeColor: { value: new THREE.Color(0x000000) }, shadeAmt: { value: 0 }, sunI: { value: 2.4 }, time: { value: 0 },
 };
 function toonInject(shader) {
   Object.assign(shader.uniforms, {
     uRimColor: LOOKU.rimColor, uRimStr: LOOKU.rimStr, uRimPow: LOOKU.rimPow, uRimSelf: LOOKU.rimSelf,
     uRimDir: LOOKU.rimDir, uRimDirAmt: LOOKU.rimDirAmt, uShadeColor: LOOKU.shadeColor, uShadeAmt: LOOKU.shadeAmt, uSunI: LOOKU.sunI,
-    uRimMul: { value: this.userData.noRim ? 0 : 1 },
+    uRimMul: { value: this.userData.noRim ? 0 : 1 }, uTime: LOOKU.time, uVein: this.userData.veinU || { value: 0 },
   });
+  shader.vertexShader = shader.vertexShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vObjP;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\n  vObjP = position;');
   shader.fragmentShader = shader.fragmentShader
     .replace('#include <common>', `#include <common>
-uniform vec3 uRimColor, uShadeColor, uRimDir; uniform float uRimStr, uRimPow, uRimSelf, uRimDirAmt, uShadeAmt, uSunI, uRimMul;`)
+uniform vec3 uRimColor, uShadeColor, uRimDir; uniform float uRimStr, uRimPow, uRimSelf, uRimDirAmt, uShadeAmt, uSunI, uRimMul, uTime, uVein;
+varying vec3 vObjP;
+float vh3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float vn3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(vh3(i), vh3(i + vec3(1,0,0)), f.x), mix(vh3(i + vec3(0,1,0)), vh3(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(vh3(i + vec3(0,0,1)), vh3(i + vec3(1,0,1)), f.x), mix(vh3(i + vec3(0,1,1)), vh3(i + vec3(1,1,1)), f.x), f.y), f.z); }
+float vf3(vec3 p){ return 0.6 * vn3(p) + 0.3 * vn3(p * 2.1) + 0.1 * vn3(p * 4.3); }`)
+    .replace('#include <color_fragment>', `#include <color_fragment>
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.03, 0.028, 0.045) + diffuseColor.rgb * 0.06, uVein);`)
     .replace('#include <opaque_fragment>', `{
   // 그림자 쪽 색 이동: 직사광을 얼마나 받는지로 판단 (툰 단계가 그대로 경계가 된다)
   float litK = dot(reflectedLight.directDiffuse, vec3(0.3333)) / max(dot(diffuseColor.rgb, vec3(0.3333)) * uSunI, 1e-3);
@@ -714,6 +726,15 @@ uniform vec3 uRimColor, uShadeColor, uRimDir; uniform float uRimStr, uRimPow, uR
   fr *= mix(1.0, smoothstep(-0.15, 0.45, dot(normal, rdv)), uRimDirAmt);
   vec3 rc = mix(uRimColor, diffuseColor.rgb * 1.8 + 0.15, uRimSelf);
   outgoingLight += rc * fr * uRimStr * uRimMul;
+  if (uVein > 0.0) { // 검게 물든 몸에 흐르는 붉은 맥
+    float n = vf3(vObjP * 1.3 + vec3(0.0, -uTime * 0.22, 0.0));
+    float vein = 1.0 - smoothstep(0.0, 0.022, abs(n - 0.5));
+    float m2 = vf3(vObjP * 3.2 + vec3(uTime * 0.1));
+    vein = max(vein, (1.0 - smoothstep(0.0, 0.014, abs(m2 - 0.5))) * 0.45) * smoothstep(0.35, 0.6, vf3(vObjP * 0.8 + 3.0)); // 맥은 몸 일부에만
+    outgoingLight *= mix(1.0, 0.55, uVein);
+    outgoingLight += vec3(1.0, 0.06, 0.1) * vein * (0.6 + 0.4 * sin(uTime * 2.6 + n * 12.0)) * 2.4 * uVein;
+    outgoingLight += vec3(0.35, 0.0, 0.04) * smoothstep(-0.2, -1.6, vObjP.y) * (0.7 + 0.3 * sin(uTime * 1.7)) * uVein; // 아래에서 배어 나오는 붉은빛
+  }
 }
 #include <opaque_fragment>`);
 }
@@ -762,7 +783,8 @@ const POST = (() => {
   const type = canFloat ? THREE.HalfFloatType : THREE.UnsignedByteType;
   const rt = (o = {}) => new THREE.WebGLRenderTarget(4, 4, { type, depthBuffer: false, ...o });
   const rScene = rt({ depthBuffer: true, samples: 4 });
-  const rA = rt(), rB = rt(), rC = rt(), rD = rt();
+  const rA = rt(), rB = rt(), rC = rt(), rD = rt(), rE = rt(), rF = rt(), rG = rt(), rH = rt();
+  const rips = [0, 1, 2].map(() => new THREE.Vector4(0, 0, 0, 0));
   const bright = new THREE.ShaderMaterial({
     uniforms: { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uThresh: { value: 0.7 } }, vertexShader: VS,
     fragmentShader: `uniform sampler2D tSrc; uniform vec2 uTexel; uniform float uThresh; varying vec2 vUv;
@@ -785,9 +807,12 @@ void main(){ vec3 c = texture2D(tSrc, vUv).rgb * 0.2270;
       uLift: { value: new THREE.Vector3() }, uGain: { value: new THREE.Vector3(1, 1, 1) }, uShTint: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
       uHiTint: { value: new THREE.Vector3(0.5, 0.5, 0.5) }, uSplit: { value: 0 }, uVig: { value: 0 }, uGrain: { value: 0 }, uScan: { value: 0 },
       uHalf: { value: 0 }, uHalfSize: { value: 6 }, uHalfColor: { value: new THREE.Vector3() }, uPoster: { value: 0 }, uDpr: { value: 1 },
+      tAnam: { value: null }, uAnam: { value: 0 }, uAnamTint: { value: new THREE.Vector3(1, 1, 1) }, tDof: { value: null }, uDof: { value: 0 },
+      uRip: { value: rips }, uAspect: { value: 1 },
     },
     vertexShader: VS,
-    fragmentShader: `uniform sampler2D tScene, tBloomA, tBloomB; uniform vec2 uRes; uniform float uTime, uKuwa, uPixel, uCA, uBloom, uSat, uCon, uGamma,
+    fragmentShader: `uniform sampler2D tAnam, tDof; uniform float uAnam, uDof, uAspect; uniform vec3 uAnamTint; uniform vec4 uRip[3];
+uniform sampler2D tScene, tBloomA, tBloomB; uniform vec2 uRes; uniform float uTime, uKuwa, uPixel, uCA, uBloom, uSat, uCon, uGamma,
   uSplit, uVig, uGrain, uScan, uHalf, uHalfSize, uPoster, uDpr; uniform vec3 uLift, uGain, uShTint, uHiTint, uHalfColor; varying vec2 vUv;
 vec3 toS(vec3 c){ c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
 float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -808,11 +833,20 @@ vec3 kuwa(vec2 uv){
 }
 void main(){
   vec2 uv = vUv;
+  // 충격파: 화면이 고리 모양으로 일그러진다
+  for (int i = 0; i < 3; i++) {
+    vec4 r = uRip[i]; if (r.w <= 0.001) continue;
+    vec2 d = (uv - r.xy) * vec2(uAspect, 1.0); float L = length(d);
+    float band = smoothstep(0.06, 0.0, abs(L - r.z));
+    uv -= (d / max(L, 1e-4)) / vec2(uAspect, 1.0) * band * r.w * 0.03;
+  }
   if (uPixel > 0.0) { vec2 cell = uPixel / uRes; uv = (floor(uv / cell) + 0.5) * cell; }
   vec3 c;
   if (uKuwa > 0.5) c = kuwa(uv);
   else if (uCA > 0.0) { vec2 d = (uv - 0.5) * uCA / uRes * 2.0; c = vec3(texture2D(tScene, uv + d).r, texture2D(tScene, uv).g, texture2D(tScene, uv - d).b); }
   else c = texture2D(tScene, uv).rgb;
+  if (uDof > 0.0) c = mix(c, texture2D(tDof, uv).rgb, smoothstep(0.26, 0.7, length((vUv - 0.5) * vec2(1.0, 1.3))) * uDof);
+  c += texture2D(tAnam, uv).rgb * uAnamTint * uAnam;
   c += (texture2D(tBloomA, uv).rgb + texture2D(tBloomB, uv).rgb * 1.3) * uBloom;
   c = toS(c);
   c = pow(max(c, 0.0), vec3(1.0 / uGamma));
@@ -844,7 +878,8 @@ void main(){
     rScene.setSize(w, h);
     rA.setSize(w >> 2, h >> 2); rB.setSize(w >> 2, h >> 2);
     rC.setSize(w >> 3, h >> 3); rD.setSize(w >> 3, h >> 3);
-    comp.uniforms.uRes.value.set(w, h); comp.uniforms.uDpr.value = dpr;
+    rE.setSize(w >> 2, h >> 3); rF.setSize(w >> 2, h >> 3); rG.setSize(w >> 2, h >> 2); rH.setSize(w >> 2, h >> 2);
+    comp.uniforms.uRes.value.set(w, h); comp.uniforms.uDpr.value = dpr; comp.uniforms.uAspect.value = w / h;
   }
   function pass(mat, target) { quad.material = mat; renderer.setRenderTarget(target); renderer.render(qScene, qCam); }
   function blur2(src, tmp, ww, hh) {
@@ -860,7 +895,18 @@ void main(){
       pass(bright, rA); blur2(rA, rB, w >> 2, h >> 2);
       blur.uniforms.tSrc.value = rA.texture; blur.uniforms.uDir.value.set(2 / (w >> 2), 0); pass(blur, rC);
       blur2(rC, rD, w >> 3, h >> 3);
+      if (P.anam) { // 아나모픽: 밝은 점이 가로로 길게 번진다
+        const ww = w >> 2;
+        blur.uniforms.tSrc.value = rA.texture; blur.uniforms.uDir.value.set(3 / ww, 0); pass(blur, rE);
+        blur.uniforms.tSrc.value = rE.texture; blur.uniforms.uDir.value.set(9 / ww, 0); pass(blur, rF);
+        blur.uniforms.tSrc.value = rF.texture; blur.uniforms.uDir.value.set(22 / ww, 0); pass(blur, rE);
+      }
     }
+    if (P.dof) { // 가장자리 흐림용으로 장면 전체를 흐린 판
+      bright.uniforms.tSrc.value = rScene.texture; bright.uniforms.uTexel.value.set(1.5 / w, 1.5 / h); bright.uniforms.uThresh.value = -1;
+      pass(bright, rG); blur2(rG, rH, w >> 2, h >> 2); blur2(rG, rH, w >> 2, h >> 2);
+    }
+    u.tAnam.value = rE.texture; u.tDof.value = rG.texture;
     u.tScene.value = rScene.texture; u.tBloomA.value = rA.texture; u.tBloomB.value = rC.texture;
     u.uTime.value = G.time;
     pass(comp, null);
@@ -874,9 +920,13 @@ void main(){
     u.uVig.value = P.vig || 0; u.uGrain.value = P.grain || 0; u.uScan.value = P.scan || 0;
     u.uHalf.value = P.half || 0; u.uHalfSize.value = P.halfSize || 6; v3(u.uHalfColor, P.halfColor);
     u.uPoster.value = P.poster || 0;
+    u.uAnam.value = P.anam || 0; u.uAnamTint.value.set(...(P.anamTint || [1, 1, 1])); u.uDof.value = P.dof || 0;
+    rips.forEach(r => r.set(0, 0, 0, 0));
   }
+  function ripple(x, y, k) { const r = rips.reduce((a, b) => (a.w <= b.w ? a : b)); r.set(x, y, 0.0, k); }
+  function tick(dt) { for (const r of rips) if (r.w > 0) { r.z += dt * 0.85; r.w *= Math.exp(-dt * 3.2); if (r.w < 0.01) r.w = 0; } }
   resize();
-  return { render, set, resize };
+  return { render, set, resize, ripple, tick };
 })();
 
 // ── 하늘과 발밑 (쿼터뷰라 하늘은 거의 안 보이고, 아레나 바깥 아래쪽이 보인다) ──
@@ -910,11 +960,19 @@ void main(){
     vec3 lc = mix(uAcc, vec3(1.0, 0.25, 0.6), step(0.5, h2(id + 7.0)));
     c += lc * lit * down * (0.55 + 0.45 * sin(uTime * 2.0 + h2(id) * 30.0));
     c += uAcc * 0.18 * smoothstep(0.3, 0.0, abs(fract(p.x * 0.5) - 0.5)) * down;
-  } else if (uMode > 3.5) {                    // 4 파스텔 허공 + 별 (하이퍼 라이트)
+  } else if (uMode > 3.5 && uMode < 4.5) {     // 4 파스텔 허공 + 별 (하이퍼 라이트)
     float s = step(0.996, h2(floor(vDir.xz * 300.0 + vDir.y * 77.0)));
     c += vec3(1.0) * s * 0.8;
     float n = fbm(p * 0.6 + uTime * 0.01);
     c = mix(c, uAcc, smoothstep(0.55, 0.8, n) * down * 0.6);
+  } else if (uMode > 4.5) {                    // 5 검은 진흙과 붉은 맥 + 안개 (스프링 송)
+    float n = fbm(p * 1.4 + vec2(uTime * 0.015, -uTime * 0.01));
+    float vein = 1.0 - smoothstep(0.0, 0.03, abs(n - 0.5));
+    float n2 = fbm(p * 3.3 - uTime * 0.02);
+    vein = max(vein, (1.0 - smoothstep(0.0, 0.02, abs(n2 - 0.5))) * 0.5);
+    c = mix(c, vec3(0.0), down * 0.85);
+    c += uAcc * vein * down * (0.5 + 0.5 * sin(uTime * 1.8 + n * 14.0));
+    c += vec3(0.1, 0.14, 0.22) * smoothstep(0.55, 0.85, fbm(p * 0.5 + uTime * 0.01)) * down * 0.6;
   }
   gl_FragColor = vec4(c, 1.0);
 }` });
@@ -1040,6 +1098,33 @@ const FLOORS = {
       g.beginPath(); g.moveTo(-8, -8); g.lineTo(8, -8); g.lineTo(8, 8); g.moveTo(-8, 0); g.lineTo(0, 0); g.stroke(); g.restore();
     }
   },
+  springsong(g, rnd, u) {
+    disc(g, 16 * u, '#0e1016');
+    // 젖은 돌바닥: 어두운 청회색 판석, 틈은 거의 검다
+    slabs(g, rnd, u, 0.8, 15.6, 1.35, v => { const c = 34 + v * 18; return `rgb(${c - 5},${c},${c + 9})`; }, '#06070a');
+    // 달빛이 비친 물웅덩이 (차가운 흰빛 번짐)
+    for (let k = 0; k < 18; k++) {
+      const x = (rnd() - 0.5) * 24 * u, y = (rnd() - 0.5) * 24 * u, r = (0.8 + rnd() * 2) * u;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(170,200,255,0.26)'); gr.addColorStop(0.6, 'rgba(120,150,210,0.1)'); gr.addColorStop(1, 'rgba(120,150,210,0)');
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * (0.4 + rnd() * 0.3), rnd() * 3, 0, 7); g.fill();
+    }
+    // 가장자리에서 스며드는 검은 진흙과 붉은 맥
+    for (let k = 0; k < 26; k++) {
+      const a = rnd() * 7, rr = (12.5 + rnd() * 3.5) * u, x = Math.cos(a) * rr, y = Math.sin(a) * rr, r = (1.2 + rnd() * 2.4) * u;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,0.92)'); gr.addColorStop(0.7, 'rgba(0,0,0,0.6)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    g.lineCap = 'round'; g.shadowColor = '#ff1830';
+    for (let k = 0; k < 34; k++) {
+      const a = rnd() * 7; let rr = (12.8 + rnd() * 3) * u, x = Math.cos(a) * rr, y = Math.sin(a) * rr, d = a + Math.PI + (rnd() - 0.5);
+      g.strokeStyle = rnd() > 0.4 ? 'rgba(220,20,44,0.9)' : 'rgba(120,8,22,0.9)'; g.lineWidth = 1.5 + rnd() * 2.5; g.shadowBlur = 8;
+      g.beginPath(); g.moveTo(x, y);
+      for (let s2 = 0; s2 < 7; s2++) { d += (rnd() - 0.5) * 0.9; x += Math.cos(d) * 14; y += Math.sin(d) * 14; g.lineTo(x, y); }
+      g.stroke();
+    }
+    g.shadowBlur = 0;
+    const vg = g.createRadialGradient(0, 0, 7 * u, 0, 0, 16 * u); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,4,0.7)'); disc(g, 16 * u, vg);
+  },
   ascent(g, rnd, u) {
     disc(g, 16 * u, '#14161e');
     // 금속 판 격자 + 리벳 + 철망
@@ -1074,6 +1159,7 @@ const FLOORS = {
 function envToon(color, extra = {}) {
   const m = new THREE.MeshToonMaterial({ color, gradientMap: gradientTex, ...extra });
   m.onBeforeCompile = toonInject; m.customProgramCacheKey = () => 'lookToon';
+  m.userData.veinU = { value: 0 };
   return m;
 }
 function envMesh(geo, mat, outline = true) {
@@ -1192,6 +1278,44 @@ const PROPS = {
     }
     const under = new THREE.Mesh(new THREE.ConeGeometry(ARENA_R + 1.8, 11, 8, 1), envToon(0x5a4aa0)); under.rotation.x = Math.PI; under.position.y = -6.5; E.add(under);
   },
+  springsong(E) {
+    // 어둠 속 삼나무 숲 (실루엣), 석등, 부서진 돌기둥, 바깥만 덮는 안개, 달빛 줄기
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2 + (i % 3) * 0.13, R = ARENA_R + 5 + (i % 4) * 2.4, h = 9 + (i % 5) * 1.6;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R);
+      const trunk = envMesh(new THREE.CylinderGeometry(0.22, 0.38, h * 0.55, 7), envToon(0x15120f)); trunk.position.y = h * 0.27; g.add(trunk);
+      for (let k = 0; k < 3; k++) { const c = envMesh(new THREE.ConeGeometry(2.4 - k * 0.6, h * 0.42, 8), envToon(0x0c1412)); c.position.y = h * (0.42 + k * 0.2); g.add(c); }
+      E.add(g);
+    }
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + Math.PI / 4, R = ARENA_R + 0.7;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, 0, Math.sin(a) * R); g.rotation.y = -a;
+      const base = envMesh(new THREE.BoxGeometry(0.9, 0.3, 0.9), envToon(0x4a4e58)); base.position.y = 0.15; g.add(base);
+      const post = envMesh(new THREE.CylinderGeometry(0.16, 0.2, 1.0, 8), envToon(0x4a4e58)); post.position.y = 0.8; g.add(post);
+      const box = envMesh(new THREE.BoxGeometry(0.6, 0.5, 0.6), envToon(0x3a3e48)); box.position.y = 1.5; g.add(box);
+      const fire = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.26, 0.62), glowMat(0xff2a30, 0.8)); fire.position.y = 1.5; g.add(fire);
+      const cap = envMesh(new THREE.ConeGeometry(0.62, 0.45, 4), envToon(0x4a4e58)); cap.position.y = 1.97; cap.rotation.y = Math.PI / 4; g.add(cap);
+      const L = new THREE.PointLight(0xff2030, 2.2, 6, 1.6); L.position.y = 1.5; g.add(L);
+      E.userData.flicker.push({ L, base: 2.2, ph: i * 1.9 });
+      E.add(g);
+    }
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + 0.9, R = ARENA_R + 2.6, h = 2.5 + i;
+      const p = envMesh(new THREE.BoxGeometry(1, h, 1), envToon(0x5a5e68)); p.position.set(Math.cos(a) * R, h / 2 - 0.9, Math.sin(a) * R); p.rotation.set(0.25 * (i - 1), a, 0.2); E.add(p);
+    }
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2, R = ARENA_R + 0.4 + Math.random() * 1.2, s = 0.25 + Math.random() * 0.4;
+      const r = envMesh(new THREE.DodecahedronGeometry(s, 0), envToon(0x3a3e48)); r.position.set(Math.cos(a) * R, s * 0.5, Math.sin(a) * R); r.rotation.set(i, i * 2, 0); E.add(r);
+    }
+    const fogCv = document.createElement('canvas'); fogCv.width = fogCv.height = 256;
+    { const g = fogCv.getContext('2d'); for (let k = 0; k < 60; k++) { const x = Math.random() * 256, y = Math.random() * 256, r = 20 + Math.random() * 50; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); } }
+    const fogTex = new THREE.CanvasTexture(fogCv); fogTex.wrapS = fogTex.wrapT = THREE.RepeatWrapping; fogTex.repeat.set(3, 3);
+    for (let k = 0; k < 3; k++) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(ARENA_R + 0.5, 46, 64, 1), new THREE.MeshBasicMaterial({ map: fogTex, color: 0x7d93c8, transparent: true, opacity: 0.16 - k * 0.03, depthWrite: false, blending: THREE.AdditiveBlending }));
+      m.rotation.x = -Math.PI / 2; m.position.y = 0.3 + k * 1.4; E.add(m);
+      E.userData.float.push({ o: m, y: m.position.y, ph: k * 2, amp: 0.15, spinZ: 0.02 * (k % 2 ? 1 : -1) });
+    }
+  },
   ascent(E) {
     const signs = [['파동', '#ff3ca0'], ['LIVE', '#3ce6ff'], ['합', '#ff3ca0'], ['24시', '#3ce6ff'], ['무대', '#b07aff']];
     for (let i = 0; i < 10; i++) {
@@ -1291,6 +1415,15 @@ const LOOK_STYLES = {
       rim: { color: 0x7ff6ff, str: 0.6, pow: 2.4, self: 0, dir: [0, 1, 0], dirAmt: 0 }, shade: { color: 0x5a3ac0, amt: 0.55 },
       parts: { kind: 3, n: 160, size: 0.22, add: true, colors: [0x7ff6ff, 0xff8ac8, 0xffffff], r: 18, y0: 0, y1: 8, vy: 0.15, sway: 0.4 },
       post: { pixel: 3, bloom: 1.0, thresh: 0.6, sat: 1.15, con: 1.05, poster: 14, vig: 0.2 } } },
+  '스프링 송': {
+    ref: "Fate/stay night [Heaven's Feel] III. spring song (ufotable)", short: '극장판 · ufotable', bg: 0x06080e, ground: 0x05060a, floor: 0xffffff, stone: 0x4a4e58,
+    steps: [0.18, 0.52, 1], outline: 0x06070c, outlinePx: 1.3, hemi: 0.55, sun: 2.4,
+    look: { floor: 'springsong', props: 'springsong', ground: false, fx: true, sky: { mode: 5, top: 0x05070d, mid: 0x0d1220, bot: 0x020204, acc: 0xd0102a }, fog: [0x0a0e18, 24, 72],
+      hemiSky: 0x2a3a5a, hemiGround: 0x05060a, sunColor: 0xb4ceff, sunPos: [8, 20, -14],
+      rim: { color: 0xd4e4ff, str: 0.8, pow: 2.6, self: 0.25, dir: [0.4, 0.6, -0.7], dirAmt: 0.85 }, shade: { color: 0x1a2a4c, amt: 0.75 },
+      parts: { kind: 0, n: 260, size: 0.1, add: true, colors: [0xbfd4ff, 0xbfd4ff, 0xbfd4ff, 0xff2a3a], r: 20, y0: -1, y1: 9, vy: 0.35, sway: 0.5, alpha: 0.8 },
+      post: { bloom: 1.0, thresh: 0.56, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.7, ca: 1.3, grain: 0.05, vig: 0.7, sat: 1.08, con: 1.18, gamma: 0.95,
+        lift: [0, 0.008, 0.025], gain: [0.97, 1.0, 1.07], shTint: [0.3, 0.42, 0.58], hiTint: [0.62, 0.5, 0.46], split: 0.28 } } },
   '디 어센트': {
     ref: 'The Ascent (Neon Giant) · Ghostrunner', bg: 0x05070f, ground: 0x05070f, floor: 0xffffff, stone: 0x22263a, steps: [0.3, 0.7, 1], outline: 0x05060c, outlinePx: 1.6, hemi: 0.6, sun: 0.8,
     look: { floor: 'ascent', props: 'ascent', ground: false, sky: { mode: 3, top: 0x020308, mid: 0x0b0f24, bot: 0x07060f, acc: 0x3ce6ff }, fog: [0x0a0c1e, 26, 80],
@@ -1307,6 +1440,7 @@ const lookLights = [];
 function applyLook() {
   const L = style.look;
   if (lookEnv) { disposeTree(lookEnv); lookEnv = null; }
+  if (cine.on) cineSet(false);
   stoneGroup.visible = !L;
   ground.visible = !L || L.ground;
   dome.visible = !!L;
@@ -1333,10 +1467,12 @@ function applyLook() {
   arena.add(lookEnv);
   setParticles(L.parts);
   POST.set(L.post); postOn = CFG.postOn !== false;
+  if (L.fx) cineSet(true);
 }
 // 매 프레임: 입자, 불꽃 깜빡임, 떠 있는 소품
 function lookTick(dt) {
-  domeMat.uniforms.uTime.value = G.time; partMat2.uniforms.uTime.value = G.time;
+  domeMat.uniforms.uTime.value = G.time; partMat2.uniforms.uTime.value = G.time; LOOKU.time.value = G.time;
+  cineTick(dt); POST.tick(dt);
   OUTU.res.value.set(innerWidth, innerHeight);
   OUTU.px.value = style.outlinePx * Math.max(0.75, innerHeight / 720);
   if (partSpec && parts2.visible && dt > 0) {
@@ -1358,7 +1494,7 @@ function lookTick(dt) {
     if (f.fire) f.fire.scale.set(1, 0.85 + 0.2 * Math.sin(t * 17 + f.ph), 1);
     if (f.sign) f.sign.material.opacity = Math.sin(t * 0.7 + f.ph) > -0.92 || Math.sin(t * 40) > 0 ? 1 : 0.25;
   }
-  for (const o of U.float) { o.o.position.y = o.y + Math.sin(t * 0.6 + o.ph) * o.amp; if (o.spin) o.o.rotation.y += o.spin * dt; }
+  for (const o of U.float) { o.o.position.y = o.y + Math.sin(t * 0.6 + o.ph) * o.amp; if (o.spin) o.o.rotation.y += o.spin * dt; if (o.spinZ) o.o.rotation.z += o.spinZ * dt; }
   for (const o of U.pulse) { const k = 1 + Math.max(0, Math.sin(t * 8 + o.ph)) * 0.12; o.o.scale.set(k, 1, k); }
 }
 function renderLook() {
@@ -1368,7 +1504,7 @@ function renderLook() {
 addEventListener('resize', () => { POST.resize(); if (style.look) POST.set(style.look.post); });
 
 // 타이틀 화면 고르기
-const LOOK_PICKS = ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트'];
+const LOOK_PICKS = ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트', '스프링 송'];
 function setLook(name) {
   CFG.style = name; applyStyle();
   document.querySelectorAll('#lookPicks .pick').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.look === name)));
@@ -1379,9 +1515,230 @@ function setLook(name) {
   for (const name of LOOK_PICKS) {
     const b = document.createElement('button');
     b.className = 'pick'; b.type = 'button'; b.dataset.look = name; b.setAttribute('aria-pressed', String(name === CFG.style));
-    b.innerHTML = name + (STYLES[name].ref ? `<small>${STYLES[name].ref.split(' (')[0]}</small>` : '<small>지금 그대로</small>');
+    b.innerHTML = name + (STYLES[name].ref ? `<small>${STYLES[name].short || STYLES[name].ref.split(' (')[0]}</small>` : '<small>지금 그대로</small>');
     b.addEventListener('click', () => setLook(name));
     row.appendChild(b);
+  }
+}
+
+// ───────────────────────── [알파] 극장판 연출 (스프링 송 벤치마크) ─────────────────────────
+// 캐릭터 디자인은 가져오지 않는다. 가져오는 건 화면 문법: 달빛 역광, 검게 물든 기사(붉은 맥 + 검은 연기),
+// 빛의 궤적, 충돌 순간의 불꽃·파편·흙먼지·충격파 왜곡, 아나모픽 빛 번짐, 가장자리 흐림, 필름 입자.
+// 부드러운 점 입자: 크기·투명도·색이 점마다 다르다 (흙먼지, 검은 연기, 붉은 불티)
+class FxPoints {
+  constructor(max, additive) {
+    this.max = max; this.n = 0; this.items = [];
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
+    g.setAttribute('aSize', new THREE.BufferAttribute(new Float32Array(max), 1));
+    g.setAttribute('aAlpha', new THREE.BufferAttribute(new Float32Array(max), 1));
+    g.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
+    this.geo = g;
+    this.mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+      uniforms: { uScale: { value: 500 } },
+      vertexShader: `attribute float aSize, aAlpha; attribute vec3 aCol; varying float vA; varying vec3 vC; varying float vSeed; uniform float uScale;
+void main(){ vA = aAlpha; vC = aCol; vSeed = fract(position.x * 13.1 + position.z * 7.7); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = aSize * uScale / -mv.z; }`,
+      fragmentShader: `varying float vA; varying vec3 vC; varying float vSeed;
+void main(){ vec2 p = gl_PointCoord - 0.5; float r = length(p);
+  float edge = 0.5 - 0.08 * sin(atan(p.y, p.x) * 5.0 + vSeed * 30.0);
+  float a = smoothstep(edge, edge * 0.25, r) * vA; if (a < 0.003) discard; gl_FragColor = vec4(vC, a); }`,
+    });
+    this.pts = new THREE.Points(g, this.mat); this.pts.frustumCulled = false;
+  }
+  spawn(pos, vel, size, grow, life, color, alpha, drag = 1.5, grav = 0) {
+    if (this.items.length >= this.max) this.items.shift();
+    this.items.push({ p: pos.clone(), v: vel.clone(), size, grow, life, t: 0, c: new THREE.Color(color), a: alpha, drag, grav });
+  }
+  update(dt) {
+    const P = this.geo.attributes.position.array, S = this.geo.attributes.aSize.array, A = this.geo.attributes.aAlpha.array, C = this.geo.attributes.aCol.array;
+    this.items = this.items.filter(it => (it.t += dt) < it.life);
+    this.items.forEach((it, i) => {
+      it.v.multiplyScalar(Math.exp(-it.drag * dt)); it.v.y += it.grav * dt; it.p.addScaledVector(it.v, dt);
+      const k = it.t / it.life;
+      P[i * 3] = it.p.x; P[i * 3 + 1] = it.p.y; P[i * 3 + 2] = it.p.z;
+      S[i] = it.size + it.grow * it.t; A[i] = it.a * Math.min(1, it.t * 12) * (1 - k) * (1 - k);
+      C[i * 3] = it.c.r; C[i * 3 + 1] = it.c.g; C[i * 3 + 2] = it.c.b;
+    });
+    this.geo.setDrawRange(0, this.items.length);
+    for (const k of ['position', 'aSize', 'aAlpha', 'aCol']) this.geo.attributes[k].needsUpdate = true;
+    this.mat.uniforms.uScale.value = innerHeight * 0.9;
+  }
+  clear() { this.items.length = 0; this.geo.setDrawRange(0, 0); }
+}
+
+// 빛의 궤적: 지나간 자리를 카메라 쪽으로 펼친 띠. 가운데는 하얗게, 가장자리는 자기 색
+class Trail {
+  constructor(color, width, n = 22, additive = true) {
+    this.n = n; this.w = width; this.hist = [];
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 2 * 3), 3));
+    g.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(n * 2), 1));
+    g.setAttribute('aV', new THREE.BufferAttribute(new Float32Array(n * 2).map((_, i) => (i & 1 ? 1 : -1)), 1));
+    const idx = [];
+    for (let i = 0; i < n - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    g.setIndex(idx);
+    this.geo = g;
+    this.mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+      uniforms: { uColor: { value: new THREE.Color(color) } },
+      vertexShader: 'attribute float aA, aV; varying float vA, vV; void main(){ vA = aA; vV = aV; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: `uniform vec3 uColor; varying float vA, vV;
+void main(){ float e = 1.0 - abs(vV); vec3 c = mix(uColor, vec3(1.0), pow(e, 5.0) * 0.85); gl_FragColor = vec4(c, vA * pow(e, 0.7)); }`,
+    });
+    this.mesh = new THREE.Mesh(g, this.mat); this.mesh.frustumCulled = false;
+  }
+  push(p, s) { this.hist.unshift({ p: p.clone(), s }); if (this.hist.length > this.n) this.hist.pop(); }
+  build() {
+    const P = this.geo.attributes.position.array, A = this.geo.attributes.aA.array, H = this.hist, n = this.n;
+    const cam = camera.position, side = V(), tan = V(), view = V();
+    for (let i = 0; i < n; i++) {
+      const h = H[Math.min(i, H.length - 1)];
+      if (!h) { A[i * 2] = A[i * 2 + 1] = 0; continue; }
+      const last = H.length - 1, a = H[Math.min(last, Math.max(0, i - 1))].p, b = H[Math.min(last, i + 1)].p;
+      tan.subVectors(a, b); view.subVectors(cam, h.p);
+      side.crossVectors(tan, view); if (side.lengthSq() < 1e-8) side.set(0, 1, 0); side.normalize();
+      const k = i / (n - 1), w = this.w * (1 - k * 0.85);
+      P[i * 6] = h.p.x + side.x * w; P[i * 6 + 1] = h.p.y + side.y * w; P[i * 6 + 2] = h.p.z + side.z * w;
+      P[i * 6 + 3] = h.p.x - side.x * w; P[i * 6 + 4] = h.p.y - side.y * w; P[i * 6 + 5] = h.p.z - side.z * w;
+      const al = i < H.length ? h.s * Math.pow(1 - k, 1.6) : 0;
+      A[i * 2] = A[i * 2 + 1] = al;
+    }
+    this.geo.attributes.position.needsUpdate = true; this.geo.attributes.aA.needsUpdate = true;
+  }
+}
+
+// 바닥 균열 무늬 (보스 내려찍기 자리)
+const crackTex = (() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256; const g = cv.getContext('2d');
+  g.translate(128, 128); g.lineCap = 'round';
+  let sd = 3; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+  for (const [lw, col, blur] of [[7, 'rgba(0,0,0,0.85)', 0], [2.2, 'rgba(255,40,60,0.95)', 10]]) {
+    g.lineWidth = lw; g.strokeStyle = col; g.shadowColor = '#ff1830'; g.shadowBlur = blur; sd = 3;
+    for (let k = 0; k < 9; k++) {
+      let a = (k / 9) * Math.PI * 2 + r() * 0.5, x = 0, y = 0; g.beginPath(); g.moveTo(0, 0);
+      for (let s = 0; s < 6; s++) { a += (r() - 0.5) * 0.9; const L = 10 + r() * 16; x += Math.cos(a) * L; y += Math.sin(a) * L; g.lineTo(x, y); }
+      g.stroke();
+    }
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+
+const cine = { on: false, dust: new FxPoints(260, false), smoke: new FxPoints(320, false), glow: new FxPoints(220, true), trails: [], debris: [], cracks: [], light: null, auraT: 0 };
+for (const s of [cine.dust, cine.smoke, cine.glow]) { s.pts.visible = false; scene.add(s.pts); }
+const debrisGeo = new THREE.DodecahedronGeometry(0.13, 0), debrisMat = envToon(0x30333c);
+function cineSet(on) {
+  cine.on = on;
+  const B = G.boss, U = B.bodyMat.userData.veinU;
+  if (U) U.value = on ? 1 : 0;
+  B.armMats.forEach(m => m.userData.veinU && (m.userData.veinU.value = on ? 1 : 0));
+  for (const s of [cine.dust, cine.smoke, cine.glow]) { s.pts.visible = on; s.clear(); }
+  if (cine.light) { cine.light.parent?.remove(cine.light); cine.light = null; }
+  cine.trails.forEach(t => { t.mesh.parent?.remove(t.mesh); t.geo.dispose(); t.mat.dispose(); }); cine.trails = [];
+  cine.debris.forEach(d => scene.remove(d.m)); cine.debris = [];
+  cine.cracks.forEach(c => { scene.remove(c.m); c.m.material.dispose(); }); cine.cracks = [];
+  if (!on) return;
+  cine.light = new THREE.PointLight(0xff1a2a, 7, 11, 1.6); cine.light.position.set(0, 1.6, 0); B.root.add(cine.light);
+  const lighter = c => new THREE.Color(c).lerp(new THREE.Color(0xffffff), 0.25);
+  for (const p of G.players) {
+    const blade = new Trail(lighter(p.color), p.char.key === 'moru' ? 0.38 : 0.26, 18), body = new Trail(p.color, 0.42, 14);
+    blade.owner = p; blade.kind = 'blade'; body.owner = p; body.kind = 'body';
+    cine.trails.push(blade, body);
+  }
+  for (const k of [0, 1]) { const t = new Trail(0xff2238, 0.5, 16); t.owner = B; t.kind = 'fist'; t.arm = k; cine.trails.push(t); }
+  cine.trails.forEach(t => scene.add(t.mesh));
+}
+const tipLocal = { moru: V(0.62, 0, 1.3), jebi: V(0.44, 0, 1.65) };
+function cineTick(dt) {
+  if (!cine.on) return;
+  const B = G.boss;
+  // 보스 오라: 검은 연기가 피어오르고, 붉은 불티가 섞인다. 예비 동작 중엔 짙어진다
+  if (!B.dead && dt > 0) {
+    const winding = B.state === 'windup', rate = winding ? 70 : 34;
+    cine.auraT += dt * rate;
+    while (cine.auraT > 1) {
+      cine.auraT--;
+      const a = Math.random() * Math.PI * 2, r = 0.7 + Math.random() * 0.9;
+      const p = V(B.pos.x + Math.cos(a) * r, B.pos.y + 0.3 + Math.random() * 2.8, B.pos.z + Math.sin(a) * r);
+      cine.smoke.spawn(p, V(Math.cos(a) * 0.4, 1.0 + Math.random() * 0.8, Math.sin(a) * 0.4), 0.7 + Math.random() * 0.6, 1.4, 1.1 + Math.random() * 0.6, 0x030306, 0.55, 1.2);
+      if (Math.random() < (winding ? 0.35 : 0.15)) cine.glow.spawn(p, V((Math.random() - 0.5) * 0.6, 1.4 + Math.random(), (Math.random() - 0.5) * 0.6), 0.12, 0, 0.9, 0xff2a3a, 0.9, 0.6);
+    }
+    cine.light.intensity = (winding ? 10 : 6) + Math.sin(G.time * 9) * 1.2;
+  }
+  for (const s of [cine.dust, cine.smoke, cine.glow]) s.update(dt);
+  // 궤적
+  for (const t of cine.trails) {
+    const o = t.owner;
+    if (t.kind === 'fist') {
+      const A = B.atk, swing = (B.state === 'windup' && A && B.t / A.windup > 0.55) || B.state === 'active' || (B.state === 'recover' && B.t > 0.3);
+      t.push(B.arms[t.arm].localToWorld(V(0, -1.1, 0.25)), swing && !B.dead ? 0.9 : 0);
+    } else if (!o.root.visible || !o.alive) t.push(o.pos.clone().setY(1), 0);
+    else if (t.kind === 'blade') {
+      const s = o.state === 'attack' ? (o.hitDone ? Math.max(0, 1 - (o.t - o.windup) / 0.18) : 1) : o.state === 'charge' && o.chargeFull ? 0.5 : 0;
+      t.push(o.arm.localToWorld(tipLocal[o.char.key]?.clone() || V(0.5, 0, 1.4)), s);
+    } else {
+      const s = o.state === 'dodge' || o.state === 'cover' ? 1 : 0;
+      t.push(o.pos.clone().setY(o.root.position.y + 1.0), s);
+    }
+    t.build();
+  }
+  // 파편: 튀어 올랐다가 바닥에서 튕기고 사라진다
+  cine.debris = cine.debris.filter(d => {
+    d.t += dt; d.v.y -= 24 * dt; d.m.position.addScaledVector(d.v, dt);
+    d.m.rotation.x += d.spin * dt; d.m.rotation.z += d.spin * 0.7 * dt;
+    if (d.m.position.y < 0.08) { d.m.position.y = 0.08; d.v.y *= -0.35; d.v.x *= 0.6; d.v.z *= 0.6; d.spin *= 0.5; }
+    d.m.scale.setScalar(d.s * Math.min(1, (1.6 - d.t) * 2));
+    if (d.t > 1.6) { scene.remove(d.m); return false; }
+    return true;
+  });
+  cine.cracks = cine.cracks.filter(c => {
+    c.t += dt; c.m.material.opacity = Math.min(1, c.t * 10) * Math.max(0, 1 - (c.t - 1.2) / 1.6);
+    if (c.t > 2.8) { scene.remove(c.m); c.m.material.dispose(); return false; }
+    return true;
+  });
+}
+function spawnDebris(pos, n, up, out) {
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(debrisGeo, debrisMat); m.castShadow = true;
+    const a = Math.random() * Math.PI * 2, s = 0.6 + Math.random() * 1.4;
+    m.position.set(pos.x + Math.cos(a) * 0.4, 0.15, pos.z + Math.sin(a) * 0.4);
+    scene.add(m);
+    cine.debris.push({ m, s, t: 0, spin: (Math.random() - 0.5) * 20, v: V(Math.cos(a) * out * (0.5 + Math.random()), up * (0.6 + Math.random() * 0.7), Math.sin(a) * out * (0.5 + Math.random())) });
+  }
+}
+function spawnDust(pos, n, speed, size, color = 0x6a7488) {
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+    cine.dust.spawn(V(pos.x + Math.cos(a) * 0.5, 0.25 + Math.random() * 0.3, pos.z + Math.sin(a) * 0.5),
+      V(Math.cos(a) * speed * (0.6 + Math.random() * 0.6), 0.4 + Math.random() * 0.8, Math.sin(a) * speed * (0.6 + Math.random() * 0.6)), size, size * 1.6, 0.9 + Math.random() * 0.6, color, 0.42, 2.6);
+  }
+}
+function rippleAt(pos, k) {
+  const s = pos.clone().project(camera);
+  if (Math.abs(s.x) < 1.2 && Math.abs(s.y) < 1.2) POST.ripple(s.x * 0.5 + 0.5, s.y * 0.5 + 0.5, k);
+}
+// 판정 쪽에서 부르는 연출 훅. 이 룩이 아니면 아무 일도 안 한다
+function cineFx(kind, pos) {
+  if (!cine.on || !pos) return;
+  const ground = pos.clone().setY(0);
+  if (kind === 'clash') {         // 받아낸 순간: 흰 불꽃 + 붉은 불꽃, 흙먼지 고리, 작은 파편
+    burst(pos, 0xffffff, 22, 14, true); burst(pos, 0xff4a52, 10, 10, true);
+    cine.glow.spawn(pos, V(), 2.6, 4, 0.16, 0xcfe0ff, 0.9, 0);
+    spawnDust(ground, 12, 5, 0.9); spawnDebris(ground, 5, 6, 3); rippleAt(pos, 0.9);
+  } else if (kind === 'slam') {   // 보스 내려찍기: 큰 파편, 흙먼지, 검은 진흙 튐, 붉은 균열
+    spawnDebris(ground, 16, 10, 5); spawnDust(ground, 22, 7, 1.3);
+    for (let i = 0; i < 10; i++) { const a = Math.random() * 7; cine.smoke.spawn(V(pos.x + Math.cos(a), 0.4, pos.z + Math.sin(a)), V(Math.cos(a) * 3, 2 + Math.random() * 2, Math.sin(a) * 3), 0.9, 1.6, 0.9, 0x020204, 0.7, 2); }
+    for (let i = 0; i < 18; i++) { const a = Math.random() * 7; cine.glow.spawn(V(pos.x, 0.3, pos.z), V(Math.cos(a) * (3 + Math.random() * 5), 2 + Math.random() * 4, Math.sin(a) * (3 + Math.random() * 5)), 0.14, 0, 0.7, 0xff2a3a, 1, 1.2, -9); }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), new THREE.MeshBasicMaterial({ map: crackTex, transparent: true, depthWrite: false, opacity: 0 }));
+    m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6; m.position.set(pos.x, 0.03, pos.z); scene.add(m);
+    cine.cracks.push({ m, t: 0 });
+    rippleAt(pos, 1.3);
+  } else if (kind === 'hap') {    // 합: 크게 일그러지고, 붉은·흰 불꽃이 사방으로
+    burst(pos, 0xffffff, 18, 16, true); burst(pos, 0xff3a48, 16, 12, true);
+    cine.glow.spawn(pos, V(), 4, 7, 0.22, 0xffffff, 0.85, 0);
+    spawnDust(ground, 16, 6, 1.1); spawnDebris(ground, 8, 8, 4); rippleAt(pos, 1.6);
+  } else if (kind === 'hit') {
+    burst(pos, 0xffffff, 6, 9, true); cine.glow.spawn(pos, V(), 0.9, 2, 0.1, 0xcfe0ff, 0.7, 0); rippleAt(pos, 0.2);
   }
 }
 
@@ -2424,6 +2781,7 @@ class Boss {
       if (A.kind === 'midSlam') { this.pos.x = A.center.x; this.pos.z = A.center.z; this.root.position.y = 0; }
       G.shake = Math.max(G.shake, 0.35); SFX.slam();
       fxRing(A.center, 0xffffff, 0.5, A.radius + 0.6, 0.35, 0.5);
+      cineFx('slam', A.center);
       if (A.kind === 'chain') return this.chainStrike(A);
       const receivers = this.resolveArea(A);
       if (receivers.length) return onReceived(receivers);
@@ -2751,6 +3109,7 @@ function receiveFeedback(list) {
   G.stats.receive++; if (perfect) G.stats.perfectReceive++; if (best === 'strong') G.stats.fitReceive++;
   addMom(perfect ? CFG.momPerfectReceive : CFG.momReceive);
   const r0 = receivers[0], contact = r0.pos.clone().lerp(B.pos, 0.45).setY(1.2);
+  cineFx('clash', contact);
   const newFx = CFG.fx !== '기존';
   if (perfect) {
     newFx ? SFX.rcvVoice(VOICE[r0.idx], true) : SFX.perfectRcv();
@@ -2881,6 +3240,7 @@ function doHap(p, grade, dtr, dmg, rel = 0, aim = 0) {
   const B = G.boss, perfect = grade === 'perfect', full = aim >= 0.99;
   clearAim(p);
   const weakPos = B.pos.clone().addScaledVector(B.openDir, B.R * 0.95).setY(2.1);
+  cineFx('hap', weakPos);
   const unison = CFG.momOn && G.mom >= 100 && (perfect || !CFG.unisonNeedsPerfect);
   // 노림은 합·합기 어느 쪽에도 실린다 (dmg에는 부른 쪽에서 이미 노림이 들어 있다)
   let mul = (perfect ? CFG.perfectHapMul : CFG.hapMul) + aim * CFG.aimBonusMul;
@@ -3101,6 +3461,7 @@ function playerHitsBoss(p) {
   SFX.hit();
   const hitPoint = p.pos.clone().lerp(B.pos, 0.5).setY(1.5);
   burst(hitPoint, 0xffffff, 5, 4);
+  cineFx('hit', hitPoint);
   popText(hitPoint, String(base), 'dmg', 0.5);
   G.recentHits.push({ p, time: G.now, base, aim: CFG.aimOn ? p.aim : 0 });
   addGroggy(CFG.grogHit);
