@@ -321,6 +321,7 @@ td:first-child { color: var(--ink-dim); }
       <span>원정 <kbd>U</kbd></span>
       <button class="pick" type="button" id="draftBtn" aria-pressed="true">유물 고르기<small>마당마다 3개 중 1개</small></button>
     </div>
+    <div class="picks" id="lookPicks"><span>화면 <kbd>H</kbd></span></div>
     <p class="note">원정: 세 마당(고른 상대 → 나머지 둘)을 이어서 싸워요. 마당에 들어가기 전에 <strong>유물</strong>을 하나씩 골라요. 유물은 숫자를 올리지 않고 <strong>규칙</strong>을 바꿔요. 마당이 끝나면 그 마당에서 가장 좋았던 합을 <strong>다시 보여 줘요</strong>.</p>
     <div class="table-wrap">
       <table>
@@ -413,6 +414,7 @@ const CFG = {
   bossTempo: 1.0,
   respawn: 6,
   style: '기본 툰',
+  postOn: true,          // [알파] 레퍼런스 룩의 후처리 (블룸·붓 질감·망점 등)
   // 합 연출 (A 세션)
   fx: '새 연출',         // '기존'으로 바꾸면 이전 연출과 비교할 수 있다
   freezePerfect: 0.3,    // 완벽한 합 정지 시간 (실제 초)
@@ -634,6 +636,7 @@ let gradientTex = makeGradient(style.steps);
 const toonMats = [], outlineList = [];
 function toon(color, extra = {}) {
   const m = new THREE.MeshToonMaterial({ color, gradientMap: gradientTex, ...extra });
+  m.onBeforeCompile = toonInject; m.customProgramCacheKey = () => 'lookToon'; // [알파] 레퍼런스 룩: 림·그림자 색
   toonMats.push(m);
   return m;
 }
@@ -645,9 +648,9 @@ function outlined(geo, mat) {
   const group = new THREE.Group();
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = true;
-  const om = new THREE.MeshBasicMaterial({ color: style.outline, side: THREE.BackSide });
+  outNormals(geo);
+  const om = outlineMat(style.outline); // [알파] 화면 픽셀 기준 굵기
   const o = new THREE.Mesh(geo, om);
-  o.scale.setScalar(style.outlineScale);
   outlineList.push({ mat: om, mesh: o });
   group.add(mesh, o);
   return { group, mesh, outlineMat: om };
@@ -663,13 +666,14 @@ const groundMat = new THREE.MeshBasicMaterial({ color: style.ground });
 const ground = new THREE.Mesh(new THREE.CircleGeometry(90, 48), groundMat);
 ground.rotation.x = -Math.PI / 2; ground.position.y = -1.0; arena.add(ground);
 const floorMat = toon(style.floor);
+floorMat.userData.noRim = true;
 const floor = new THREE.Mesh(new THREE.CylinderGeometry(ARENA_R + 1, ARENA_R + 1.8, 1, 72), floorMat);
 floor.position.y = -0.5; floor.receiveShadow = true; arena.add(floor);
 for (const [r, op] of [[ARENA_R, 0.22], [9.5, 0.07], [5, 0.07]]) {
   const ring = new THREE.Mesh(new THREE.RingGeometry(r - 0.12, r + 0.12, 96), basicT(0xffffff, op));
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; arena.add(ring);
 }
-const stoneMats = [];
+const stoneMats = [], stoneGroup = new THREE.Group(); arena.add(stoneGroup);
 for (let i = 0; i < 11; i++) {
   const a = (i / 11) * Math.PI * 2 + 0.3;
   const h = 2.5 + ((i * 7) % 5) * 0.8;
@@ -677,8 +681,710 @@ for (let i = 0; i < 11; i++) {
   const p = outlined(new THREE.CylinderGeometry(0.7, 0.95, h, 7), m);
   p.group.position.set(Math.cos(a) * (ARENA_R + 3.4), h / 2 - 0.9, Math.sin(a) * (ARENA_R + 3.4));
   p.group.rotation.y = a;
-  arena.add(p.group);
+  stoneGroup.add(p.group);
 }
+
+// ───────────────────────── [알파] 레퍼런스 룩 ─────────────────────────
+// 실제 게임 여섯 개의 화면 문법을 따라 만든 룩. 판정 색(주황 예고, 보라 받기 불가, 금색 합)은 건드리지 않는다.
+// 룩 = 툰 명암 + 림 + 그림자 색 + 외곽선 굵기 + 후처리 + 하늘/발밑 + 바닥 그림 + 소품 + 빛 + 떠다니는 입자.
+const LOOKU = {
+  rimColor: { value: new THREE.Color(0xffffff) }, rimStr: { value: 0 }, rimPow: { value: 3 }, rimSelf: { value: 0 },
+  rimDir: { value: V(0, 1, 0) }, rimDirAmt: { value: 0 },
+  shadeColor: { value: new THREE.Color(0x000000) }, shadeAmt: { value: 0 }, sunI: { value: 2.4 },
+};
+function toonInject(shader) {
+  Object.assign(shader.uniforms, {
+    uRimColor: LOOKU.rimColor, uRimStr: LOOKU.rimStr, uRimPow: LOOKU.rimPow, uRimSelf: LOOKU.rimSelf,
+    uRimDir: LOOKU.rimDir, uRimDirAmt: LOOKU.rimDirAmt, uShadeColor: LOOKU.shadeColor, uShadeAmt: LOOKU.shadeAmt, uSunI: LOOKU.sunI,
+    uRimMul: { value: this.userData.noRim ? 0 : 1 },
+  });
+  shader.fragmentShader = shader.fragmentShader
+    .replace('#include <common>', `#include <common>
+uniform vec3 uRimColor, uShadeColor, uRimDir; uniform float uRimStr, uRimPow, uRimSelf, uRimDirAmt, uShadeAmt, uSunI, uRimMul;`)
+    .replace('#include <opaque_fragment>', `{
+  // 그림자 쪽 색 이동: 직사광을 얼마나 받는지로 판단 (툰 단계가 그대로 경계가 된다)
+  float litK = dot(reflectedLight.directDiffuse, vec3(0.3333)) / max(dot(diffuseColor.rgb, vec3(0.3333)) * uSunI, 1e-3);
+  float shadeK = 1.0 - smoothstep(0.05, 0.35, litK);
+  outgoingLight = mix(outgoingLight, outgoingLight * uShadeColor * 2.2 + uShadeColor * 0.06, shadeK * uShadeAmt);
+  // 림: 가장자리에서 딱 끊기는 띠 (툰식), 방향을 주면 한쪽에서만
+  vec3 vdir = normalize(vViewPosition);
+  float fr = pow(1.0 - clamp(dot(normal, vdir), 0.0, 1.0), uRimPow);
+  fr = smoothstep(0.32, 0.42, fr);
+  vec3 rdv = normalize((viewMatrix * vec4(uRimDir, 0.0)).xyz);
+  fr *= mix(1.0, smoothstep(-0.15, 0.45, dot(normal, rdv)), uRimDirAmt);
+  vec3 rc = mix(uRimColor, diffuseColor.rgb * 1.8 + 0.15, uRimSelf);
+  outgoingLight += rc * fr * uRimStr * uRimMul;
+}
+#include <opaque_fragment>`);
+}
+
+// 외곽선: 뒤집은 껍데기를 화면 픽셀 단위로 밀어낸다 → 물체 크기와 상관없이 같은 굵기
+const OUTU = { px: { value: 2.5 }, res: { value: new THREE.Vector2(1280, 720) } };
+function outNormals(geo) {
+  if (geo.userData.outN) return;
+  geo.userData.outN = true;
+  const pos = geo.attributes.position, nor = geo.attributes.normal, n = pos.count, acc = new Map();
+  const key = i => `${Math.round(pos.getX(i) * 1e3)},${Math.round(pos.getY(i) * 1e3)},${Math.round(pos.getZ(i) * 1e3)}`;
+  for (let i = 0; i < n; i++) {
+    const k = key(i), a = acc.get(k) || [0, 0, 0];
+    a[0] += nor.getX(i); a[1] += nor.getY(i); a[2] += nor.getZ(i); acc.set(k, a);
+  }
+  const out = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const a = acc.get(key(i)), l = Math.hypot(a[0], a[1], a[2]) || 1;
+    out[i * 3] = a[0] / l; out[i * 3 + 1] = a[1] / l; out[i * 3 + 2] = a[2] / l;
+  }
+  geo.setAttribute('aOutN', new THREE.BufferAttribute(out, 3));
+}
+function outlineMat(color) {
+  const m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
+  m.onBeforeCompile = shader => {
+    shader.uniforms.uOutPx = OUTU.px; shader.uniforms.uOutRes = OUTU.res;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec3 aOutN; uniform float uOutPx; uniform vec2 uOutRes;')
+      .replace('#include <project_vertex>', `#include <project_vertex>
+  vec3 oN = normalize(normalMatrix * aOutN);
+  vec2 oD = (projectionMatrix * vec4(oN, 0.0)).xy;
+  oD = length(oD) > 1e-5 ? normalize(oD) : vec2(0.0);
+  gl_Position.xy += oD * uOutPx * 2.0 / uOutRes * gl_Position.w;`);
+  };
+  m.customProgramCacheKey = () => 'lookOutline';
+  return m;
+}
+
+// ── 후처리 ──
+const POST = (() => {
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
+  const qScene = new THREE.Scene(); qScene.add(quad);
+  const qCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
+  const canFloat = renderer.capabilities.isWebGL2 && renderer.extensions.has('EXT_color_buffer_float');
+  const type = canFloat ? THREE.HalfFloatType : THREE.UnsignedByteType;
+  const rt = (o = {}) => new THREE.WebGLRenderTarget(4, 4, { type, depthBuffer: false, ...o });
+  const rScene = rt({ depthBuffer: true, samples: 4 });
+  const rA = rt(), rB = rt(), rC = rt(), rD = rt();
+  const bright = new THREE.ShaderMaterial({
+    uniforms: { tSrc: { value: null }, uTexel: { value: new THREE.Vector2() }, uThresh: { value: 0.7 } }, vertexShader: VS,
+    fragmentShader: `uniform sampler2D tSrc; uniform vec2 uTexel; uniform float uThresh; varying vec2 vUv;
+void main(){ vec3 c = vec3(0.0);
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) c += texture2D(tSrc, vUv + vec2(i, j) * uTexel).rgb;
+  c /= 9.0; float l = max(c.r, max(c.g, c.b));
+  float k = smoothstep(uThresh, uThresh + 0.25, l);
+  gl_FragColor = vec4(c * k, 1.0); }` });
+  const blur = new THREE.ShaderMaterial({
+    uniforms: { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } }, vertexShader: VS,
+    fragmentShader: `uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv;
+void main(){ vec3 c = texture2D(tSrc, vUv).rgb * 0.2270;
+  c += (texture2D(tSrc, vUv + uDir * 1.3846).rgb + texture2D(tSrc, vUv - uDir * 1.3846).rgb) * 0.3162;
+  c += (texture2D(tSrc, vUv + uDir * 3.2308).rgb + texture2D(tSrc, vUv - uDir * 3.2308).rgb) * 0.0703;
+  gl_FragColor = vec4(c, 1.0); }` });
+  const comp = new THREE.ShaderMaterial({
+    uniforms: {
+      tScene: { value: null }, tBloomA: { value: null }, tBloomB: { value: null }, uRes: { value: new THREE.Vector2() }, uTime: { value: 0 },
+      uKuwa: { value: 0 }, uPixel: { value: 0 }, uCA: { value: 0 }, uBloom: { value: 0 }, uSat: { value: 1 }, uCon: { value: 1 }, uGamma: { value: 1 },
+      uLift: { value: new THREE.Vector3() }, uGain: { value: new THREE.Vector3(1, 1, 1) }, uShTint: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+      uHiTint: { value: new THREE.Vector3(0.5, 0.5, 0.5) }, uSplit: { value: 0 }, uVig: { value: 0 }, uGrain: { value: 0 }, uScan: { value: 0 },
+      uHalf: { value: 0 }, uHalfSize: { value: 6 }, uHalfColor: { value: new THREE.Vector3() }, uPoster: { value: 0 }, uDpr: { value: 1 },
+    },
+    vertexShader: VS,
+    fragmentShader: `uniform sampler2D tScene, tBloomA, tBloomB; uniform vec2 uRes; uniform float uTime, uKuwa, uPixel, uCA, uBloom, uSat, uCon, uGamma,
+  uSplit, uVig, uGrain, uScan, uHalf, uHalfSize, uPoster, uDpr; uniform vec3 uLift, uGain, uShTint, uHiTint, uHalfColor; varying vec2 vUv;
+vec3 toS(vec3 c){ c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+// 쿠와하라: 네 구역 중 가장 고른 구역의 평균 → 붓으로 칠한 면처럼 뭉친다 (하데스·데스 도어)
+vec3 kuwa(vec2 uv){
+  vec2 t = 1.0 / uRes; vec3 m0 = vec3(0.0), m1 = vec3(0.0), m2 = vec3(0.0), m3 = vec3(0.0), s0 = vec3(0.0), s1 = vec3(0.0), s2 = vec3(0.0), s3 = vec3(0.0);
+  for (int j = 0; j <= 2; j++) for (int i = 0; i <= 2; i++) {
+    vec3 a = texture2D(tScene, uv + vec2(-i, -j) * t).rgb; m0 += a; s0 += a * a;
+    vec3 b = texture2D(tScene, uv + vec2( i, -j) * t).rgb; m1 += b; s1 += b * b;
+    vec3 c = texture2D(tScene, uv + vec2(-i,  j) * t).rgb; m2 += c; s2 += c * c;
+    vec3 d = texture2D(tScene, uv + vec2( i,  j) * t).rgb; m3 += d; s3 += d * d;
+  }
+  m0 /= 9.0; m1 /= 9.0; m2 /= 9.0; m3 /= 9.0;
+  float v0 = dot(s0 / 9.0 - m0 * m0, vec3(1.0)), v1 = dot(s1 / 9.0 - m1 * m1, vec3(1.0)), v2 = dot(s2 / 9.0 - m2 * m2, vec3(1.0)), v3 = dot(s3 / 9.0 - m3 * m3, vec3(1.0));
+  vec3 r = m0; float v = v0;
+  if (v1 < v) { v = v1; r = m1; } if (v2 < v) { v = v2; r = m2; } if (v3 < v) { r = m3; }
+  return r;
+}
+void main(){
+  vec2 uv = vUv;
+  if (uPixel > 0.0) { vec2 cell = uPixel / uRes; uv = (floor(uv / cell) + 0.5) * cell; }
+  vec3 c;
+  if (uKuwa > 0.5) c = kuwa(uv);
+  else if (uCA > 0.0) { vec2 d = (uv - 0.5) * uCA / uRes * 2.0; c = vec3(texture2D(tScene, uv + d).r, texture2D(tScene, uv).g, texture2D(tScene, uv - d).b); }
+  else c = texture2D(tScene, uv).rgb;
+  c += (texture2D(tBloomA, uv).rgb + texture2D(tBloomB, uv).rgb * 1.3) * uBloom;
+  c = toS(c);
+  c = pow(max(c, 0.0), vec3(1.0 / uGamma));
+  c = uLift + c * (uGain - uLift);
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  c = mix(vec3(l), c, uSat);
+  c = (c - 0.5) * uCon + 0.5;
+  l = clamp(dot(c, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
+  c += ((uShTint - 0.5) * (1.0 - l) + (uHiTint - 0.5) * l) * uSplit;
+  if (uHalf > 0.0) {
+    // 망점: 어두운 곳일수록 점이 커진다 (하이파이 러시의 벤데이 점)
+    vec2 p = gl_FragCoord.xy / (uHalfSize * uDpr);
+    p = mat2(0.7071, -0.7071, 0.7071, 0.7071) * p;
+    float r = sqrt(clamp(1.0 - l * 1.7, 0.0, 1.0)) * 0.62;
+    float dd = length(fract(p) - 0.5);
+    float dotk = 1.0 - smoothstep(r - 0.08, r + 0.08, dd);
+    c = mix(c, c * uHalfColor, dotk * uHalf);
+  }
+  if (uPoster > 0.0) c = floor(c * uPoster + 0.5) / uPoster;
+  if (uScan > 0.0) c *= 1.0 - uScan * (0.5 + 0.5 * sin(gl_FragCoord.y / uDpr * 3.14159));
+  vec2 q = vUv - 0.5; c *= 1.0 - uVig * dot(q, q) * 2.4;
+  c += (hash(floor(gl_FragCoord.xy / uDpr) + fract(uTime) * 91.0) - 0.5) * uGrain;
+  gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+}` });
+  let w = 4, h = 4, dpr = 1;
+  function resize() {
+    dpr = Math.min(devicePixelRatio, 1.5);
+    w = Math.max(4, Math.round(innerWidth * dpr)); h = Math.max(4, Math.round(innerHeight * dpr));
+    rScene.setSize(w, h);
+    rA.setSize(w >> 2, h >> 2); rB.setSize(w >> 2, h >> 2);
+    rC.setSize(w >> 3, h >> 3); rD.setSize(w >> 3, h >> 3);
+    comp.uniforms.uRes.value.set(w, h); comp.uniforms.uDpr.value = dpr;
+  }
+  function pass(mat, target) { quad.material = mat; renderer.setRenderTarget(target); renderer.render(qScene, qCam); }
+  function blur2(src, tmp, ww, hh) {
+    blur.uniforms.tSrc.value = src.texture; blur.uniforms.uDir.value.set(1.6 / ww, 0); pass(blur, tmp);
+    blur.uniforms.tSrc.value = tmp.texture; blur.uniforms.uDir.value.set(0, 1.6 / hh); pass(blur, src);
+  }
+  function render(P) {
+    renderer.setRenderTarget(rScene);
+    renderer.render(scene, camera);
+    const u = comp.uniforms;
+    if (P.bloom > 0) {
+      bright.uniforms.tSrc.value = rScene.texture; bright.uniforms.uTexel.value.set(1.5 / w, 1.5 / h); bright.uniforms.uThresh.value = P.thresh ?? 0.7;
+      pass(bright, rA); blur2(rA, rB, w >> 2, h >> 2);
+      blur.uniforms.tSrc.value = rA.texture; blur.uniforms.uDir.value.set(2 / (w >> 2), 0); pass(blur, rC);
+      blur2(rC, rD, w >> 3, h >> 3);
+    }
+    u.tScene.value = rScene.texture; u.tBloomA.value = rA.texture; u.tBloomB.value = rC.texture;
+    u.uTime.value = G.time;
+    pass(comp, null);
+  }
+  function set(P) {
+    const u = comp.uniforms, v3 = (x, a) => x.value.set(...(a || [0, 0, 0]));
+    u.uKuwa.value = P.kuwa || 0; u.uPixel.value = (P.pixel || 0) * dpr; u.uCA.value = (P.ca || 0) * dpr; u.uBloom.value = P.bloom || 0;
+    u.uSat.value = P.sat ?? 1; u.uCon.value = P.con ?? 1; u.uGamma.value = P.gamma ?? 1;
+    v3(u.uLift, P.lift); u.uGain.value.set(...(P.gain || [1, 1, 1]));
+    u.uShTint.value.set(...(P.shTint || [0.5, 0.5, 0.5])); u.uHiTint.value.set(...(P.hiTint || [0.5, 0.5, 0.5])); u.uSplit.value = P.split || 0;
+    u.uVig.value = P.vig || 0; u.uGrain.value = P.grain || 0; u.uScan.value = P.scan || 0;
+    u.uHalf.value = P.half || 0; u.uHalfSize.value = P.halfSize || 6; v3(u.uHalfColor, P.halfColor);
+    u.uPoster.value = P.poster || 0;
+  }
+  resize();
+  return { render, set, resize };
+})();
+
+// ── 하늘과 발밑 (쿼터뷰라 하늘은 거의 안 보이고, 아레나 바깥 아래쪽이 보인다) ──
+const domeMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { uTop: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uBot: { value: new THREE.Color() }, uAcc: { value: new THREE.Color() },
+    uMode: { value: 0 }, uTime: { value: 0 } },
+  vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform vec3 uTop, uMid, uBot, uAcc; uniform float uMode, uTime; varying vec3 vDir;
+float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float n2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + vec2(1, 1)), f.x), f.y); }
+float fbm(vec2 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { s += a * n2(p); p *= 2.03; a *= 0.5; } return s; }
+void main(){
+  float y = vDir.y;
+  vec3 c = y > 0.0 ? mix(uMid, uTop, smoothstep(0.0, 0.5, y)) : mix(uMid, uBot, smoothstep(0.0, 0.45, -y));
+  vec2 p = vDir.xz / max(-y, 0.06);          // 아래쪽을 먼 바닥 평면으로 펼친 좌표
+  float down = smoothstep(0.02, 0.25, -y);
+  if (uMode > 0.5 && uMode < 1.5) {           // 1 용암 균열 (하데스)
+    float n = fbm(p * 2.2 + vec2(0.0, uTime * 0.03));
+    float crack = 1.0 - smoothstep(0.0, 0.05, abs(n - 0.5));
+    c += uAcc * crack * down * (0.6 + 0.4 * sin(uTime * 1.3 + n * 9.0));
+    c += uAcc * 0.25 * pow(n, 3.0) * down;
+  } else if (uMode > 1.5 && uMode < 2.5) {    // 2 구름 바다 (퓨리)
+    float n = fbm(p * 1.1 + vec2(uTime * 0.02, 0.0));
+    c = mix(c, uAcc, smoothstep(0.45, 0.75, n) * down);
+    c += vec3(1.0) * smoothstep(0.72, 0.9, n) * 0.25 * down;
+  } else if (uMode > 2.5 && uMode < 3.5) {    // 3 발밑 도시 불빛 (디 어센트)
+    vec2 g = p * 9.0, id = floor(g), f = fract(g);
+    float lit = step(0.72, h2(id)) * step(0.15, f.x) * step(f.x, 0.85) * step(0.2, f.y) * step(f.y, 0.8);
+    vec3 lc = mix(uAcc, vec3(1.0, 0.25, 0.6), step(0.5, h2(id + 7.0)));
+    c += lc * lit * down * (0.55 + 0.45 * sin(uTime * 2.0 + h2(id) * 30.0));
+    c += uAcc * 0.18 * smoothstep(0.3, 0.0, abs(fract(p.x * 0.5) - 0.5)) * down;
+  } else if (uMode > 3.5) {                    // 4 파스텔 허공 + 별 (하이퍼 라이트)
+    float s = step(0.996, h2(floor(vDir.xz * 300.0 + vDir.y * 77.0)));
+    c += vec3(1.0) * s * 0.8;
+    float n = fbm(p * 0.6 + uTime * 0.01);
+    c = mix(c, uAcc, smoothstep(0.55, 0.8, n) * down * 0.6);
+  }
+  gl_FragColor = vec4(c, 1.0);
+}` });
+const dome = new THREE.Mesh(new THREE.SphereGeometry(150, 48, 24), domeMat);
+dome.visible = false; dome.renderOrder = -10; arena.add(dome);
+
+// 바닥 그림 (원기둥 윗면의 UV는 원 모양 → 캔버스 가운데가 아레나 가운데)
+const FLOOR_PX = 1024, FPU = (FLOOR_PX / 2) / (ARENA_R + 1);
+function floorCanvas(paint) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = FLOOR_PX;
+  const g = cv.getContext('2d'); g.translate(FLOOR_PX / 2, FLOOR_PX / 2);
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  paint(g, rnd, FPU);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+const ring = (g, r0, r1, col) => { g.beginPath(); g.arc(0, 0, r1, 0, Math.PI * 2); g.arc(0, 0, r0, 0, Math.PI * 2, true); g.fillStyle = col; g.fill(); };
+const disc = (g, r, col) => { g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fillStyle = col; g.fill(); };
+// 동심원으로 엇갈려 깐 판석 (하데스·데스 도어 공용)
+function slabs(g, rnd, u, from, to, step, shade, gapCol) {
+  for (let r = from; r < to; r += step) {
+    const n = Math.max(6, Math.round(r * 4.2 * (1.6 / step)));
+    for (let i = 0; i < n; i++) {
+      const jit = (rnd() - 0.5) * 0.25;
+      const a0 = (i / n) * Math.PI * 2 + r * 1.7 + jit * 0.2, a1 = a0 + (Math.PI * 2) / n * (0.97 + rnd() * 0.03);
+      g.beginPath(); g.arc(0, 0, (r + step - 0.05) * u, a0, a1); g.arc(0, 0, (r + 0.05) * u, a1, a0, true); g.closePath();
+      g.fillStyle = shade(rnd()); g.fill();
+      if (gapCol) { g.strokeStyle = gapCol; g.lineWidth = 2.5; g.stroke(); }
+    }
+  }
+}
+const FLOORS = {
+  hades(g, rnd, u) {
+    disc(g, 16 * u, '#1c1418');
+    // 동심원 판석
+    slabs(g, rnd, u, 1.0, 15.5, 1.6, v => { const c = 34 + v * 18; return `rgb(${c + 8},${c - 4},${c + 2})`; }, '#0e0809');
+    // 금빛 미앤더(그리스 무늬) 띠
+    ring(g, 11.6 * u, 12.6 * u, '#3a1a12');
+    g.strokeStyle = '#c98b3c'; g.lineWidth = 3;
+    for (let i = 0; i < 64; i++) {
+      g.save(); g.rotate((i / 64) * Math.PI * 2); g.translate(12.1 * u, 0);
+      g.beginPath(); g.moveTo(-6, -10); g.lineTo(-6, 6); g.lineTo(6, 6); g.lineTo(6, -4); g.lineTo(0, -4); g.lineTo(0, 0); g.stroke();
+      g.restore();
+    }
+    g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 11.65 * u, 0, 7); g.stroke(); g.beginPath(); g.arc(0, 0, 12.55 * u, 0, 7); g.stroke();
+    // 피 같은 붉은 문양과 균열
+    g.globalAlpha = 0.5; g.strokeStyle = '#7a1424'; g.lineWidth = 4;
+    for (let k = 0; k < 6; k++) { g.save(); g.rotate(k * Math.PI / 3); g.beginPath(); g.moveTo(1 * u, 0); g.quadraticCurveTo(3 * u, 1.6 * u, 4.6 * u, 0); g.stroke(); g.restore(); }
+    g.globalAlpha = 0.7; g.strokeStyle = '#0a0608'; g.lineWidth = 2;
+    for (let k = 0; k < 22; k++) {
+      let x = (rnd() - 0.5) * 26 * u, y = (rnd() - 0.5) * 26 * u; g.beginPath(); g.moveTo(x, y);
+      for (let s = 0; s < 5; s++) { x += (rnd() - 0.5) * 50; y += (rnd() - 0.5) * 50; g.lineTo(x, y); } g.stroke();
+    }
+    g.globalAlpha = 1;
+    const vg = g.createRadialGradient(0, 0, 9 * u, 0, 0, 16 * u); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,0,6,0.75)');
+    disc(g, 16 * u, vg);
+  },
+  furi(g, rnd, u) {
+    disc(g, 16 * u, '#1b1b3a');
+    // 육각 판
+    const s = 1.5 * u, hx = s * Math.sqrt(3);
+    for (let row = -12; row <= 12; row++) for (let col = -12; col <= 12; col++) {
+      const x = col * hx + (row & 1) * hx / 2, y = row * s * 1.5;
+      if (Math.hypot(x, y) > 15 * u) continue;
+      g.beginPath();
+      for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; g.lineTo(x + Math.cos(a) * s * 0.96, y + Math.sin(a) * s * 0.96); }
+      g.closePath(); const v = rnd(); g.fillStyle = v > 0.92 ? '#3b2a78' : v > 0.6 ? '#25264c' : '#202044'; g.fill();
+    }
+    g.strokeStyle = '#59f0ff'; g.lineWidth = 6; g.shadowColor = '#59f0ff'; g.shadowBlur = 18;
+    g.beginPath(); g.arc(0, 0, 14.6 * u, 0, 7); g.stroke();
+    g.strokeStyle = '#ff3d8a'; g.shadowColor = '#ff3d8a'; g.lineWidth = 3;
+    g.beginPath(); g.arc(0, 0, 4.2 * u, 0, 7); g.stroke();
+    for (let k = 0; k < 8; k++) { g.save(); g.rotate(k * Math.PI / 4); g.beginPath(); g.moveTo(4.6 * u, 0); g.lineTo(9 * u, 0); g.stroke(); g.restore(); }
+    g.shadowBlur = 0;
+  },
+  hifi(g, rnd, u) {
+    // 무대 원판: 싸우는 안쪽은 차분하게(연한 라벤더 판), 바깥 고리에만 굵은 팝 색 + 검은 테두리
+    disc(g, 16 * u, '#111');
+    disc(g, 15.85 * u, '#2a2a3a');
+    const cols = ['#ffe23a', '#ff4fa3', '#3ad1ff', '#ffffff'];
+    for (let k = 0; k < 24; k++) {
+      g.beginPath(); g.arc(0, 0, 15.6 * u, (k / 24) * Math.PI * 2, ((k + 1) / 24) * Math.PI * 2 - 0.02); g.arc(0, 0, 13.4 * u, ((k + 1) / 24) * Math.PI * 2 - 0.02, (k / 24) * Math.PI * 2, true); g.closePath();
+      g.fillStyle = cols[k % cols.length]; g.fill(); g.lineWidth = 5; g.strokeStyle = '#111'; g.stroke();
+    }
+    disc(g, 13.2 * u, '#111');
+    disc(g, 13.05 * u, '#8a82c0');   // 중간 명도: 주황 예고와 흰 받기 링이 묻히지 않게
+    // 판 이음매와 큰 원 표시 (무대 바닥 테이프)
+    g.strokeStyle = 'rgba(30,20,70,0.35)'; g.lineWidth = 3;
+    for (let k = -6; k <= 6; k++) { g.beginPath(); g.moveTo(k * 2 * u, -13 * u); g.lineTo(k * 2 * u, 13 * u); g.stroke(); }
+    g.strokeStyle = '#ff4fa3'; g.lineWidth = 7; g.setLineDash([26, 18]); g.beginPath(); g.arc(0, 0, 9.5 * u, 0, 7); g.stroke(); g.setLineDash([]);
+    const star = (x, y, r, col) => { g.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5, rr = k & 1 ? r * 0.45 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fillStyle = col; g.fill(); g.lineWidth = 5; g.strokeStyle = '#111'; g.stroke(); };
+    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + 0.4; star(Math.cos(a) * 13.4 * u, Math.sin(a) * 13.4 * u, 0.9 * u, k & 1 ? '#ffe23a' : '#ff4fa3'); }
+  },
+  deathsdoor(g, rnd, u) {
+    disc(g, 16 * u, '#4c514c');
+    // 닳은 판석 (엇갈린 동심원, 결이 고르지 않게)
+    slabs(g, rnd, u, 0.6, 15.6, 1.25, v => { const c = 96 + v * 22; return `rgb(${c},${c + 4},${c - 2})`; }, 'rgba(40,44,40,0.8)');
+    // 균열
+    g.strokeStyle = 'rgba(30,32,30,0.6)'; g.lineWidth = 2;
+    for (let k = 0; k < 30; k++) { let x = (rnd() - 0.5) * 26 * u, y = (rnd() - 0.5) * 26 * u; g.beginPath(); g.moveTo(x, y); for (let s2 = 0; s2 < 4; s2++) { x += (rnd() - 0.5) * 40; y += (rnd() - 0.5) * 40; g.lineTo(x, y); } g.stroke(); }
+    // 이끼와 낙엽
+    for (let k = 0; k < 70; k++) {
+      const a = rnd() * 7, r = Math.sqrt(rnd()) * 15 * u, rr = (0.4 + rnd() * 1.4) * u;
+      const gr = g.createRadialGradient(Math.cos(a) * r, Math.sin(a) * r, 0, Math.cos(a) * r, Math.sin(a) * r, rr);
+      gr.addColorStop(0, 'rgba(84,104,64,0.7)'); gr.addColorStop(1, 'rgba(84,104,64,0)'); g.fillStyle = gr; g.fillRect(-16 * u, -16 * u, 32 * u, 32 * u);
+    }
+    for (let k = 0; k < 160; k++) { g.fillStyle = rnd() > 0.5 ? '#8a6a3a' : '#6e5a36'; g.save(); g.translate((rnd() - 0.5) * 28 * u, (rnd() - 0.5) * 28 * u); g.rotate(rnd() * 7); g.fillRect(-5, -2, 10, 4); g.restore(); }
+    const vg = g.createRadialGradient(0, 0, 8 * u, 0, 0, 16 * u); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(20,24,22,0.55)'); disc(g, 16 * u, vg);
+  },
+  hyperlight(g, rnd, u) {
+    const bg = g.createRadialGradient(0, 0, 0, 0, 0, 16 * u); bg.addColorStop(0, '#7fe0c8'); bg.addColorStop(1, '#3f9f9a'); disc(g, 16 * u, bg);
+    // 픽셀 풀
+    for (let k = 0; k < 520; k++) {
+      const a = rnd() * 7, r = Math.sqrt(rnd()) * 15.5 * u, x = Math.round(Math.cos(a) * r / 8) * 8, y = Math.round(Math.sin(a) * r / 8) * 8;
+      g.fillStyle = rnd() > 0.5 ? 'rgba(170,245,220,0.55)' : 'rgba(40,130,126,0.45)'; g.fillRect(x, y, 8, 8);
+    }
+    for (let k = 0; k < 36; k++) { const x = Math.round((rnd() - 0.5) * 28 * u / 8) * 8, y = Math.round((rnd() - 0.5) * 28 * u / 8) * 8; g.fillStyle = rnd() > 0.5 ? '#ff7ac0' : '#fff3a0'; g.fillRect(x, y, 8, 8); g.fillRect(x - 8, y, 8, 8); }
+    // 고대 문양 타일 고리
+    g.strokeStyle = '#d8fbff'; g.lineWidth = 4;
+    for (let k = 0; k < 16; k++) {
+      g.save(); g.rotate((k / 16) * Math.PI * 2); g.translate(10.6 * u, 0);
+      g.fillStyle = 'rgba(30,60,90,0.55)'; g.fillRect(-18, -18, 36, 36); g.strokeRect(-18, -18, 36, 36);
+      g.beginPath(); g.moveTo(-8, -8); g.lineTo(8, -8); g.lineTo(8, 8); g.moveTo(-8, 0); g.lineTo(0, 0); g.stroke(); g.restore();
+    }
+  },
+  ascent(g, rnd, u) {
+    disc(g, 16 * u, '#14161e');
+    // 금속 판 격자 + 리벳 + 철망
+    const s = 2 * u;
+    for (let x = -16 * u; x < 16 * u; x += s) for (let y = -16 * u; y < 16 * u; y += s) {
+      const v = 26 + rnd() * 14; g.fillStyle = `rgb(${v},${v + 3},${v + 10})`; g.fillRect(x + 2, y + 2, s - 4, s - 4);
+      g.fillStyle = '#4a5064'; for (const [dx, dy] of [[6, 6], [s - 6, 6], [6, s - 6], [s - 6, s - 6]]) { g.beginPath(); g.arc(x + dx, y + dy, 2.2, 0, 7); g.fill(); }
+      if (rnd() > 0.82) { g.strokeStyle = '#2a2f40'; g.lineWidth = 2; for (let k = 6; k < s - 4; k += 7) { g.beginPath(); g.moveTo(x + k, y + 4); g.lineTo(x + k, y + s - 4); g.stroke(); } }
+    }
+    // 젖은 웅덩이 (네온 반사)
+    for (let k = 0; k < 26; k++) {
+      const x = (rnd() - 0.5) * 26 * u, y = (rnd() - 0.5) * 26 * u, r = (0.6 + rnd() * 1.6) * u, col = rnd() > 0.5 ? '255,60,160' : '60,230,255';
+      const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},0.38)`); gr.addColorStop(1, `rgba(${col},0)`);
+      g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * 0.6, rnd() * 3, 0, 7); g.fill();
+    }
+    // 네온 이음매
+    g.lineWidth = 4; g.shadowBlur = 16;
+    for (let k = 0; k < 4; k++) {
+      const col = k & 1 ? '#ff3ca0' : '#3ce6ff'; g.strokeStyle = col; g.shadowColor = col;
+      g.save(); g.rotate(k * Math.PI / 2 + 0.785); g.beginPath(); g.moveTo(3 * u, 0); g.lineTo(13.5 * u, 0); g.stroke(); g.restore();
+    }
+    g.strokeStyle = '#3ce6ff'; g.shadowColor = '#3ce6ff'; g.beginPath(); g.arc(0, 0, 14.8 * u, 0, 7); g.stroke(); g.shadowBlur = 0;
+    // 가장자리 경고 줄무늬 (흑백: 금색은 합 전용이라 노랑을 피한다)
+    for (let k = 0; k < 90; k++) {
+      g.save(); g.rotate((k / 90) * Math.PI * 2); g.fillStyle = k & 1 ? '#e8e8f0' : '#101218';
+      g.beginPath(); g.moveTo(15.1 * u, -4); g.lineTo(15.9 * u, -14); g.lineTo(15.9 * u, 8); g.lineTo(15.1 * u, 18); g.closePath(); g.fill(); g.restore();
+    }
+  },
+};
+
+// ── 소품 ──
+function envToon(color, extra = {}) {
+  const m = new THREE.MeshToonMaterial({ color, gradientMap: gradientTex, ...extra });
+  m.onBeforeCompile = toonInject; m.customProgramCacheKey = () => 'lookToon';
+  return m;
+}
+function envMesh(geo, mat, outline = true) {
+  const g = new THREE.Group(), m = new THREE.Mesh(geo, mat);
+  m.castShadow = true; m.receiveShadow = true; g.add(m);
+  if (outline && style.outlinePx > 0) { outNormals(geo); g.add(new THREE.Mesh(geo, outlineMat(style.outline))); }
+  return g;
+}
+const glowMat = (color, op = 0.9) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false });
+function textSign(lines, col, w = 512, h = 256) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
+  g.fillStyle = 'rgba(6,8,18,0.85)'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = col; g.lineWidth = 10; g.shadowColor = col; g.shadowBlur = 24; g.strokeRect(14, 14, w - 28, h - 28);
+  g.fillStyle = col; g.font = `900 ${Math.round(h * 0.42)}px "Black Han Sans", "Noto Sans KR", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  lines.forEach((t, i) => g.fillText(t, w / 2, h / 2 + (i - (lines.length - 1) / 2) * h * 0.4));
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const PROPS = {
+  hades(E) {
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.2, R = ARENA_R + 3.2, broken = i % 3 === 1, h = broken ? 2.2 + (i % 2) : 6.5;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R);
+      const shaft = envMesh(new THREE.CylinderGeometry(0.62, 0.7, h, 16), envToon(0xb8a48a)); shaft.position.y = h / 2; g.add(shaft);
+      const base = envMesh(new THREE.BoxGeometry(1.8, 0.45, 1.8), envToon(0x8a7660)); base.position.y = 0.22; g.add(base);
+      if (!broken) { const cap = envMesh(new THREE.BoxGeometry(1.9, 0.5, 1.9), envToon(0xc9b08a)); cap.position.y = h + 0.2; g.add(cap); }
+      E.add(g);
+    }
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + Math.PI / 4, R = ARENA_R + 0.4;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, 0, Math.sin(a) * R);
+      const leg = envMesh(new THREE.CylinderGeometry(0.12, 0.25, 1.4, 8), envToon(0x2a1a14)); leg.position.y = 0.7; g.add(leg);
+      const bowl = envMesh(new THREE.CylinderGeometry(0.75, 0.35, 0.5, 14), envToon(0x5a3a1c)); bowl.position.y = 1.55; g.add(bowl);
+      const fire = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.4, 10), glowMat(0xff7a2a)); fire.position.y = 2.3; g.add(fire);
+      const core = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.9, 8), glowMat(0xffe0a0)); core.position.y = 2.1; g.add(core);
+      const L = new THREE.PointLight(0xff8a3a, 9, 13, 1.6); L.position.y = 2.4; g.add(L);
+      E.userData.flicker.push({ L, base: 9, fire, ph: i * 1.7 });
+      E.add(g);
+    }
+  },
+  furi(E) {
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.5, R = ARENA_R + 6 + (i % 3) * 3, h = 4 + (i % 4) * 2.2;
+      const m = envMesh(new THREE.BoxGeometry(1.2 + (i % 2), h, 1.2), envToon(i % 2 ? 0x2a2450 : 0x3a2c6a));
+      m.position.set(Math.cos(a) * R, -2 + (i % 3) * 1.5, Math.sin(a) * R); m.rotation.set(0.15 * (i % 3), a, 0.2 * ((i % 2) - 0.5));
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(1.25 + (i % 2), 0.12, 1.25), glowMat(i % 3 ? 0x59f0ff : 0xff3d8a)); cap.position.y = h / 2; m.add(cap);
+      E.userData.float.push({ o: m, y: m.position.y, ph: i * 0.9, amp: 0.5 });
+      E.add(m);
+    }
+    const under = envMesh(new THREE.ConeGeometry(ARENA_R + 1.8, 9, 6, 1), envToon(0x241c48), false);
+    under.rotation.x = Math.PI; under.position.y = -5.5; E.add(under);
+  },
+  hifi(E) {
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6, R = ARENA_R + 2.6;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R); g.rotation.y = -a - Math.PI / 2;
+      for (let k = 0; k < 2; k++) {
+        const box = envMesh(new THREE.BoxGeometry(2.2, 2.2, 1.6), envToon(0x1a1a22)); box.position.y = 1.1 + k * 2.25; g.add(box);
+        const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.1, 24), envToon(0x8a8aa0)); cone.rotation.x = Math.PI / 2; cone.position.set(0, 1.1 + k * 2.25, 0.82); g.add(cone);
+        const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.12, 16), envToon(i & 1 ? 0xff4fa3 : 0x3ad1ff)); dot.rotation.x = Math.PI / 2; dot.position.set(0, 1.1 + k * 2.25, 0.86); g.add(dot);
+        E.userData.pulse.push({ o: cone, ph: i + k });
+      }
+      E.add(g);
+    }
+    // 트러스 아치와 핀 조명
+    for (let i = 0; i < 2; i++) {
+      const g = new THREE.Group(); g.rotation.y = i * Math.PI / 2;
+      for (const s of [-1, 1]) { const leg = envMesh(new THREE.BoxGeometry(0.5, 9, 0.5), envToon(0xffe23a)); leg.position.set(s * (ARENA_R + 1.6), 3.6, 0); g.add(leg); }
+      const top = envMesh(new THREE.BoxGeometry((ARENA_R + 1.6) * 2 + 0.5, 0.5, 0.5), envToon(0xffe23a)); top.position.y = 8.1; g.add(top);
+      for (const s of [-0.5, 0.5]) {
+        const beamM = new THREE.Mesh(new THREE.ConeGeometry(2.6, 8, 24, 1, true), new THREE.MeshBasicMaterial({ color: i ? 0xff9ad0 : 0x9ae8ff, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+        beamM.position.set(s * 9, 4, 0); beamM.rotation.z = s * 0.5; g.add(beamM);
+      }
+      E.add(g);
+    }
+  },
+  deathsdoor(E) {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + 0.3, R = ARENA_R + 3.4, h = 7 + (i % 3);
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R); g.rotation.y = -a;
+      const p = envMesh(new THREE.BoxGeometry(1.1, h, 1.1), envToon(0x7b807a)); p.position.y = h / 2; g.add(p);
+      const tip = envMesh(new THREE.ConeGeometry(0.85, 1.8, 4), envToon(0x6a6f6a)); tip.position.y = h + 0.9; tip.rotation.y = Math.PI / 4; g.add(tip);
+      E.add(g);
+    }
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + 1.1, R = ARENA_R + 0.6;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, 0, Math.sin(a) * R);
+      const post = envMesh(new THREE.CylinderGeometry(0.08, 0.12, 3.2, 6), envToon(0x1e2220)); post.position.y = 1.6; g.add(post);
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), glowMat(0xffc87a)); lamp.position.y = 3.3; g.add(lamp);
+      const L = new THREE.PointLight(0xffb060, 5, 9, 1.6); L.position.y = 3.2; g.add(L);
+      E.userData.flicker.push({ L, base: 5, ph: i * 2.1 });
+      E.add(g);
+    }
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.7, R = ARENA_R + 7;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R);
+      const trunk = envMesh(new THREE.CylinderGeometry(0.2, 0.45, 6, 6), envToon(0x3a3630)); trunk.position.y = 3; g.add(trunk);
+      for (let k = 0; k < 4; k++) { const b = envMesh(new THREE.CylinderGeometry(0.06, 0.16, 2.6, 5), envToon(0x3a3630)); b.position.set(0, 3.5 + k * 0.6, 0); b.rotation.set(0.9, k * 1.7, 0); b.translateY(1.2); g.add(b); }
+      E.add(g);
+    }
+  },
+  hyperlight(E) {
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + 0.25, R = ARENA_R + 4 + (i % 2) * 4, h = 5 + (i % 3) * 2;
+      const geo = new THREE.OctahedronGeometry(1, 0); geo.scale(1.1, h / 2, 1.1);
+      const m = new THREE.Mesh(geo, envToon(i & 1 ? 0xff8ac8 : 0x7af0ff, { emissive: i & 1 ? 0x6a1a4a : 0x0a4a5a }));
+      m.position.set(Math.cos(a) * R, h / 2 - 0.5, Math.sin(a) * R); m.rotation.y = a;
+      E.userData.float.push({ o: m, y: m.position.y, ph: i, amp: 0.35, spin: 0.15 });
+      E.add(m);
+    }
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 1, R = ARENA_R + 2.5;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), envToon(0xf2e8ff));
+      m.position.set(Math.cos(a) * R, 1.5 + (i % 3), Math.sin(a) * R); m.rotation.set(i, i * 2, 0);
+      E.userData.float.push({ o: m, y: m.position.y, ph: i * 1.3, amp: 0.4, spin: 0.4 });
+      E.add(m);
+    }
+    const under = new THREE.Mesh(new THREE.ConeGeometry(ARENA_R + 1.8, 11, 8, 1), envToon(0x5a4aa0)); under.rotation.x = Math.PI; under.position.y = -6.5; E.add(under);
+  },
+  ascent(E) {
+    const signs = [['파동', '#ff3ca0'], ['LIVE', '#3ce6ff'], ['합', '#ff3ca0'], ['24시', '#3ce6ff'], ['무대', '#b07aff']];
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.3, R = ARENA_R + 3.2, h = 6 + (i % 3) * 2;
+      const g = new THREE.Group(); g.position.set(Math.cos(a) * R, -0.9, Math.sin(a) * R); g.rotation.y = -a - Math.PI / 2;
+      const col = envMesh(new THREE.BoxGeometry(1.2, h, 1.2), envToon(0x22263a)); col.position.y = h / 2; g.add(col);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.12, h * 0.8, 0.12), glowMat(i & 1 ? 0xff3ca0 : 0x3ce6ff)); strip.position.set(0.62, h / 2, 0.62); g.add(strip);
+      if (i % 2 === 0) {
+        const [t, c] = signs[(i / 2) % signs.length];
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), new THREE.MeshBasicMaterial({ map: textSign([t], c), transparent: true, side: THREE.DoubleSide }));
+        s.position.set(0, h * 0.7, 0.7); g.add(s);
+        E.userData.flicker.push({ sign: s, ph: i * 1.3 });
+      }
+      E.add(g);
+    }
+    const lights = [[0xff2a8a, 0.785], [0x2af0ff, 2.356], [0xff2a8a, 3.927], [0x2af0ff, 5.498]];
+    for (const [c, a] of lights) { const L = new THREE.PointLight(c, 10, 20, 1.5); L.position.set(Math.cos(a) * 11, 4, Math.sin(a) * 11); E.add(L); E.userData.flicker.push({ L, base: 10, ph: a * 3, soft: true }); }
+    const block = new THREE.Mesh(new THREE.BoxGeometry(34, 30, 34), envToon(0x161a28)); block.position.y = -16; E.add(block);
+  },
+};
+
+// ── 떠다니는 입자 ──
+const PART_N = 420;
+const partGeo2 = new THREE.BufferGeometry();
+partGeo2.setAttribute('position', new THREE.BufferAttribute(new Float32Array(PART_N * 3), 3));
+partGeo2.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(PART_N).map(() => Math.random()), 1));
+partGeo2.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(PART_N * 3).fill(1), 3));
+const partMat2 = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false,
+  uniforms: { uSize: { value: 0.15 }, uScale: { value: 400 }, uKind: { value: 0 }, uTime: { value: 0 }, uAlpha: { value: 1 } },
+  vertexShader: `attribute float aSeed; attribute vec3 aCol; varying float vSeed; varying vec3 vCol; uniform float uSize, uScale;
+void main(){ vSeed = aSeed; vCol = aCol; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+  gl_PointSize = uSize * (0.6 + aSeed * 0.8) * uScale / -mv.z; }`,
+  fragmentShader: `varying float vSeed; varying vec3 vCol; uniform float uKind, uTime, uAlpha;
+void main(){ vec2 p = gl_PointCoord - 0.5; float a;
+  if (uKind < 0.5) a = smoothstep(0.5, 0.0, length(p));                                   // 둥근 불티·먼지
+  else if (uKind < 1.5) { a = step(abs(p.x), 0.32) * step(abs(p.y), 0.2); }                // 색종이
+  else if (uKind < 2.5) { a = smoothstep(0.08, 0.0, abs(p.x)) * smoothstep(0.5, 0.2, abs(p.y)); } // 빗줄기
+  else { a = max(smoothstep(0.07, 0.0, abs(p.x)) * smoothstep(0.5, 0.0, abs(p.y)), smoothstep(0.07, 0.0, abs(p.y)) * smoothstep(0.5, 0.0, abs(p.x))) + smoothstep(0.18, 0.0, length(p)); } // 반짝이
+  float tw = 0.55 + 0.45 * sin(uTime * (2.0 + vSeed * 5.0) + vSeed * 40.0);
+  gl_FragColor = vec4(vCol, a * uAlpha * (uKind > 2.5 || uKind < 0.5 ? tw : 1.0)); }`,
+});
+const parts2 = new THREE.Points(partGeo2, partMat2); parts2.frustumCulled = false; parts2.visible = false; arena.add(parts2);
+let partSpec = null;
+function resetPart(i, anywhereY) {
+  const P = partGeo2.attributes.position.array, s = partSpec, a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * s.r;
+  P[i * 3] = Math.cos(a) * r; P[i * 3 + 2] = Math.sin(a) * r;
+  P[i * 3 + 1] = anywhereY ? s.y0 + Math.random() * (s.y1 - s.y0) : (s.vy < 0 ? s.y1 : s.y0);
+}
+function setParticles(spec) {
+  partSpec = spec;
+  parts2.visible = !!spec;
+  if (!spec) return;
+  partMat2.uniforms.uKind.value = spec.kind; partMat2.uniforms.uSize.value = spec.size; partMat2.uniforms.uAlpha.value = spec.alpha ?? 1;
+  partMat2.blending = spec.add ? THREE.AdditiveBlending : THREE.NormalBlending; partMat2.needsUpdate = true;
+  partGeo2.setDrawRange(0, spec.n);
+  const C = partGeo2.attributes.aCol.array, pal = spec.colors.map(c => new THREE.Color(c));
+  for (let i = 0; i < PART_N; i++) { resetPart(i, true); const c = pal[i % pal.length]; C[i * 3] = c.r; C[i * 3 + 1] = c.g; C[i * 3 + 2] = c.b; }
+  partGeo2.attributes.aCol.needsUpdate = true; partGeo2.attributes.position.needsUpdate = true;
+}
+
+// ── 룩 정의 ──
+// 숫자는 레퍼런스를 화면으로 비교하며 맞췄다. 판정 색(주황·보라·금)은 어느 룩에서도 그대로.
+const LOOK_STYLES = {
+  '하데스': {
+    ref: 'Hades (Supergiant)', bg: 0x140a12, ground: 0x0e070c, floor: 0xffffff, stone: 0xb8a48a, steps: [0.22, 0.58, 1], outline: 0x0a0508, outlinePx: 3.2, hemi: 0.9, sun: 3.0,
+    look: { floor: 'hades', props: 'hades', ground: false, sky: { mode: 1, top: 0x0b0610, mid: 0x2a0e1e, bot: 0x0a0408, acc: 0xff5a1a }, fog: [0x1a0c14, 30, 75],
+      hemiSky: 0x7a5a7a, hemiGround: 0x1a0a10, sunColor: 0xffdcae, sunPos: [-5, 24, 9],
+      rim: { color: 0xff8a40, str: 0.75, pow: 2.4, self: 0.15, dir: [0.4, -0.2, -1], dirAmt: 0.6 }, shade: { color: 0x4a2860, amt: 0.65 },
+      parts: { kind: 0, n: 220, size: 0.16, add: true, colors: [0xff8a2a, 0xffc060, 0xff5020], r: 18, y0: -1, y1: 10, vy: 1.4, sway: 0.6 },
+      post: { kuwa: 1, bloom: 0.6, thresh: 0.62, sat: 1.15, con: 1.12, lift: [0.025, 0, 0.03], gain: [1.05, 0.98, 0.94], shTint: [0.38, 0.22, 0.5], hiTint: [0.62, 0.52, 0.4], split: 0.25, vig: 0.6, grain: 0.025 } } },
+  '퓨리': {
+    ref: 'Furi (The Game Bakers, Takashi Okazaki)', bg: 0x2a1446, ground: 0x2a1446, floor: 0xffffff, stone: 0x3a2c6a, steps: [0.45, 1], outline: 0x0a0612, outlinePx: 2.2, hemi: 1.1, sun: 3.0,
+    look: { floor: 'furi', props: 'furi', ground: false, sky: { mode: 2, top: 0x1a1240, mid: 0xd0346e, bot: 0x2a1450, acc: 0xff9a5a }, fog: [0x6a2060, 45, 120],
+      hemiSky: 0xff9ad0, hemiGround: 0x2a1446, sunColor: 0xfff0e8, sunPos: [9, 18, -10],
+      rim: { color: 0x6af0ff, str: 1.0, pow: 2.8, self: 0, dir: [-0.6, 0.3, 0.7], dirAmt: 0.7 }, shade: { color: 0x3a1a70, amt: 0.8 },
+      parts: { kind: 0, n: 120, size: 0.12, add: true, colors: [0x6af0ff, 0xffffff], r: 20, y0: -3, y1: 9, vy: 0.5, sway: 0.3 },
+      post: { bloom: 1.15, thresh: 0.5, sat: 1.25, con: 1.15, ca: 1.2, shTint: [0.38, 0.26, 0.58], hiTint: [0.62, 0.5, 0.45], split: 0.2, vig: 0.35, grain: 0.02 } } },
+  '하이파이 러시': {
+    ref: 'Hi-Fi RUSH (Tango Gameworks)', bg: 0x48b8ff, ground: 0x2f8ae0, floor: 0xffffff, stone: 0x1a1a22, steps: [0.5, 1], outline: 0x000000, outlinePx: 3.8, hemi: 1.25, sun: 2.1,
+    look: { floor: 'hifi', props: 'hifi', ground: true, sky: { mode: 0, top: 0x2a8cff, mid: 0x6cd0ff, bot: 0x2f8ae0, acc: 0xffffff }, fog: [0x7ac8ff, 55, 130],
+      hemiSky: 0xffffff, hemiGround: 0x8a7aff, sunColor: 0xffffff, sunPos: [-10, 20, 8],
+      rim: { color: 0xffffff, str: 0.6, pow: 3.2, self: 0, dir: [0, 1, 0], dirAmt: 0 }, shade: { color: 0x3030d0, amt: 0.6 },
+      parts: { kind: 1, n: 180, size: 0.22, add: false, colors: [0xff4fa3, 0x3ad1ff, 0xffffff, 0x8a5aff], r: 17, y0: -1, y1: 12, vy: -1.2, sway: 1.4 },
+      post: { half: 0.75, halfSize: 7, halfColor: [0.25, 0.25, 0.75], sat: 1.3, con: 1.1, bloom: 0.35, thresh: 0.8, vig: 0.15 } } },
+  '데스 도어': {
+    ref: "Death's Door (Acid Nerve)", bg: 0x8e968f, ground: 0x6a706a, floor: 0xffffff, stone: 0x7b807a, steps: [0.3, 0.66, 1], outline: 0x1a1c1a, outlinePx: 1.0, hemi: 0.8, sun: 3.4,
+    look: { floor: 'deathsdoor', props: 'deathsdoor', ground: true, sky: { mode: 0, top: 0x6f7a76, mid: 0xa7ada4, bot: 0x6a706a, acc: 0xffffff }, fog: [0x9ea39a, 20, 58],
+      hemiSky: 0xc8d0c8, hemiGround: 0x3a403a, sunColor: 0xfff4dc, sunPos: [-15, 14, -3],
+      rim: { color: 0xffffff, str: 0.4, pow: 4, self: 0, dir: [-1, 0.2, 0], dirAmt: 0.8 }, shade: { color: 0x2a3a46, amt: 0.55 },
+      parts: { kind: 0, n: 160, size: 0.1, add: false, colors: [0xe8e8e0, 0xc8c8c0], r: 20, y0: -1, y1: 9, vy: -0.25, sway: 1.0, alpha: 0.6 },
+      post: { kuwa: 1, bloom: 0.45, thresh: 0.7, sat: 0.85, con: 1.06, shTint: [0.42, 0.48, 0.52], hiTint: [0.56, 0.53, 0.46], split: 0.18, vig: 0.5, grain: 0.06 } } },
+  '하이퍼 라이트': {
+    ref: 'Hyper Light Drifter / Breaker (Heart Machine)', bg: 0xf2a6c8, ground: 0x5a4aa0, floor: 0xffffff, stone: 0x7af0ff, steps: [0.55, 1], outline: 0x2a1a4a, outlinePx: 0, hemi: 1.5, sun: 2.2,
+    look: { floor: 'hyperlight', props: 'hyperlight', ground: false, sky: { mode: 4, top: 0x6a4fd0, mid: 0xff8ac0, bot: 0x3a2a8a, acc: 0xffd2a0 }, fog: [0xff9ac8, 38, 95],
+      hemiSky: 0xffd0f0, hemiGround: 0x40a0a0, sunColor: 0xfff2f8, sunPos: [10, 20, 6],
+      rim: { color: 0x7ff6ff, str: 0.6, pow: 2.4, self: 0, dir: [0, 1, 0], dirAmt: 0 }, shade: { color: 0x5a3ac0, amt: 0.55 },
+      parts: { kind: 3, n: 160, size: 0.22, add: true, colors: [0x7ff6ff, 0xff8ac8, 0xffffff], r: 18, y0: 0, y1: 8, vy: 0.15, sway: 0.4 },
+      post: { pixel: 3, bloom: 1.0, thresh: 0.6, sat: 1.15, con: 1.05, poster: 14, vig: 0.2 } } },
+  '디 어센트': {
+    ref: 'The Ascent (Neon Giant) · Ghostrunner', bg: 0x05070f, ground: 0x05070f, floor: 0xffffff, stone: 0x22263a, steps: [0.3, 0.7, 1], outline: 0x05060c, outlinePx: 1.6, hemi: 0.6, sun: 0.8,
+    look: { floor: 'ascent', props: 'ascent', ground: false, sky: { mode: 3, top: 0x020308, mid: 0x0b0f24, bot: 0x07060f, acc: 0x3ce6ff }, fog: [0x0a0c1e, 26, 80],
+      hemiSky: 0x3040a0, hemiGround: 0x0a0a14, sunColor: 0x8090ff, sunPos: [-6, 22, 8],
+      rim: { color: 0x7af0ff, str: 0.9, pow: 2.2, self: 1, dir: [0, 1, 0], dirAmt: 0 }, shade: { color: 0x101040, amt: 0.6 },
+      parts: { kind: 2, n: 400, size: 0.45, add: true, colors: [0x9ab8ff, 0xc8d8ff], r: 22, y0: -1, y1: 14, vy: -18, sway: 0, alpha: 0.5 },
+      post: { bloom: 1.35, thresh: 0.45, ca: 1.8, scan: 0.06, grain: 0.04, sat: 1.2, con: 1.15, vig: 0.5, shTint: [0.42, 0.4, 0.62], hiTint: [0.55, 0.5, 0.55], split: 0.15 } } },
+};
+Object.assign(STYLES, LOOK_STYLES);
+for (const s of Object.values(STYLES)) if (s.outlinePx === undefined) s.outlinePx = Math.round((s.outlineScale - 1) * 36 * 10) / 10;
+
+let lookEnv = null, postOn = false;
+const lookLights = [];
+function applyLook() {
+  const L = style.look;
+  if (lookEnv) { disposeTree(lookEnv); lookEnv = null; }
+  stoneGroup.visible = !L;
+  ground.visible = !L || L.ground;
+  dome.visible = !!L;
+  OUTU.px.value = style.outlinePx;
+  LOOKU.sunI.value = style.sun;
+  if (!L) {
+    LOOKU.rimStr.value = 0; LOOKU.shadeAmt.value = 0;
+    hemi.color.set(0xffffff); hemi.groundColor.set(0x556070); sun.color.set(0xffffff); sun.position.set(-8, 22, 6);
+    floorMat.map = null; floorMat.needsUpdate = true;
+    setParticles(null); postOn = false;
+    return;
+  }
+  hemi.color.set(L.hemiSky); hemi.groundColor.set(L.hemiGround); sun.color.set(L.sunColor); sun.position.set(...L.sunPos);
+  scene.fog = new THREE.Fog(L.fog[0], L.fog[1], L.fog[2]);
+  const r = L.rim;
+  LOOKU.rimColor.value.set(r.color); LOOKU.rimStr.value = r.str; LOOKU.rimPow.value = r.pow; LOOKU.rimSelf.value = r.self;
+  LOOKU.rimDir.value.set(...r.dir).normalize(); LOOKU.rimDirAmt.value = r.dirAmt;
+  LOOKU.shadeColor.value.set(L.shade.color); LOOKU.shadeAmt.value = L.shade.amt;
+  const S = L.sky, du = domeMat.uniforms;
+  du.uTop.value.set(S.top); du.uMid.value.set(S.mid); du.uBot.value.set(S.bot); du.uAcc.value.set(S.acc); du.uMode.value = S.mode;
+  floorMat.map?.dispose(); floorMat.map = floorCanvas(FLOORS[L.floor]); floorMat.needsUpdate = true;
+  lookEnv = new THREE.Group(); lookEnv.userData = { flicker: [], float: [], pulse: [] };
+  PROPS[L.props](lookEnv);
+  arena.add(lookEnv);
+  setParticles(L.parts);
+  POST.set(L.post); postOn = CFG.postOn !== false;
+}
+// 매 프레임: 입자, 불꽃 깜빡임, 떠 있는 소품
+function lookTick(dt) {
+  domeMat.uniforms.uTime.value = G.time; partMat2.uniforms.uTime.value = G.time;
+  OUTU.res.value.set(innerWidth, innerHeight);
+  OUTU.px.value = style.outlinePx * Math.max(0.75, innerHeight / 720);
+  if (partSpec && parts2.visible && dt > 0) {
+    const P = partGeo2.attributes.position.array, S = partGeo2.attributes.aSeed.array, s = partSpec;
+    for (let i = 0; i < s.n; i++) {
+      const k = i * 3, sd = S[i];
+      P[k + 1] += s.vy * (0.5 + sd) * dt;
+      P[k] += Math.sin(G.time * (0.6 + sd) + sd * 20) * s.sway * dt;
+      P[k + 2] += Math.cos(G.time * (0.5 + sd) + sd * 13) * s.sway * dt;
+      if (P[k + 1] > s.y1 || P[k + 1] < s.y0) resetPart(i, false);
+    }
+    partGeo2.attributes.position.needsUpdate = true;
+    partMat2.uniforms.uScale.value = innerHeight * 0.9;
+  }
+  if (!lookEnv) return;
+  const U = lookEnv.userData, t = G.time;
+  for (const f of U.flicker) {
+    if (f.L) f.L.intensity = f.base * (f.soft ? 0.85 + 0.15 * Math.sin(t * 1.3 + f.ph) : 0.75 + 0.25 * Math.sin(t * 13 + f.ph) * Math.sin(t * 7.3 + f.ph * 2));
+    if (f.fire) f.fire.scale.set(1, 0.85 + 0.2 * Math.sin(t * 17 + f.ph), 1);
+    if (f.sign) f.sign.material.opacity = Math.sin(t * 0.7 + f.ph) > -0.92 || Math.sin(t * 40) > 0 ? 1 : 0.25;
+  }
+  for (const o of U.float) { o.o.position.y = o.y + Math.sin(t * 0.6 + o.ph) * o.amp; if (o.spin) o.o.rotation.y += o.spin * dt; }
+  for (const o of U.pulse) { const k = 1 + Math.max(0, Math.sin(t * 8 + o.ph)) * 0.12; o.o.scale.set(k, 1, k); }
+}
+function renderLook() {
+  if (postOn && style.look) POST.render(style.look.post);
+  else { renderer.setRenderTarget(null); renderer.render(scene, camera); }
+}
+addEventListener('resize', () => { POST.resize(); if (style.look) POST.set(style.look.post); });
+
+// 타이틀 화면 고르기
+const LOOK_PICKS = ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트'];
+function setLook(name) {
+  CFG.style = name; applyStyle();
+  document.querySelectorAll('#lookPicks .pick').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.look === name)));
+  gui?.controllersRecursive().forEach(c => c.updateDisplay());
+}
+{
+  const row = document.getElementById('lookPicks');
+  for (const name of LOOK_PICKS) {
+    const b = document.createElement('button');
+    b.className = 'pick'; b.type = 'button'; b.dataset.look = name; b.setAttribute('aria-pressed', String(name === CFG.style));
+    b.innerHTML = name + (STYLES[name].ref ? `<small>${STYLES[name].ref.split(' (')[0]}</small>` : '<small>지금 그대로</small>');
+    b.addEventListener('click', () => setLook(name));
+    row.appendChild(b);
+  }
+}
+
 
 // ───────────────────────── 효과 ─────────────────────────
 const textsEl = document.getElementById('texts');
@@ -914,6 +1620,7 @@ addEventListener('keydown', e => {
   if (!G.running && !resultEl.hidden && e.code === 'KeyN' && !$('nextBtn').hidden) return nextStage();
   if (!G.running && !resultEl.hidden && e.code === 'KeyV' && !$('replayBtn').hidden) return $('replayBtn').click();
   if (!titleEl.hidden && e.code === 'KeyU') $('draftBtn').click();
+  if (!titleEl.hidden && e.code === 'KeyH') setLook(LOOK_PICKS[(LOOK_PICKS.indexOf(CFG.style) + 1) % LOOK_PICKS.length]);
   if (!G.running && !resultEl.hidden && e.code === 'KeyR') start(G.mode);
   if (e.code === 'Escape') showTitle();
   if (!titleEl.hidden && e.code === 'KeyB') setBoss({ gate: 'monk', monk: 'rally', rally: 'gate' }[CFG.boss] || 'gate');
@@ -3016,7 +3723,8 @@ fK.add(CHARS.jebi, 'dmg', 2, 20, 1).name('제비 공격 피해');
 fK.add(CHARS.jebi, 'lunge', 2, 8, 0.1).name('제비 파고드는 거리');
 fK.close();
 gui.add(CFG, 'infiniteHP').name('아군 피 무한');
-gui.add(CFG, 'style', Object.keys(STYLES)).name('아트 스타일').onChange(applyStyle);
+gui.add(CFG, 'style', Object.keys(STYLES)).name('아트 스타일').onChange(setLook);
+gui.add(CFG, 'postOn').name('후처리 (레퍼런스 룩)').onChange(applyStyle);
 gui.add({ restart: () => G.mode && start(G.mode) }, 'restart').name('다시 시작');
 function toggleGui() { guiEl.hidden = !guiEl.hidden; }
 tuneBtn.addEventListener('click', toggleGui);
@@ -3030,8 +3738,9 @@ function applyStyle() {
   stoneMats.forEach(m => m.color.set(style.stone));
   gradientTex.dispose(); gradientTex = makeGradient(style.steps);
   toonMats.forEach(m => { m.gradientMap = gradientTex; m.needsUpdate = true; });
-  outlineList.forEach(o => { o.mat.color.set(style.outline); o.mesh.scale.setScalar(style.outlineScale); });
+  outlineList.forEach(o => { o.mat.color.set(style.outline); o.mesh.visible = style.outlinePx > 0; });
   hemi.intensity = style.hemi; sun.intensity = style.sun;
+  applyLook();
 }
 applyStyle();
 
@@ -3191,9 +3900,10 @@ function frame(ms) {
   if (G.replay) replayFrame(raw);
   else { G.players.forEach(p => p.draw(fdt)); G.boss.draw(fdt); }
   fxUpdate(raw, fdt);
+  lookTick(fdt);
   if (G.replay) replayCamera(); else drawCamera(raw);
   if (G.impact > 0) { renderImpact(G.impact > 2 ? 0 : 1); G.impact--; }
-  else renderer.render(scene, camera);
+  else renderLook();
 }
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
