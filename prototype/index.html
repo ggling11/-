@@ -1408,12 +1408,12 @@ const LOOK_STYLES = {
     ref: "Fate/stay night [Heaven's Feel] III. spring song (ufotable)", short: '극장판 · ufotable', bg: 0x06080e, ground: 0x05060a, floor: 0xffffff, stone: 0x4a4e58,
     steps: [0.18, 0.52, 1], outline: 0x06070c, outlinePx: 1.3, hemi: 0.7, sun: 2.9,
     look: { floor: 'springsong', props: 'springsong', ground: false, fx: true, world: true, fogRel: true, models: true,
-      sky: { mode: 6, top: 0x04060c, mid: 0x161e2e, bot: 0x161e2e, acc: 0xcfe0ff }, fog: [0x161e2e, 6, 58],
+      sky: { mode: 6, top: 0x04060c, mid: 0x222c42, bot: 0x222c42, acc: 0xcfe0ff }, fog: [0x222c42, 4, 50], // 멀수록 달빛 안개에 옅어진다 (축대·숲이 겹겹이 떠 보이게)
       hemiSky: 0x34445f, hemiGround: 0x0b0d12, sunColor: 0xc6d6f2, sunPos: [1.4, 19, -21.2],
       rim: { color: 0xd4e4ff, str: 0.8, pow: 2.6, self: 0.25, dir: [0.4, 0.6, -0.7], dirAmt: 0.85 }, shade: { color: 0x1a2a4c, amt: 0.75 },
       fill: 0x3a4660, noStrobe: true,
       parts: { kind: 0, n: 260, size: 0.1, add: true, colors: [0xbfd4ff, 0xbfd4ff, 0xbfd4ff, 0xff2a3a], r: 20, y0: -1, y1: 9, vy: 0.35, sway: 0.5, alpha: 0.8 },
-      post: { bloom: 0.9, thresh: 0.8, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.7, ca: 1.3, grain: 0.014, vig: 0.7, sat: 1.08, con: 1.18, gamma: 0.95,
+      post: { bloom: 0.9, thresh: 0.8, anam: 0.6, anamTint: [0.55, 0.72, 1.0], dof: 0.6, ca: 1.3, grain: 0.014, vig: 0.55, sat: 1.1, con: 1.16, gamma: 1.06, // 6단계: 폰에서도 돌결이 보이게 중간 톤만 조금 (깊은 검정은 남긴다)
         lift: [0, 0.008, 0.025], gain: [0.97, 1.0, 1.07], shTint: [0.3, 0.42, 0.58], hiTint: [0.62, 0.5, 0.46], split: 0.28 } } },
   '디 어센트': {
     ref: 'The Ascent (Neon Giant) · Ghostrunner', bg: 0x05070f, ground: 0x05070f, floor: 0xffffff, stone: 0x22263a, steps: [0.3, 0.7, 1], outline: 0x05060c, outlinePx: 1.6, hemi: 0.6, sun: 0.8,
