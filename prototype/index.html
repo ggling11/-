@@ -2822,7 +2822,8 @@ function hfAnimPlayer(P, dt) {
   else if (s === 'down') Object.assign(pose, { crouch: 0.7, pitch: 0.2 });
   else Object.assign(pose, { twist: armY * 0.3 });
   hfLocomote(M, P.pos, P.yaw, dt, pose, cfg);
-  if (s === 'free' && !G.replay) { const k = M.mo.walkK || 0; // 다시 보기는 기록된 팔 각도를 그대로 쓴다 M.carry = (M.carry || 0) + ((P.char.key === 'jebi' ? 1.5 : 0.7) * k - (M.carry || 0)) * (1 - Math.exp(-dt * 8)); P.arm.rotation.y += M.carry; } else M.carry = 0;
+  // 다시 보기는 기록된 팔 각도를 그대로 쓴다
+  if (s === 'free' && !G.replay) { const k = M.mo.walkK || 0; M.carry = (M.carry || 0) + ((P.char.key === 'jebi' ? 1.5 : 0.7) * k - (M.carry || 0)) * (1 - Math.exp(-dt * 8)); P.arm.rotation.y += M.carry; } else M.carry = 0;
 }
 // 보스: 무겁고 느리다. 예비 동작에서 크게 젖히고 낮추고, 해방에서 깊게 꽂힌다
 const HF_BOSS_GAIT = { walkSpeed: 3.2, stride: 2.6, bob: 0.1, lift: 0.22, walkLean: 0.1, k: 70, zeta: 0.55, breath: 1.1, breathAmp: 0.025, leadFoot: 1 };
