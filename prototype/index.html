@@ -1468,7 +1468,7 @@ function applyLook() {
 // 매 프레임: 입자, 불꽃 깜빡임, 떠 있는 소품
 function lookTick(dt) {
   domeMat.uniforms.uTime.value = G.time; partMat2.uniforms.uTime.value = G.time; LOOKU.time.value = G.time;
-  cineTick(dt); POST.tick(dt);
+  cineTick(dt); POST.tick(dt); hfGhostTick(dt);
   if (style.look?.noStrobe && G.impact > 0) { G.impact = 0; G.flash = Math.max(G.flash, 0.55); } // 흑백 반전 스트로브 대신 부드러운 흰 섬광
   OUTU.res.value.set(innerWidth, innerHeight);
   OUTU.px.value = style.outlinePx * Math.max(0.75, innerHeight / 720);
@@ -2467,6 +2467,10 @@ function buildBossModel(B) {
       [armArm, hfBox(0.32, 0.3, 0.38, [0, -1.06, 0.05])], [trim, hfBox(0.34, 0.08, 0.12, [0, -1.0, 0.24])], [armArm, hfBox(0.1, 0.2, 0.14, [s * -0.16, -1.04, 0.14], [0, 0, s * 0.4])]], M);
     return { upper, fore, s, a: 1.0, b: 1.0, shoulder: V(s * 1.1, 3.3, 0) };
   });
+  // 몸 구: 천을 걸어 둔 줄은 모두 구 바깥에 있어야 한다 (안이면 천이 위로 밀려 뒤집힌다)
+  hfFinish(M, { torso, pelvis, head, leg: { L1: 0.92, L2: 0.88, footY: 0.1 },
+    colliders: [{ bone: torso, a: V(0, 0.8, -0.05), r: 0.72 }, { bone: torso, a: V(0, 0.3, -0.06), r: 0.6 }, { bone: pelvis, a: V(0, -0.5, -0.28), r: 0.86 }, ...M.legs.flatMap(L => [{ bone: L.thigh, a: V(), b: V(0, -0.92, 0), r: 0.28, leg: true }, { bone: L.shin, a: V(), b: V(0, -0.88, 0), r: 0.22, leg: true }])],
+    cloths: [{ mesh: capeMesh, cols: 11, rows: 15, damp: 0.993, wind: 0.9, legs: false }, { mesh: tab, cols: 5, rows: 11, damp: 0.99, wind: 0.5 }] });
   M.root.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { if (!M.mats.includes(m)) M.mats.push(m); }); });
   return M;
 }
@@ -2482,7 +2486,7 @@ function buildMoruModel(P) {
   const hips = [[dark, hfLat([[0.3, -0.12], [0.36, 0.0], [0.37, 0.12]])], [leather, hfBand(0.38, 0.06, 0.07)], [trim, hfBox(0.14, 0.12, 0.06, [0, 0.06, 0.42])]];
   hfTassets(hips, plate, trim, 0.4, 0.47, 0.0, 0.3, 4, 1.6, { gap: 0.12 });
   const pelvis = hfBone(root, hips, M, [0, 0.84, 0]);
-  const tab = new THREE.Mesh(hfClothGeo(0.36, 0.56, 3, 6, 0.4, 0.2, -0.1), tabM); tab.position.set(0, 0.0, 0.38); tab.rotation.y = Math.PI; tab.castShadow = true; pelvis.add(tab); M.tabard = tab;
+  const tab = new THREE.Mesh(hfClothGeo(0.36, 0.56, 3, 6, 0.4, 0.2, -0.1), tabM); tab.position.set(0, 0.0, 0.43); tab.rotation.y = Math.PI; tab.castShadow = true; pelvis.add(tab); M.tabard = tab;
   M.legs = [];
   for (const s of [-1, 1]) {
     const thigh = hfBone(pelvis, [[dark, hfLimb(0.42, 0.15, 0.13, 0.015)], [plate, hfLat([[0.13, -0.06], [0.14, 0], [0.11, 0.07], [0.002, 0.11]], { p: [0, -0.4, 0.07], r: [Math.PI / 2, 0, 0] })]], M, [s * 0.19, -0.04, 0]);
@@ -2524,6 +2528,9 @@ function buildMoruModel(P) {
     const fore = hfBone(root, [[plate, hfLat([[0.13, -0.3], [0.135, -0.26], [0.11, -0.12], [0.095, 0]], { seg: 12 })], [leather, hfBox(0.15, 0.14, 0.16, [0, -0.38, 0.02])], [trim, hfBand(0.13, -0.27, 0.025)]], M);
     return { upper, fore, s, a: 0.38, b: 0.38, shoulder: V(s * 0.36, 1.4, 0.02) };
   });
+  hfFinish(M, { torso, pelvis, head: hd, leg: { L1: 0.4, L2: 0.32, footY: 0.075 },
+    colliders: [{ bone: torso, a: V(0, 0.25, -0.02), r: 0.36 }, { bone: pelvis, a: V(0, -0.14, -0.05), r: 0.34 }, ...M.legs.flatMap(L => [{ bone: L.thigh, a: V(), b: V(0, -0.4, 0), r: 0.13, leg: true }, { bone: L.shin, a: V(), b: V(0, -0.32, 0), r: 0.12, leg: true }])],
+    cloths: [{ mesh: capeMesh, cols: 7, rows: 9, damp: 0.992, wind: 0.6, legs: false }, { mesh: tab, cols: 4, rows: 7, damp: 0.99, wind: 0.4 }] });
   M.root.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { if (!M.mats.includes(m)) M.mats.push(m); }); });
   return M;
 }
@@ -2584,6 +2591,9 @@ function buildJebiModel(P) {
     const fore = hfBone(root, [[coat, hfLimb(0.32, 0.062, 0.055)], [trim, hfBand(0.066, -0.28, 0.03)], [dark, hfBox(0.075, 0.1, 0.09, [0, -0.36, 0.01])]], M);
     return { upper, fore, s, a: 0.36, b: 0.36, shoulder: V(s * 0.25, 1.56, 0) };
   });
+  hfFinish(M, { torso, pelvis, head: hd, leg: { L1: 0.46, L2: 0.37, footY: 0.07 },
+    colliders: [{ bone: torso, a: V(0, 0.3, -0.02), r: 0.26 }, { bone: hd, a: V(), r: 0.23 }, { bone: pelvis, a: V(0, -0.08, 0.04), r: 0.19 }, ...M.legs.flatMap(L => [{ bone: L.thigh, a: V(), b: V(0, -0.46, 0), r: 0.1, leg: true }, { bone: L.shin, a: V(), b: V(0, -0.37, 0), r: 0.085, leg: true }])],
+    cloths: M.coat.map(c => ({ mesh: c, cols: 4, rows: 9, damp: 0.99, wind: 0.5 })), chains: M.tails.map(rib => ({ rib, bone: torso })) });
   M.root.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { if (!M.mats.includes(m)) M.mats.push(m); }); });
   return M;
 }
@@ -2591,17 +2601,255 @@ function buildJebiModel(P) {
 // 팔 IK: 무기 쪽 손은 손잡이, 반대 손은 두 손 무기면 손잡이 아래쪽, 아니면 허리 옆
 const _hfA = V(), _hfB = V();
 function hfPoseArms(M, pivots) {
-  M.root.updateWorldMatrix(true, false);
+  M.root.updateWorldMatrix(true, true);
   M.arms.forEach((A, i) => {
-    const S = A.shoulder;
+    const S = A.shoulderT ? M.root.worldToLocal(M.torso.localToWorld(A.shoulderT.clone())) : A.shoulder;
     let H;
     if (pivots) { pivots[i].updateWorldMatrix(true, false); H = M.root.worldToLocal(pivots[i].localToWorld(_hfA.copy(M.grip[i]))); } // 보스: 양팔 각자 회전축
     else if (M.grip[i]) { M.gripObj.updateWorldMatrix(true, false); H = M.root.worldToLocal(M.gripObj.localToWorld(_hfA.copy(M.grip[i]))); }
-    else H = _hfB.set(A.s * 0.3, S.y - 0.66, 0.06).clone();
+    else { const sw = (M.mo?.swing || 0) * (A.s > 0 ? 1 : -1); H = _hfB.set(A.s * 0.3, S.y - 0.66 + Math.abs(sw) * 0.08, 0.06 + sw * 0.3).clone(); } // 빈손: 걸음에 맞춰 앞뒤로
     const pole = V(A.s * 0.7, -0.3, -1);
     const { E, H: Hc } = hfIK(S, H.clone(), A.a, A.b, pole);
     hfAim(A.upper, S, E, V(0, 0, 1)); hfAim(A.fore, E, Hc, V(0, 0, 1));
   });
+}
+
+// ───────────────────────── [알파] 스프링 송 움직임 (단계 4) ─────────────────────────
+// 원칙: 무게와 속도의 대비. 예비 동작(몸을 젖히고 낮춘다) → 해방(앞으로 튕기며 넘어선다) → 잔향(천과 머리끈이 뒤따른다).
+//   걸음은 실제 이동 거리로 굴려 발이 미끄러지지 않고, 다리는 2관절 IK로 땅을 디딘다.
+//   몸의 비틀기·숙임·낮춤은 스프링으로 따라가서 해방 때 저절로 조금 넘어섰다 돌아온다(무거운 모루는 느리게, 제비는 빠르게).
+//   천은 베를레(점 + 길이 묶음)로 흔들리고, 몸 둘레의 구에 부딪혀 몸을 뚫지 않는다.
+const _w1 = V(), _w2 = V(), _w3 = V(), _w4 = V();
+// 뼈를 세계 좌표의 두 점으로 겨눈다 (부모 좌표로 바꿔서 hfAim)
+function hfAimW(bone, fromW, toW, frontW) {
+  const par = bone.parent, f = par.worldToLocal(_w1.copy(fromW)), t = par.worldToLocal(_w2.copy(toW));
+  const fr = par.worldToLocal(_w3.copy(fromW).add(frontW)).sub(f);
+  hfAim(bone, f.clone(), t.clone(), fr.clone());
+  bone.updateWorldMatrix(false, false);
+}
+// 감쇠 스프링: 목표를 따라가되 덜 감쇠하면 넘어섰다 돌아온다
+function hfSpring(o, key, target, dt, k, zeta = 0.55) {
+  const v = key + 'V'; o[v] = o[v] || 0;
+  const h = Math.min(dt, 1 / 30), n = dt > 0 ? Math.max(1, Math.ceil(dt / h)) : 0, s = dt / Math.max(1, n);
+  for (let i = 0; i < n; i++) { o[v] += (k * (target - o[key]) - 2 * zeta * Math.sqrt(k) * o[v]) * s; o[key] += o[v] * s; }
+  return o[key];
+}
+// 움직임 준비: 어깨를 몸통 기준으로, 다리의 엉덩이 자리, 쉼 자세 기록
+function hfFinish(M, o) {
+  M.torso = o.torso; M.pelvis = o.pelvis; M.leg = o.leg; M.colliders = o.colliders || []; M.head = M.head || o.head;
+  M.rest = { pelvis: o.pelvis.position.clone(), torso: o.torso.position.clone() };
+  for (const A of M.arms) A.shoulderT = A.shoulder.clone().sub(o.torso.position);
+  for (const L of M.legs) L.hip = L.thigh.position.clone();
+  M.mo = { phase: 0, speed: 0, prev: null, twist: 0, pitch: 0, roll: 0, crouch: 0, lunge: 0, t: Math.random() * 10 };
+  M.cloths = (o.cloths || []).map(c => new HFCloth(c.mesh, c.cols, c.rows, M, c));
+  M.chains = (o.chains || []).map(c => new HFChain(c.rib, c.bone, M, c));
+}
+// 다리 IK: 엉덩이에서 발 목표까지, 무릎은 앞으로 굽는다
+function hfLegs(M, feet) {
+  const R = M.root, { L1, L2 } = M.leg;
+  M.legs.forEach((L, i) => {
+    const H = R.worldToLocal(M.pelvis.localToWorld(_w4.copy(L.hip))).clone();
+    const { E: K, H: F } = hfIK(H, feet[i].clone(), L1, L2, V(0, 0.15, 1));
+    const Hw = R.localToWorld(H.clone()), Kw = R.localToWorld(K.clone()), Fw = R.localToWorld(F.clone());
+    const front = R.localToWorld(H.clone().add(V(0, 0, 1))).sub(Hw);
+    hfAimW(L.thigh, Hw, Kw, front);
+    hfAimW(L.shin, Kw, Fw, front);
+  });
+}
+// 걸음 + 자세 (사람·보스 공통). pose: { crouch, twist, pitch, roll, lunge(앞발 내딛기), spread(보폭 벌림), tuck(발 들기) }
+function hfLocomote(M, pos, yaw, dt, pose, cfg) {
+  const mo = M.mo; mo.t += dt;
+  if (!mo.prev || mo.prev.distanceTo(pos) > 1.2) mo.prev = pos.clone(); // 순간이동은 걸음·속도에 넣지 않는다
+  const d = _w1.copy(pos).sub(mo.prev); d.y = 0;
+  if (dt > 0) mo.prev.copy(pos); else d.set(0, 0, 0); // 시간이 멈춘 프레임의 이동은 다음 프레임으로 (천과 걸음이 같은 시간을 산다)
+  const dist = d.length(), sp = dt > 0 ? dist / dt : 0;
+  mo.speed += (Math.min(sp, 20) - mo.speed) * (1 - Math.exp(-dt * 8));
+  // 몸 기준 이동 방향 (+Z 앞, +X 왼쪽 손 쪽)
+  const fx = Math.sin(yaw), fz = Math.cos(yaw), lx = d.x * fz - d.z * fx, lz = d.x * fx + d.z * fz;
+  const ml = Math.hypot(lx, lz), mdir = ml > 1e-5 ? V(lx / ml, 0, lz / ml) : V(0, 0, 1);
+  const walkK = clamp(mo.speed / cfg.walkSpeed, 0, 1) * (pose.noWalk ? 0 : 1);
+  mo.phase += pose.noWalk ? 0 : (dist / cfg.stride) * Math.PI * 2;
+  const k = cfg.k;
+  const crouch = hfSpring(mo, 'crouch', pose.crouch || 0, dt, k * 0.8);
+  const twist = hfSpring(mo, 'twist', pose.twist || 0, dt, k, cfg.zeta);
+  const pitch = hfSpring(mo, 'pitch', (pose.pitch || 0) + walkK * cfg.walkLean, dt, k, cfg.zeta);
+  const roll = hfSpring(mo, 'roll', pose.roll || 0, dt, k * 0.7);
+  const lunge = hfSpring(mo, 'lunge', pose.lunge || 0, dt, k * 1.2, 0.7);
+  const legLen = M.leg.L1 + M.leg.L2, breathe = Math.sin(mo.t * cfg.breath) * 0.5 + 0.5;
+  const bob = -Math.abs(Math.cos(mo.phase)) * cfg.bob * walkK;
+  mo.swing = Math.cos(mo.phase) * walkK; mo.walkK = walkK;
+  // 골반·몸통
+  M.pelvis.position.copy(M.rest.pelvis); M.pelvis.position.y += -crouch * legLen * 0.3 + bob - legLen * 0.03;
+  M.pelvis.rotation.set(0, -twist * 0.35 + Math.sin(mo.phase) * 0.12 * walkK, Math.cos(mo.phase) * 0.05 * walkK);
+  M.torso.position.copy(M.rest.torso); M.torso.position.y += -crouch * legLen * 0.3 + bob - legLen * 0.03 - breathe * cfg.breathAmp;
+  M.torso.rotation.set(pitch + breathe * cfg.breathAmp * 0.6, twist - Math.sin(mo.phase) * 0.08 * walkK, roll);
+  if (M.head) M.head.rotation.set(-pitch * 0.5, -twist * 0.4, -roll * 0.5);
+  M.root.updateWorldMatrix(true, true);
+  // 발: 쉼 자리 + 걸음 (발이 앞으로 갈 때만 든다) + 앞발 내딛기
+  const sh = cfg.stride / 4, feet = M.legs.map((L, i) => {
+    const ph = mo.phase + (i ? Math.PI : 0), along = Math.cos(ph) * sh * walkK, lift = Math.max(0, -Math.sin(ph)) * cfg.lift * walkK;
+    const spread = 1 + (pose.spread || 0);
+    const f = V(L.hip.x * spread * 1.05, M.leg.footY + lift + (pose.tuck || 0), (i === cfg.leadFoot ? 1 : -0.6) * lunge * legLen * 0.32 + (i === cfg.leadFoot ? 0.04 : -0.04) * legLen);
+    return f.addScaledVector(mdir, along);
+  });
+  hfLegs(M, feet);
+  return { walkK };
+}
+// ── 천 시뮬레이션 (베를레): 격자 천(망토·앞자락·코트 자락)과 사슬(천 띠) 공통 ──
+// 몸 충돌체: 구 { bone, a, r } 또는 캡슐 { bone, a, b, r } (팔다리). 세계 좌표로 바꾼 뒤 한 프레임 안의 작은 걸음마다
+// 지난 프레임 자리와 이번 자리 사이를 보간해서 쓴다 → 빠르게 휘두른 다리가 천을 건너뛰지 않는다
+function hfColWorld(M, legs) {
+  const sc = M.root.getWorldScale(_w3).x;
+  return M.colliders.filter(c => legs || !c.leg).map(c => ({ a: c.bone.localToWorld(c.a.clone()), b: c.b ? c.bone.localToWorld(c.b.clone()) : null, r: c.r * sc }));
+}
+function hfColLerp(prev, cur, k) {
+  if (!prev || prev.length !== cur.length) return cur;
+  return cur.map((c, i) => ({ a: prev[i].a.clone().lerp(c.a, k), b: c.b ? prev[i].b.clone().lerp(c.b, k) : null, r: c.r }));
+}
+const _hc = V();
+function hfPush(p, cols) { // 점 p를 충돌체 밖으로. 가장 깊은 것부터 밀어 겹친 충돌체 사이에서 덜 흔들린다
+  for (let pass = 0; pass < 2; pass++) for (const c of cols) {
+    let cx = c.a.x, cy = c.a.y, cz = c.a.z;
+    if (c.b) { const ex = c.b.x - c.a.x, ey = c.b.y - c.a.y, ez = c.b.z - c.a.z, L2 = ex * ex + ey * ey + ez * ez || 1e-9; const t = clamp(((p.x - c.a.x) * ex + (p.y - c.a.y) * ey + (p.z - c.a.z) * ez) / L2, 0, 1); cx += ex * t; cy += ey * t; cz += ez * t; }
+    const dx = p.x - cx, dy = p.y - cy, dz = p.z - cz, d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 < c.r * c.r) { const d = Math.sqrt(d2) || 1e-6, s = c.r / d; p.set(cx + dx * s, cy + dy * s, cz + dz * s); }
+  }
+  if (p.y < 0.03) p.y = 0.03;
+}
+function hfDepth(p, cols) { let f = 0, m = 0; for (const c of cols) { let C = c.a; if (c.b) { const e = _hc.copy(c.b).sub(c.a), t = clamp(p.clone().sub(c.a).dot(e) / (e.lengthSq() || 1e-9), 0, 1); C = c.a.clone().addScaledVector(e, t); } const d = c.r - p.distanceTo(C); f = Math.max(f, d / c.r); m = Math.max(m, d); } return [f, m]; }
+class HFSim {
+  // pts: 쉼 자세(부모 좌표), host: 그 좌표의 Object3D, pin(i): 걸린 점인가, cons: [[a, b, 길이]]
+  constructor(host, pts, pin, cons, M, o) {
+    this.host = host; this.M = M; this.o = o; this.rest = pts; this.pinF = pin; this.cons = cons;
+    this.p = pts.map(v => v.clone()); this.q = pts.map(v => v.clone()); this.ready = false; this.acc = 0; this.prevCols = null; this.anchor = null;
+  }
+  restW(i, out) { return this.host.localToWorld(out.copy(this.rest[i])); }
+  reset() {
+    for (let i = 0; i < this.p.length; i++) { this.restW(i, this.p[i]); this.q[i].copy(this.p[i]); }
+    const cols = hfColWorld(this.M, this.o.legs !== false); for (let i = 0; i < this.p.length; i++) if (!this.pinF(i)) { hfPush(this.p[i], cols); this.q[i].copy(this.p[i]); }
+    this.ready = true; this.anchor = null; this.prevCols = cols;
+  }
+  step(dt, time) {
+    this.host.updateWorldMatrix(true, false);
+    if (!this.ready) this.reset();
+    if (this.restW(0, _w1).distanceTo(this.p[0]) > 1.2) this.reset(); // 순간이동했으면 다시 건다 (가장 빠른 구르기도 한 프레임 0.3m 안팎)
+    if (dt > 0) {
+      // 몸이 움직인 만큼 일부를 그대로 따라온다 (나머지만 관성으로 뒤처진다: 걸음엔 살짝, 질주·구르기엔 크게)
+      const a = _w4.set(0, 0, 0); let n = 0; for (let i = 0; i < this.p.length; i++) if (this.pinF(i)) { a.add(this.restW(i, _w1)); n++; } a.divideScalar(Math.max(1, n));
+      if (this.anchor) { const d = _w1.copy(a).sub(this.anchor).multiplyScalar(this.o.follow ?? 0.6); for (let i = 0; i < this.p.length; i++) if (!this.pinF(i)) { this.p[i].add(d); this.q[i].add(d); } }
+      this.anchor = (this.anchor || V()).copy(a);
+      const h = 1 / 90, g = this.o.gravity ?? -9.8, damp = this.o.damp ?? 0.99, wind = this.o.wind ?? 0.6, iters = this.o.iters ?? 6;
+      this.acc = Math.min(this.acc + dt, h * 4);
+      const steps = Math.floor(this.acc / h), cur = hfColWorld(this.M, this.o.legs !== false);
+      for (let s = 0; s < steps; s++) {
+        this.acc -= h;
+        const cols = hfColLerp(this.prevCols, cur, (s + 1) / steps);
+        const wx = Math.sin(time * 0.7 + 1.3) * wind, wz = Math.cos(time * 0.53) * wind * 0.6;
+        for (let i = 0; i < this.p.length; i++) {
+          if (this.pinF(i)) { this.restW(i, this.p[i]); this.q[i].copy(this.p[i]); continue; }
+          const p = this.p[i], q = this.q[i]; let vx = (p.x - q.x) * damp, vy = (p.y - q.y) * damp, vz = (p.z - q.z) * damp;
+          const vl = Math.hypot(vx, vy, vz), vmax = 0.2; if (vl > vmax) { vx *= vmax / vl; vy *= vmax / vl; vz *= vmax / vl; } // 한 걸음에 18m/s 넘게 튀지 않게
+          q.copy(p); p.x += vx + wx * h * h; p.y += vy + g * h * h; p.z += vz + wz * h * h;
+        }
+        for (let it = 0; it < iters; it++) {
+          for (const [a, b, L] of this.cons) {
+            const pa = this.p[a], pb = this.p[b], dx = pb.x - pa.x, dy = pb.y - pa.y, dz = pb.z - pa.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+            const wa = this.pinF(a) ? 0 : 1, wb = this.pinF(b) ? 0 : 1, w = wa + wb; if (!w) continue;
+            const k = (d - L) / d / w; pa.x += dx * k * wa; pa.y += dy * k * wa; pa.z += dz * k * wa; pb.x -= dx * k * wb; pb.y -= dy * k * wb; pb.z -= dz * k * wb;
+          }
+          for (let i = 0; i < this.p.length; i++) if (!this.pinF(i)) hfPush(this.p[i], cols);
+        }
+      }
+      if (steps) this.prevCols = cur;
+    }
+    { const cur = hfColWorld(this.M, this.o.legs !== false); for (let i = 0; i < this.p.length; i++) if (!this.pinF(i)) hfPush(this.p[i], cur); } // 프레임 끝 자세로 한 번 더 (시간이 멈춘 프레임에 몸이 옮겨져도)
+    this.write();
+  }
+  // 검사용: 몸 충돌체 안으로 3% 넘게 들어간 점 수, 가장 깊이(m)
+  penetrations() {
+    const cols = hfColWorld(this.M, this.o.legs !== false); let n = 0; this.depth = 0;
+    for (let i = 0; i < this.p.length; i++) { if (this.pinF(i)) continue; const [f, m] = hfDepth(this.p[i], cols); if (f > 0.03) n++; this.depth = Math.max(this.depth, m); }
+    return n;
+  }
+}
+// 격자 천: 메시 좌표의 정점 = 점. 위 줄이 걸린다. 가로·세로·대각 + 두 칸 건너 세로(굽힘 버팀)
+class HFCloth extends HFSim {
+  constructor(mesh, cols, rows, M, o) {
+    const P = mesh.geometry.attributes.position, rest = []; for (let i = 0; i < P.count; i++) rest.push(V(P.getX(i), P.getY(i), P.getZ(i)));
+    const cons = [], id = (c, r) => r * cols + c, add = (a, b) => cons.push([a, b, rest[a].distanceTo(rest[b])]);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      if (c + 1 < cols) add(id(c, r), id(c + 1, r));
+      if (r + 1 < rows) add(id(c, r), id(c, r + 1));
+      if (c + 1 < cols && r + 1 < rows) { add(id(c, r), id(c + 1, r + 1)); add(id(c + 1, r), id(c, r + 1)); }
+      if (r + 2 < rows) add(id(c, r), id(c, r + 2));
+    }
+    const pinRows = o.pinRows || 1;
+    super(mesh, rest, i => Math.floor(i / cols) < pinRows, cons, M, o);
+    this.mesh = mesh; this.cols = cols; this.rows = rows;
+  }
+  write() {
+    const P = this.mesh.geometry.attributes.position;
+    for (let i = 0; i < this.p.length; i++) { const v = this.mesh.worldToLocal(_w1.copy(this.p[i])); P.setXYZ(i, v.x, v.y, v.z); }
+    P.needsUpdate = true; this.mesh.geometry.computeVertexNormals(); this.mesh.geometry.computeBoundingSphere();
+  }
+}
+// 사슬(천 띠): 띠의 점 열. 앞 두 점이 목에 걸린다
+class HFChain extends HFSim {
+  constructor(rib, bone, M, o) {
+    const rest = rib.pts.map(v => v.clone()), cons = rest.slice(1).map((v, i) => [i, i + 1, v.distanceTo(rest[i])]);
+    super(bone, rest, i => i < 2, cons, M, { follow: 0.3, damp: 0.985, gravity: -5.5, iters: 8, wind: 0.8, ...o });
+    this.rib = rib;
+  }
+  write() { for (let i = 0; i < this.p.length; i++) this.rib.pts[i].copy(this.host.worldToLocal(_w1.copy(this.p[i]))); this.rib.build(); }
+}
+function hfCloth(M, dt) { const t = G.time; for (const c of M.cloths) c.step(dt, t); for (const c of M.chains) c.step(dt, t); }
+
+
+// 사람: 상태 → 자세
+const HF_GAIT = {
+  moru: { walkSpeed: 4.5, stride: 1.5, bob: 0.05, lift: 0.14, walkLean: 0.08, k: 160, zeta: 0.5, breath: 1.7, breathAmp: 0.012, leadFoot: 1 },
+  jebi: { walkSpeed: 5.5, stride: 2.1, bob: 0.04, lift: 0.18, walkLean: 0.14, k: 420, zeta: 0.42, breath: 2.1, breathAmp: 0.008, leadFoot: 1 },
+};
+function hfAnimPlayer(P, dt) {
+  const M = P.hfM, s = P.state, cfg = HF_GAIT[P.char.key], armY = P.arm.rotation.y, pose = {};
+  if (s === 'attack') {
+    if (!P.hitDone) { const k = clamp(P.t / Math.max(0.01, P.windup), 0, 1); Object.assign(pose, { crouch: 0.35 * k, twist: armY * 0.55, pitch: -0.2 * k, lunge: -0.25 * k, roll: 0.06 * k }); }
+    else Object.assign(pose, { crouch: 0.45, twist: armY * 0.65, pitch: 0.38, lunge: 1, roll: -0.08 }); // 해방: 앞발을 내딛고 몸을 던진다
+  } else if (s === 'charge') Object.assign(pose, { crouch: 0.6, twist: armY * 0.5, pitch: -0.12, lunge: -0.4, spread: 0.3 });
+  else if (s === 'receive' || s === 'cover') Object.assign(pose, { crouch: 0.38, pitch: 0.14, spread: 0.35, lunge: 0.3, twist: armY * 0.4 });
+  else if (s === 'dodge') Object.assign(pose, { crouch: 0.55, pitch: 0.42, tuck: 0.12, noWalk: true });
+  else if (s === 'recoil' || s === 'hurt') Object.assign(pose, { crouch: 0.42, pitch: -0.3, roll: 0.1, spread: 0.2 });
+  else if (s === 'down') Object.assign(pose, { crouch: 0.7, pitch: 0.2 });
+  else Object.assign(pose, { twist: armY * 0.3 });
+  hfLocomote(M, P.pos, P.yaw, dt, pose, cfg);
+  if (s === 'free' && !G.replay) { const k = M.mo.walkK || 0; // 다시 보기는 기록된 팔 각도를 그대로 쓴다 M.carry = (M.carry || 0) + ((P.char.key === 'jebi' ? 1.5 : 0.7) * k - (M.carry || 0)) * (1 - Math.exp(-dt * 8)); P.arm.rotation.y += M.carry; } else M.carry = 0;
+}
+// 보스: 무겁고 느리다. 예비 동작에서 크게 젖히고 낮추고, 해방에서 깊게 꽂힌다
+const HF_BOSS_GAIT = { walkSpeed: 3.2, stride: 2.6, bob: 0.1, lift: 0.22, walkLean: 0.1, k: 70, zeta: 0.55, breath: 1.1, breathAmp: 0.025, leadFoot: 1 };
+function hfAnimBoss(B, dt) {
+  const M = B.hfM, A = B.atk, st = B.state, p = A ? clamp(B.t / A.windup, 0, 1) : 0, pose = {};
+  if (st === 'windup' && A && (A.kind === 'slam' || A.kind === 'midSlam' || A.kind === 'chain')) Object.assign(pose, { crouch: 0.3 * p, pitch: -0.28 * p, twist: -0.25 * p, lunge: -0.3 * p, spread: 0.2 * p });
+  else if (st === 'windup' && A && A.kind === 'sweep') Object.assign(pose, { crouch: 0.35 * p, twist: 0.6 * p, pitch: -0.1 * p, spread: 0.3 * p });
+  else if (st === 'windup' && A && A.kind === 'charge') Object.assign(pose, { crouch: 0.45 * p, pitch: 0.3 * p, lunge: -0.4 * p });
+  else if (st === 'active' && A && A.kind === 'charge') Object.assign(pose, { crouch: 0.3, pitch: 0.45, lunge: 0.6 });
+  else if (st === 'active' || (st === 'recover' && A && (A.kind === 'slam' || A.kind === 'midSlam'))) Object.assign(pose, { crouch: 0.6, pitch: 0.42, twist: 0.15, lunge: 1, spread: 0.3 }); // 깊게 꽂힌다
+  else if (st === 'gap' || st === 'stagger') Object.assign(pose, { crouch: 0.5 + Math.sin(G.time * 9) * 0.05, pitch: -0.32, roll: 0.14 * Math.sin(G.time * 3), spread: 0.4 });
+  else if (st === 'recover') Object.assign(pose, { crouch: 0.25, pitch: 0.1 });
+  hfLocomote(M, B.pos, B.yaw, dt, pose, HF_BOSS_GAIT);
+}
+// ── 잔상: 빠르게 움직일 때 몸 모양을 그대로 떠서 남긴다 (제비가 특히 많이) ──
+const hfGhosts = [];
+function hfGhost(P, color, life = 0.28) {
+  const g = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.38, depthWrite: false, blending: THREE.AdditiveBlending });
+  const grab = obj => obj.traverse(o => { if (!o.isMesh || !o.visible || o.material?.side === THREE.BackSide || o.material?.isMeshBasicMaterial) return; o.updateWorldMatrix(true, false); const m = new THREE.Mesh(o.geometry, mat); m.matrixAutoUpdate = false; m.matrix.copy(o.matrixWorld); g.add(m); });
+  grab(P.hfM.root); if (P.hfM.weapon) grab(P.hfM.weapon);
+  scene.add(g); hfGhosts.push({ g, mat, t: 0, life });
+}
+function hfGhostTick(dt) {
+  for (let i = hfGhosts.length - 1; i >= 0; i--) {
+    const h = hfGhosts[i]; h.t += dt; h.mat.opacity = 0.38 * Math.max(0, 1 - h.t / h.life) ** 1.5;
+    if (h.t >= h.life) { scene.remove(h.g); h.mat.dispose(); hfGhosts.splice(i, 1); }
+  }
 }
 
 // ───────────────────────── 효과 ─────────────────────────
@@ -3235,7 +3483,15 @@ class Player {
     this.foot.material.color.set(ctrl ? 0xffffff : this.color);
     this.foot.material.opacity = practice && !ctrl ? 0.25 : ctrl ? 0.95 : 0.55;
     this.foot.scale.setScalar(ctrl ? 1.12 + Math.sin(G.time * 6) * 0.06 : 1);
-    if (this.hfM?.on) { hfPoseArms(this.hfM); for (const m of this.hfM.extraEmissive) m.emissive.copy(this.bodyMat.emissive); }
+    if (this.hfM?.on) { this.hfTick(dt); for (const m of this.hfM.extraEmissive) m.emissive.copy(this.bodyMat.emissive); }
+  }
+  // [알파] 스프링 송 모델: 걸음·자세 → 팔 IK → 천 → 잔상 (다시 보기에서도 부른다)
+  hfTick(dt) {
+    const M = this.hfM;
+    hfAnimPlayer(this, dt); hfPoseArms(M); hfCloth(M, dt);
+    const light = this.char.key === 'jebi', fast = M.mo.speed > (light ? 8 : 11);
+    M.ghostT = (M.ghostT || 0) - dt;
+    if (fast && dt > 0 && M.ghostT <= 0 && this.root.visible && cine.on) { hfGhost(this, light ? 0x7fe0ff : 0xffa080, light ? 0.3 : 0.2); M.ghostT = light ? 0.03 : 0.07; }
   }
 }
 
@@ -3768,8 +4024,9 @@ class Boss {
     this.sqT = (this.sqT || 0) + dt;
     const sq = (this.squash || 0) * Math.exp(-this.sqT * 6) * Math.cos(this.sqT * 26);
     this.spin.scale.set(1 + 0.16 * sq, 1 - 0.2 * sq, 1 + 0.16 * sq);
-    if (this.hfM?.on) { hfPoseArms(this.hfM, this.arms); for (const m of this.armMats) m.emissive.copy(e); }
+    if (this.hfM?.on) { this.hfTick(dt); for (const m of this.armMats) m.emissive.copy(e); }
   }
+  hfTick(dt) { hfAnimBoss(this, dt); hfPoseArms(this.hfM, this.arms); hfCloth(this.hfM, dt); }
 }
 
 // ───────────────────────── 전투 규칙 ─────────────────────────
@@ -5155,7 +5412,7 @@ function frame(ms) {
     drawHud();
   } else clearInputEdges();
   const fdt = G.freezeFx ? 0 : raw; // 완벽한 합 정지 중에는 모양과 파티클도 멈춘다
-  if (G.replay) replayFrame(raw);
+  if (G.replay) { replayFrame(raw); G.players.forEach(p => p.hfM?.on && p.hfTick(raw)); if (G.boss.hfM?.on) G.boss.hfTick(raw); } // [알파] 다시 보기에서도 모델이 움직인다
   else { G.players.forEach(p => p.draw(fdt)); G.boss.draw(fdt); }
   fxUpdate(raw, fdt);
   lookTick(fdt);
@@ -5174,5 +5431,5 @@ G.players[1].reset(V(2.5, 0, 5), Math.PI);
 requestAnimationFrame(frame);
 
 // 테스트용 핸들
-window.__game = { camera, scene, THREE, renderer, startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
+window.__game = { camera, scene, THREE, renderer, hfColWorld, hfDepth, startReplay, endReplay, G, CFG, start, openGap, playerHitsBoss, bossHitsPlayer, tryTag, applyStyle, addMom, inThreat, updateAim, CHARS, fit, doHap };
 </script>
