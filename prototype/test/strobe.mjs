@@ -10,7 +10,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const look = process.argv[2] || '스프링 송', SECONDS = +(process.argv[3] || 10);
+const look = process.argv[2] || '모비드 메탈', SECONDS = +(process.argv[3] || 10);
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
 const errors = [];

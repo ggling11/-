@@ -1,4 +1,4 @@
-// [알파] 캐릭터 모델 비교판 (docs/실험/알파-스프링송-프롬프트.md 단계 3)
+// [알파] 캐릭터 모델 비교판 (docs/실험/알파-모비드메탈-프롬프트.md 단계 3)
 //
 //   cd prototype/test && npm install && node models.mjs [룩 이름]
 //
@@ -16,7 +16,7 @@ fs.mkdirSync(out, { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOK = process.argv[2] || '스프링 송';
+const LOOK = process.argv[2] || '모비드 메탈';
 const POSE = process.argv[3] || 'idle';
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -86,7 +86,7 @@ async function silhouette() {
     return { mask: Array.from(out), url: cv.toDataURL() };
   });
 }
-const subjects = [['boss', '보스 · 수문장'], ['p1', '1P · 모루'], ['p2', '2P · 제비']];
+const subjects = [['boss', '보스'], ['p1', '1P · 모루'], ['p2', '2P · 제비']];
 const shots = [], sils = {};
 for (const [who, name] of subjects) {
   const pose = who === 'boss' ? (POSE === 'attack' ? 'windup' : 'idle') : POSE;

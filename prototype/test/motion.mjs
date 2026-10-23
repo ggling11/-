@@ -17,7 +17,7 @@ fs.mkdirSync(out, { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOK = process.argv[2] || '스프링 송';
+const LOOK = process.argv[2] || '모비드 메탈';
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 480, height: 480 } });
@@ -40,7 +40,7 @@ await page.evaluate(() => {
   window.__afterFrame = () => {
     const now = performance.now(), d = Math.max(1, now - last); last = now;
     // 천 검사
-    for (const o of [G.boss, ...G.players]) { const M = o.hfM; if (!M?.on) continue; let n = 0; for (const c of [...M.cloths, ...M.chains]) { const k = c.penetrations(); n += k; if ((c.depth || 0) > (window.__depth || 0)) { window.__depth = c.depth; const cols = __game.hfColWorld(M, c.o.legs !== false); let ci = -1, cm = 0; for (let i = 0; i < c.p.length; i++) { if (c.pinF(i)) continue; cols.forEach((cc, j) => { const m = __game.hfDepth(c.p[i], [cc])[1]; if (m > cm) { cm = m; ci = j + (cc.b ? '(캡슐)' : '(구)') + ' 점' + i; } }); } window.__deepWho = (o === G.boss ? 'boss' : o.char.key) + ':' + (M.cloths.includes(c) ? 'cloth' + M.cloths.indexOf(c) : 'chain' + M.chains.indexOf(c)) + ' state=' + o.state + ' speed=' + M.mo.speed.toFixed(1) + ' strip=' + (window.__strip || '') + ' 충돌체=' + ci + ' dt=' + (G.time - (window.__lastT || 0)).toFixed(4) + ' hold=' + window.__hold; } if (k) window.__penWho = (o === G.boss ? 'boss' : o.char.key) + ':' + (M.cloths.includes(c) ? 'cloth' + M.cloths.indexOf(c) : 'chain' + M.chains.indexOf(c)) + '=' + k; } window.__pen = Math.max(window.__pen, n); M.root.traverse(b => { if (!Number.isFinite(b.position.x + b.quaternion.x)) window.__nan++; }); }
+    for (const o of [G.boss, ...G.players]) { const M = o.mmM; if (!M?.on) continue; let n = 0; for (const c of [...M.cloths, ...M.chains]) { const k = c.penetrations(); n += k; if ((c.depth || 0) > (window.__depth || 0)) { window.__depth = c.depth; const cols = __game.mmColWorld(M, c.o.legs !== false); let ci = -1, cm = 0; for (let i = 0; i < c.p.length; i++) { if (c.pinF(i)) continue; cols.forEach((cc, j) => { const m = __game.mmDepth(c.p[i], [cc])[1]; if (m > cm) { cm = m; ci = j + (cc.b ? '(캡슐)' : '(구)') + ' 점' + i; } }); } window.__deepWho = (o === G.boss ? 'boss' : o.char.key) + ':' + (M.cloths.includes(c) ? 'cloth' + M.cloths.indexOf(c) : 'chain' + M.chains.indexOf(c)) + ' state=' + o.state + ' speed=' + M.mo.speed.toFixed(1) + ' strip=' + (window.__strip || '') + ' 충돌체=' + ci + ' dt=' + (G.time - (window.__lastT || 0)).toFixed(4) + ' hold=' + window.__hold; } if (k) window.__penWho = (o === G.boss ? 'boss' : o.char.key) + ':' + (M.cloths.includes(c) ? 'cloth' + M.cloths.indexOf(c) : 'chain' + M.chains.indexOf(c)) + '=' + k; } window.__pen = Math.max(window.__pen, n); M.root.traverse(b => { if (!Number.isFinite(b.position.x + b.quaternion.x)) window.__nan++; }); }
     window.__lastT = G.time;
     if (window.__drive && window.__hold > 1) window.__drive(); // 다음 프레임이 시간이 흐르는 프레임일 때만 옮긴다
     if (window.__hold > 0) { window.__hold--; G.timeScale = window.__hold > 0 ? Math.min(1, (1000 / 60) / Math.min(50, d)) : 0; } else G.timeScale = 0;
@@ -71,7 +71,7 @@ async function strip(name, who, dist, cond, n, every, file) {
 }
 await strip('보스 내려찍기 · 예비 동작 → 꽂힘 → 회복 (0.1초 간격)', 'boss', 13, () => { const B = __game.G.boss; return B.state === 'windup' && B.atk && /slam/i.test(B.atk.kind) && B.t / B.atk.windup > 0.15; }, 12, 6, 'slam');
 await strip('휘두르기 (1/30초 간격)', 'p2', 7, () => __game.G.players.some(p => p.state === 'attack' && p.t < 0.03) && (window.__who = __game.G.players.find(p => p.state === 'attack')), 12, 2, 'swing');
-await strip('움직임 · 걷기와 달리기 (0.05초 간격)', 'p1', 8, () => __game.G.players.some(p => p.hfM?.mo.speed > 2.5 && p.state === 'free') && (window.__walker = 1), 12, 3, 'walk');
+await strip('움직임 · 걷기와 달리기 (0.05초 간격)', 'p1', 8, () => __game.G.players.some(p => p.mmM?.mo.speed > 2.5 && p.state === 'free') && (window.__walker = 1), 12, 3, 'walk');
 // ④ 걷기·달리기 옆모습: 판정을 멈추고 한 사람을 원을 따라 몰아 본다 (다리 IK·천의 뒤따름)
 async function gait(name, who, speed, file) {
   await page.evaluate(f => { window.__strip = f; }, file);

@@ -15,7 +15,7 @@ fs.mkdirSync(out, { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8').replace('window.__game = {', 'window.__game = { cineFx, impactStar,');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOK = process.argv[2] || '스프링 송';
+const LOOK = process.argv[2] || '모비드 메탈';
 const TIMES = [0.03, 0.06, 0.1, 0.2, 0.35, 0.6, 1.0, 2.0];
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });

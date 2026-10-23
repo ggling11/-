@@ -1,8 +1,8 @@
-// [알파] 스프링 송 룩: 자동 관람을 실제로 돌리며 순간별로 찍는다 (오라, 궤적, 파편, 충격파는 움직여야 보인다)
+// [알파] 모비드 메탈 룩: 자동 관람을 실제로 돌리며 순간별로 찍는다 (궤적, 데이터 조각, 파편, 충격파는 움직여야 보인다)
 //
-//   cd prototype/test && npm install && node springsong.mjs
+//   cd prototype/test && npm install && node morbid.mjs
 //
-// prototype/test/out/ss_*.png, ss_sheet.png
+// prototype/test/out/mm_*.png, mm_sheet.png
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,8 +25,8 @@ await page.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
 await page.route('http://local.test/', r => r.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + '</body></html>' }));
 await page.goto('http://local.test/');
 await page.waitForFunction(() => window.__game, null, { timeout: 20000 });
-await page.evaluate(() => { __game.CFG.relicDraft = false; __game.CFG.style = '스프링 송'; __game.applyStyle(); });
-const title = path.join(out, 'ss_0_title.png');
+await page.evaluate(() => { __game.CFG.relicDraft = false; __game.CFG.style = '모비드 메탈'; __game.applyStyle(); });
+const title = path.join(out, 'mm_0_title.png');
 await page.waitForTimeout(1500);
 await page.screenshot({ path: title });
 await page.keyboard.press('Digit4'); // 합 연출 보기 (자동)
@@ -37,29 +37,29 @@ const wait = (fn, t = 240000) => page.waitForFunction(fn, null, { timeout: t });
 async function snap(name, file) { const f = path.join(out, file); await page.screenshot({ path: f }); shots.push({ name, f }); }
 
 await wait(() => { const B = __game.G.boss; return B.state === 'windup' && B.t / B.atk.windup > 0.7; });
-await snap('예비 동작 · 검은 오라와 붉은 맥', 'ss_1_windup.png');
+await snap('예비 동작 · 붉은 네온과 주먹 궤적', 'mm_1_windup.png');
 await wait(() => __game.G.players.some(p => p.state === 'attack' && !p.hitDone && p.t > p.windup * 0.6));
-await snap('휘두르는 중 · 빛의 궤적', 'ss_1b_swing.png');
+await snap('휘두르는 중 · 자리 색 칼 궤적과 데이터 조각', 'mm_1b_swing.png');
 await wait(() => __game.G.boss.state === 'gap' || __game.G.boss.state === 'stagger');
 await page.waitForTimeout(250);
-await snap('받아낸 순간 · 불꽃, 흙먼지, 충격파, 균열', 'ss_2_clash.png');
+await snap('틈 · 장갑이 깨지고 약점 표적 고리', 'mm_2_clash.png');
 await wait(() => !!__game.G.release && __game.G.impact === 0);
-await snap('완벽한 합 · 정지', 'ss_3_freeze.png');
+await snap('완벽한 합 · 정지 (약점이 터지는 순간)', 'mm_3_freeze.png');
 await page.evaluate(() => { __game.CFG.freezePerfect = 0.3; });
 await wait(() => !__game.G.release && !!__game.G.slow);
 await page.waitForTimeout(200);
-await snap('완벽한 합 · 해방 (슬로모션)', 'ss_4_release.png');
+await snap('완벽한 합 · 해방 (홀로그램 조각, 세로 빛줄기)', 'mm_4_release.png');
 await wait(() => __game.G.boss.state === 'chase', 60000);
 await wait(() => { const B = __game.G.boss; return B.state === 'windup' && B.t / B.atk.windup > 0.85; });
-await snap('다음 예비 동작 · 역할 교대', 'ss_5_windup2.png');
+await snap('다음 예비 동작 · 역할 교대', 'mm_5_windup2.png');
 await wait(() => __game.G.boss.state === 'stagger');
-await snap('합 · 휘청임', 'ss_6_stagger.png');
+await snap('합 · 휘청임', 'mm_6_stagger.png');
 
 const sheet = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const b64 = f => `data:image/png;base64,${fs.readFileSync(f).toString('base64')}`;
 await sheet.setContent(`<style>body{margin:0;background:#07080c;color:#e8ecf6;font:600 18px sans-serif;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px}
 figure{margin:0}img{width:100%;display:block;border-radius:3px}figcaption{padding:4px 2px}</style>${shots.map(s => `<figure><img src="${b64(s.f)}"><figcaption>${s.name}</figcaption></figure>`).join('')}`);
-await sheet.screenshot({ path: path.join(out, 'ss_sheet.png'), fullPage: true });
+await sheet.screenshot({ path: path.join(out, 'mm_sheet.png'), fullPage: true });
 await browser.close();
 console.log(JSON.stringify({ ok: !errors.length, errors }, null, 2));
 process.exit(errors.length ? 1 : 0);

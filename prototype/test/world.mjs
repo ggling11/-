@@ -1,4 +1,4 @@
-// [알파] 스프링 송 월드 검사 (docs/실험/알파-스프링송-프롬프트.md 단계 2)
+// [알파] 모비드 메탈 월드 검사 (docs/실험/알파-모비드메탈-프롬프트.md 단계 2)
 //
 //   cd prototype/test && npm install && node world.mjs [룩 이름]
 //
@@ -18,7 +18,7 @@ fs.mkdirSync(out, { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOK = process.argv[2] || '스프링 송';
+const LOOK = process.argv[2] || '모비드 메탈';
 const SIZES = process.argv[3] ? process.argv[3].split(',').map(t => t.split('x').map(Number)) : [[1280, 720], [400, 800], [960, 540]];
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });

@@ -13,9 +13,9 @@ import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8')
-  .replace('window.__game = {', 'window.__game = { hfImpactTest: p => { hfFlare(p, 0, 9, 0xffffff, 0.3); const f = hfFlares[hfFlares.length - 1]; f.m.scale.set(12, 12, 1); f.m.quaternion.copy(camera.quaternion); }, fxObjs, parts, cine, hfGhosts, hfSparks, hfFlares, get hfSlash() { return hfSlash; },');
+  .replace('window.__game = {', 'window.__game = { mmImpactTest: p => { mmFlare(p, 0, 9, 0xffffff, 0.3); const f = mmFlares[mmFlares.length - 1]; f.m.scale.set(12, 12, 1); f.m.quaternion.copy(camera.quaternion); }, fxObjs, parts, cine, mmGhosts, mmSparks, mmFlares, mmHolo, get reticle() { return G.boss.reticle; },');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOK = process.argv[2] || '스프링 송', SECS = +(process.argv[3] || 20);
+const LOOK = process.argv[2] || '모비드 메탈', SECS = +(process.argv[3] || 20);
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
@@ -38,9 +38,9 @@ const res = await page.evaluate(([secs, selftest]) => new Promise(done => {
   const fxRoots = () => {
     const s = new Set();
     const add = o => o && o.traverse(c => s.add(c));
-    g.fxObjs.forEach(f => add(f.obj)); g.parts.forEach(p => add(p.m)); g.hfGhosts.forEach(h => add(h.g)); g.hfFlares.forEach(f => add(f.m));
-    add(g.hfSparks.mesh); if (g.hfSlash) { add(g.hfSlash.core); add(g.hfSlash.rim); }
-    const c = g.cine; [c.dust, c.smoke, c.glow].forEach(x => add(x.pts)); c.trails.forEach(t => add(t.mesh)); c.debris.forEach(d => add(d.m));
+    g.fxObjs.forEach(f => add(f.obj)); g.parts.forEach(p => add(p.m)); g.mmGhosts.forEach(h => add(h.g)); g.mmFlares.forEach(f => add(f.m));
+    add(g.mmSparks.mesh); add(g.mmHolo.mesh);
+    const c = g.cine; [c.dust, c.smoke, c.glow, c.data].forEach(x => add(x.pts)); c.trails.forEach(t => add(t.mesh)); c.debris.forEach(d => add(d.m));
     return s;
   };
   window.__afterFrame = () => {
@@ -53,7 +53,7 @@ const res = await page.evaluate(([secs, selftest]) => new Promise(done => {
     const pts = { tele: [], ring: [] }, B = G.boss;
     if (B.tele?.g?.userData.radius) { const c = B.tele.g.position, R = B.tele.g.userData.radius - 0.07; for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2; pts.tele.push(new THREE.Vector3(c.x + Math.cos(a) * R, 0.04, c.z + Math.sin(a) * R)); } }
     for (const p of G.players) if (p.ring.visible && p.root.visible) { const c = p.pos; for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; pts.ring.push(new THREE.Vector3(c.x + Math.cos(a) * 0.95, 0.04, c.z + Math.sin(a) * 0.95)); } }
-    if (selftest && B.tele?.g) g.hfImpactTest(B.tele.g.position.clone().setY(0.3)); // 자체 검사: 일부러 예고 원 위에 큰 섬광
+    if (selftest && B.tele?.g) g.mmImpactTest(B.tele.g.position.clone().setY(0.3)); // 자체 검사: 일부러 예고 원 위에 큰 섬광
     // 이펙트만 회색 바탕에
     const keep = fxRoots(), hidden = [];
     scene.traverse(o => { if ((o.isMesh || o.isPoints || o.isLine || o.isSprite) && o.visible && !keep.has(o)) { hidden.push(o); o.visible = false; } });

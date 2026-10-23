@@ -16,7 +16,7 @@ fs.mkdirSync(path.join(here, 'out'), { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
-const LOOKS = process.argv.slice(2).length ? process.argv.slice(2) : ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트', '스프링 송'];
+const LOOKS = process.argv.slice(2).length ? process.argv.slice(2) : ['기본 툰', '하데스', '퓨리', '하이파이 러시', '데스 도어', '하이퍼 라이트', '디 어센트', '모비드 메탈'];
 const LIMIT = { glob: 0.6, jump: 1.5, back: 0.5 };
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
