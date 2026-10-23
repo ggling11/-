@@ -5,6 +5,8 @@
 // 판정을 멈춘 장면에서 이펙트를 한 번 터뜨리고 정해진 시각(0.03, 0.06, 0.1, 0.2, 0.35, 0.6, 1.0, 2.0초)에 찍는다.
 // 순서가 맞는지 본다: ① 흰 섬광 → ② 가로 번짐 → ③ 불꽃 줄기 → ④ 먼지 → ⑤ 균열.
 // 함께 재는 것: 프레임마다 화면 평균 휘도 → 섬광이 0.1초 안에 가라앉는지
+// 섬광만: 받기·합을 한 번 더 터뜨리되 오래 남는 층(홀로그램 조각, 데이터 입자, 불티, 먼지, 김, 파편)을 그리지 않고 휘도만 잰다.
+//   최고치가 작으면(반실사 룩) 남는 조각만으로도 '절반'을 넘어서, 섬광 자체의 길이는 이쪽으로 본다.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,7 +15,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.join(here, 'out');
 fs.mkdirSync(out, { recursive: true });
 const { chromium } = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
-const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8').replace('window.__game = {', 'window.__game = { cineFx, impactStar,');
+const html = fs.readFileSync(path.join(here, '..', 'index.html'), 'utf8').replace('window.__game = {', 'window.__game = { cineFx, impactStar, cine, mmHolo, mmSparks,');
 const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
 const LOOK = process.argv[2] || '모비드 메탈';
 const TIMES = [0.03, 0.06, 0.1, 0.2, 0.35, 0.6, 1.0, 2.0];
@@ -63,13 +65,30 @@ for (const [kind, name] of [['clash', '받아낸 순간 (받기 성공)'], ['sla
   const lum = await page.evaluate(() => { window.__rec = false; return window.__lum; });
   strips.push({ name, shots, lum });
 }
+const flashOnly = [];
+for (const [kind, name] of [['clash', '받아낸 순간 · 섬광만'], ['hap', '합 · 섬광만']]) {
+  await page.evaluate(() => { window.__hold = 0; __game.G.timeScale = 0; });
+  for (let i = 0; i < 6; i++) await settle();
+  await page.evaluate(kind => {
+    const { G, THREE, cine, mmHolo, mmSparks } = __game; window.__t0 = G.time; window.__lum = []; window.__rec = true;
+    const p = new THREE.Vector3(0.9, 1.2, 1.1), n0 = cine.debris.length;
+    __game.cineFx(kind, p);
+    if (kind === 'clash') __game.impactStar(p, 0.9, 0.2, false);
+    if (kind === 'hap') __game.impactStar(p, 1.5, 0.24, false);
+    const hide = o => o && o.traverse(c => c.layers.set(1)); // 카메라는 0번 층만 그린다
+    [mmHolo.mesh, mmSparks.mesh, cine.dust.pts, cine.smoke.pts, cine.data.pts].forEach(hide); cine.debris.slice(n0).forEach(d => hide(d.m));
+  }, kind);
+  await advanceTo(2.0);
+  const lum = await page.evaluate(() => { window.__rec = false; const { cine, mmHolo, mmSparks } = __game; [mmHolo.mesh, mmSparks.mesh, cine.dust.pts, cine.smoke.pts, cine.data.pts].forEach(o => o.traverse(c => c.layers.set(0))); return window.__lum; });
+  flashOnly.push({ name, lum });
+}
 const sheet = await browser.newPage({ viewport: { width: 1640, height: 1000 } });
 const b64 = f => `data:image/png;base64,${fs.readFileSync(f).toString('base64')}`;
 await sheet.setContent(`<style>body{margin:0;background:#07080c;color:#e8ecf6;font:600 14px sans-serif;padding:6px}h3{margin:8px 2px 4px}div{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}figure{margin:0}img{width:100%;display:block}figcaption{font-weight:400;font-size:12px}</style>
 ${strips.map(s => `<h3>${s.name}</h3><div>${s.shots.map(x => `<figure><img src="${b64(x.f)}"><figcaption>${x.t}초</figcaption></figure>`).join('')}</div>`).join('')}`);
 await sheet.screenshot({ path: path.join(out, 'fx_sheet.png'), fullPage: true });
 await browser.close();
-for (const s of strips) {
+for (const s of [...strips, ...flashOnly]) {
   const base = s.lum.find(([t]) => t > 1.5)?.[1] ?? s.lum.at(-1)?.[1], peak = Math.max(...s.lum.map(l => l[1]));
   const over = s.lum.filter(([t, l]) => l > base + (peak - base) * 0.5).map(l => l[0]);
   console.log(`${s.name}: 평균 휘도 바탕 ${base} → 최고 ${peak}, 절반 넘게 밝은 시간 ${over.length ? (over.at(-1) - over[0] + 1 / 60).toFixed(3) : 0}초`);

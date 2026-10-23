@@ -18,6 +18,7 @@ const mod = p => fs.readFileSync(path.join(here, 'node_modules', p));
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+page.setDefaultTimeout(120000); // 반실사 룩은 소프트웨어 렌더링에서 한 장 찍는 데 30초를 넘길 때가 있다
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 page.on('console', m => { if (m.type() === 'error' && !m.text().includes('ERR_FAILED')) errors.push(m.text()); });
@@ -30,6 +31,9 @@ await page.goto('http://local.test/');
 await page.waitForFunction(() => window.__game, null, { timeout: 15000 });
 // 이전 시나리오들은 '받기 한 번 = 틈' 규칙을 전제로 한다. [알파] 그로기 시나리오에서만 켠다
 await page.evaluate(() => { __game.CFG.groggyOn = false; __game.CFG.relicDraft = false; });
+// [알파] 규칙 검사는 가벼운 기본 툰 화면에서 돌린다 (규칙은 화면과 무관하다). 기본 룩(모비드 메탈)은 맨 끝 20번에서 따로 확인한다:
+//   반실사 화면은 소프트웨어 렌더링에서 한 프레임이 1초 가까이 걸려 이 검사들의 대기 시간 안에 틈이 끝나지 않는다
+await page.evaluate(() => { __game.CFG.style = '기본 툰'; __game.applyStyle(); });
 await page.screenshot({ path: path.join(out, '0_title.png') });
 
 const ev = f => page.evaluate(f);
@@ -559,6 +563,47 @@ await waitState(() => __game.G.boss.state !== 'active', 30000);
 results.rally = await ev(() => [__game.G.boss.state, __game.G.boss.openAll, __game.G.stats.rally, __game.G.stats.rallyHit]);
 await ev(() => { __game.CFG.boss = 'gate'; __game.CFG.groggyOn = false; });
 
+// 20) [알파] 모비드 메탈 룩 (기본 룩): 같은 규칙이 반실사 화면에서도 그대로 도는지.
+//     둘이 하기 받기 → 틈(장갑이 깨지고 금색 표적 고리) → 합(일반 타격 정지가 있어도 판정은 같다), 혼자 하기 받기 → Q → 들어오는 몸이 맞춰지며 합
+await page.keyboard.press('Escape');
+await ev(() => { __game.CFG.style = '모비드 메탈'; __game.applyStyle(); });
+await page.keyboard.press('Digit2');
+await waitState(() => __game.G.mode === 'duo' && __game.G.running, 120000);
+await ev(() => {
+  const { G } = __game; const B = G.boss, [P1, P2] = G.players;
+  B.cd = 99; B.pos.set(0, 0, 0); P1.pos.set(0, 0, 3); P2.pos.set(0, 0, -3.2); P2.yaw = 0; P1.yaw = Math.PI;
+  for (const p of G.players) { p.state = 'free'; p.impact = 0; }
+  B.target = P1; B.begin('slam'); B.t = B.atk.windup - 0.12;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup', 120000);
+results.mmReceive = await ev(() => { const B = __game.G.boss; return [B.state, !!(B.mmM?.on && B.reticle?.visible && B.weak.visible), __game.G.players.every(p => p.mmM?.on)]; });
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyK');
+await waitState(() => __game.G.stats.hap === 1 || __game.G.boss.state !== 'gap', 240000);
+results.mmHap = await ev(() => __game.G.stats.hap);
+await page.screenshot({ path: path.join(out, '6_mm_duo_hap.png') });
+await page.keyboard.press('Escape');
+await page.keyboard.press('Digit1');
+await waitState(() => __game.G.mode === 'solo' && __game.G.running, 120000);
+await ev(() => {
+  const { G } = __game; const B = G.boss, A = G.players[0];
+  B.cd = 99; B.pos.set(0, 0, 0); A.pos.set(0, 0, 3); A.yaw = Math.PI;
+  B.target = A; B.begin('slam'); B.t = B.atk.windup - 0.12;
+});
+await page.keyboard.down('KeyG');
+await waitState(() => __game.G.boss.state !== 'windup', 120000);
+await page.keyboard.up('KeyG');
+await page.keyboard.press('KeyQ');
+await waitState(() => __game.G.active === 1, 120000);
+results.mmTagIn = await ev(() => { const P = __game.G.players[1]; return [P.buildT > 0 || P.mmM.build.h.value < 50, __game.G.players[0].root.visible === false || __game.G.players[0].echo]; });
+await waitState(() => __game.G.stats.hap === 1 || __game.G.boss.state !== 'gap', 240000);
+results.mmSoloHap = await ev(() => [__game.G.stats.hap, __game.G.players[1].mmM.build.h.value]); // 태그 진입 공격이 0.06초라 합 때는 아직 맞춰지는 중일 수 있다
+await page.screenshot({ path: path.join(out, '6_mm_solo_hap.png') });
+await waitState(() => __game.G.players[1].mmM.build.h.value === 99, 120000);
+results.mmBuildDone = true;
+await ev(() => { __game.CFG.style = '기본 툰'; __game.applyStyle(); });
+
 // 11) 모바일 폭에서 가로 스크롤이 없는지
 await page.keyboard.press('Escape');
 await page.setViewportSize({ width: 400, height: 800 });
@@ -588,7 +633,8 @@ const alpha = grog && monk && relic && replay && sw && icpt && color && rally &&
   && results.coverNear[0] === 'gap' && results.coverNear[1] !== 'hurt' && results.coverNear[2] === 2
   && results.echoStart.join() === 'true,receive,true,true' && results.echoRcv[0] === 'gap' && results.echoRcv[1] === 1 && results.echoRcv[2] >= 1
   && results.echoHap === 1 && results.echoGone === false;
-const ok = alpha && results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
+const mm = results.mmReceive.join() === 'gap,true,true' && results.mmHap === 1 && results.mmTagIn[0] && results.mmTagIn[1] && results.mmSoloHap[0] === 1 && results.mmBuildDone;
+const ok = alpha && mm && results.duoReceive === 'gap' && results.duoHap === 1 && results.duoFinOpen && results.duoFin === 1
   && results.unison.n === 1 && results.soloReceive === 'gap' && results.soloHap === 1 && results.soloFin.fin === 1 && results.soloFin.active === 0
   && results.fit === 'strong,weak,weak,strong' && results.jebiCharge.state === 'gap' && results.jebiCharge.fit === 2
   && results.moruDropHap.hap === 2 && results.moruDropHap.active === 0
