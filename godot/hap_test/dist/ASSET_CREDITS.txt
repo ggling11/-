@@ -1,0 +1,28 @@
+합 시험판 0.1.0 — 출처 목록
+============================
+
+질감 (CC0 1.0, 1K JPG — ambientCG, https://ambientcg.com)
+  - PavingStones115A  마당 판석       https://ambientcg.com/view?id=PavingStones115A
+  - PavingStones138   바깥 판석       https://ambientcg.com/view?id=PavingStones138
+  - Rock030           돌난간·석등·바위 https://ambientcg.com/view?id=Rock030
+  - MetalPlates006    쇠 바닥판       https://ambientcg.com/view?id=MetalPlates006
+  내려받은 주소: https://ambientcg.com/get?file=<ID>_1K-JPG.zip
+  (색 Color · 노멀 NormalGL · 거칠기 Roughness, 쇠 바닥판은 금속성 Metalness 도)
+  ambientCG 의 모든 에셋은 CC0 1.0 Universal (퍼블릭 도메인) 입니다.
+
+글꼴 (SIL Open Font License 1.1 — 라이선스 전문은 OFL_*.txt)
+  - Black Han Sans      제목   Copyright 2015 The Black Han Sans Project Authors
+                         https://github.com/google/fonts/tree/main/ofl/blackhansans
+  - IBM Plex Sans KR    본문   Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
+                         https://github.com/google/fonts/tree/main/ofl/ibmplexsanskr
+
+소리
+  - 효과음(공격 · 받기 · 합 · 메뉴 이동 · 보스 · 참가/나가기/거절)은 외부 에셋이 아니라
+    tools/make_sfx.py 가 파이썬 표준 라이브러리로 합성한 것입니다 (프로토타입 WebAudio 합성음을 흉내).
+
+모델 · 무대
+  - 캐릭터 대역과 무대 조각은 모두 Godot 기본 도형(상자 · 원기둥 · 구 · 각기둥)을 코드로 조합한 것입니다.
+  - 잎 · 풀 모양, 하늘, 빛줄기, 충격파, 화면 셰이더는 직접 쓴 셰이더입니다.
+
+엔진
+  - Godot Engine 4.7.2-stable (MIT License) — https://godotengine.org/license

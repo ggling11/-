@@ -1,0 +1,31 @@
+[gd_resource type="ParticleProcessMaterial" format=3]
+
+[sub_resource type="Gradient" id="g1"]
+offsets = PackedFloat32Array(0, 0.15, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.55, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="t1"]
+gradient = SubResource("g1")
+
+[resource]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.2
+emission_ring_radius = 1.2
+emission_ring_inner_radius = 0.3
+emission_ring_cone_angle = 90.0
+direction = Vector3(0, 0.35, 0)
+spread = 180.0
+flatness = 0.7
+initial_velocity_min = 1.5
+initial_velocity_max = 4.0
+radial_velocity_min = 1.0
+radial_velocity_max = 3.0
+gravity = Vector3(0, 0.25, 0)
+damping_min = 1.8
+damping_max = 2.6
+angle_min = 0.0
+angle_max = 360.0
+scale_min = 1.0
+scale_max = 2.4
+color_ramp = SubResource("t1")
